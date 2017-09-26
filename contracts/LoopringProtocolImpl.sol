@@ -90,8 +90,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
     /// @param lrcFee       The amount of LR paid by order owner to miner.
-    /// @param marginS      TokenS paid to miner.
-    /// @param marginB      TokenB paid to miner.
+    /// @param splitS      TokenS paid to miner.
+    /// @param splitB      TokenB paid to miner.
     struct OrderState {
         Order   order;
         bytes32 orderHash;
@@ -102,8 +102,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    fillAmountS;
         uint    lrcReward;
         uint    lrcFee;
-        uint    marginS;
-        uint    marginB;
+        uint    splitS;
+        uint    splitB;
     }
 
     struct Ring {
@@ -474,14 +474,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.order.tokenS,
                 state.owner,
                 prev.owner,
-                state.fillAmountS - prev.marginB);
+                state.fillAmountS - prev.splitB);
 
-            if (prev.marginB + state.marginS > 0) {
+            if (prev.splitB + state.splitS > 0) {
                 delegate.transferToken(
                     state.order.tokenS,
                     state.owner,
                     ring.feeRecepient,
-                    prev.marginB + state.marginS);
+                    prev.splitB + state.splitS);
             }
 
             // Pay LRC
@@ -516,8 +516,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 prev.orderHash,
                 state.orderHash,
                 next.orderHash,
-                state.fillAmountS + state.marginS,
-                next.fillAmountS - state.marginB,
+                state.fillAmountS + state.splitS,
+                next.fillAmountS - state.splitB,
                 state.lrcReward,
                 state.lrcFee
                 );
@@ -571,21 +571,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
             } else if (state.feeSelection == FEE_SELECT_MARGIN_SPLIT) {
                 if (minerLrcSpendable >= state.lrcFee) {
                     if (state.order.buyNoMoreThanAmountB) {
-                        uint marginS = next.fillAmountS
+                        uint splitS = next.fillAmountS
                             .mul(state.order.amountS)
                             .div(state.order.amountB)
                             .sub(state.fillAmountS);
 
-                        state.marginS = marginS
+                        state.splitS = splitS
                             .mul(state.order.marginSplitPercentage)
                             .div(MARGIN_SPLIT_PERCENTAGE_BASE);
                     } else {
-                        uint marginB = next.fillAmountS.sub(
+                        uint splitB = next.fillAmountS.sub(
                             state.fillAmountS
                                 .mul(state.order.amountB)
                                 .div(state.order.amountS));
 
-                        state.marginB = marginB
+                        state.splitB = splitB
                             .mul(state.order.marginSplitPercentage)
                             .div(MARGIN_SPLIT_PERCENTAGE_BASE);
                     }
@@ -593,7 +593,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     // This implicits order with smaller index in the ring will
                     // be paid LRC reward first, so the orders in the ring does
                     // mater.
-                    if (state.marginS > 0 || state.marginB > 0) {
+                    if (state.splitS > 0 || state.splitB > 0) {
                         minerLrcSpendable = minerLrcSpendable.sub(state.lrcFee);
                         state.lrcReward = state.lrcFee;
                     }
@@ -829,8 +829,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
-                0,   // marginS
-                0    // marginB
+                0,   // splitS
+                0    // splitB
                 );
 
             /* (orders[i].availableAmountS > 0) */
