@@ -240,7 +240,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         ringIndexGuard += 1;
 
-
         //Check ring size
         uint ringSize = tokenSList.length;
         (ringSize > 1 && ringSize <= maxRingSize)
