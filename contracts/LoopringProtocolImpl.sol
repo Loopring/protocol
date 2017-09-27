@@ -47,7 +47,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public  maxRingSize                 = 0;
     uint    public  ringIndex                   = 0;
-    uint    private ringIndexGuard              = 0;
+    bool    private entered                     = false;
 
     // Exchange rate (rate) is the amount to sell or sold divided by the amount
     // to buy or bought.
@@ -235,10 +235,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         public {
 
-        (ringIndex == ringIndexGuard)
-            .orThrow("attepted re-entry submitRing function");
-
-        ringIndexGuard += 1;
+        (!entered).orThrow("attepted to re-enter submitRing function");
+        entered = true;
 
         //Check ring size
         uint ringSize = tokenSList.length;
@@ -301,6 +299,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecepient, 
             throwIfLRCIsInsuffcient
         );
+
+        entered = true;
     }
 
     /// @dev Cancel a order. Amount (amountS or amountB) to cancel can be
