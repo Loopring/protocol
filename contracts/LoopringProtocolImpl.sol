@@ -896,18 +896,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @return The signer's address.
     function calculateSignerAddress(
         bytes32 hash,
-        uint8 v,
+        uint8   v,
         bytes32 r,
         bytes32 s)
         public
         constant
         returns (address) {
 
-        return ecrecover(
-            keccak256("\x19Ethereum Signed Message:\n32", hash),
-            v,
-            r,
-            s);
+        return ecrecover(hash, v, r, s);
     }
 
     function getOrderFilled(bytes32 orderHash)
