@@ -77,16 +77,17 @@ contract('UintLib', (accounts: string[])=>{
 
 		assert.equal(
 	    	(await uintLib.nthRoot(
+	    		new BigNumber(2),
+	    		new BigNumber(3)))
+	    	.equals(new BigNumber(1)),
+	    	true, "2^1/3 == 1 failed");
+
+		assert.equal(
+	    	(await uintLib.nthRoot(
 	    		new BigNumber(7),
 	    		new BigNumber(3)))
 	    	.equals(new BigNumber(1)),
 	    	true, "7^1/3 == 1 failed");
-
-
-		// const x = await uintLib.nthRoot(
-	 //    		new BigNumber('228886641'),
-	 //    		new BigNumber(4));
-	 //    console.log(x.toString());
 
 		assert.equal(
 	    	(await uintLib.nthRoot(
@@ -95,8 +96,26 @@ contract('UintLib', (accounts: string[])=>{
 	    	.equals(new BigNumber(123)),
 	    	true, "228886641^1/4 == 123 failed");
 
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber(228886641 - 1),
+	    		new BigNumber(4)))
+	    	.equals(new BigNumber(122)),
+	    	true, "228886640^1/4 == 122 failed");
+
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber('784637716923335095224261902710254454442933591094742482943'),
+	    		new BigNumber(3)))
+	    	.equals(new BigNumber('9223372036854775807')),
+	    	true, "784637716923335095224261902710254454442933591094742482943^1/3 == 9223372036854775807 failed");
+
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber('784637716923335095224261902710254454442933591094742482942'),
+	    		new BigNumber(3)))
+	    	.equals(new BigNumber('9223372036854775806')),
+	    	true, "784637716923335095224261902710254454442933591094742482942^1/3 == 9223372036854775806 failed");
     });
   });
-
-
 })

@@ -90,19 +90,9 @@ library UintLib {
             for (uint i = 0; i < n; i++) {
                 result *= x;
             }
-            // assert(result >= x); 
+            assert(result >= x); 
         }
     }
-
-    function bitCount(uint x) public constant returns (uint result) {
-        result = 0;
-        uint xx = x;
-        while(xx > 0) {
-            xx >>= 1;
-            result += 1;
-        }
-    }
-
 
     /// Based on the nth root algorithm derived from Newton's method
     /// (https://en.wikipedia.org/wiki/Nth_root_algorithm)
