@@ -26,7 +26,7 @@ import "zeppelin-solidity/contracts/math/SafeMath.sol";
 library UintLib {
     using SafeMath  for uint;
 
-    function tolerantSub(uint x, uint y) constant returns (uint z) {
+    function tolerantSub(uint x, uint y) public constant returns (uint z) {
         if (x >= y) z = x - y; 
         else z = 0;
     }
@@ -45,7 +45,7 @@ library UintLib {
         uint[] arr,
         uint scale
         )
-        internal
+        public
         constant
         returns (uint) {
 
@@ -82,37 +82,38 @@ library UintLib {
             .div(len - 1);
     }
 
-    function pow(uint x, uint n) constant returns (uint result) {
-        if (x == 0) return 0;
-        result = 1;
-        for (uint i = 0; i < n; i++) {
-            result *= x;
+    function pow(uint x, uint n) public constant returns (uint result) {
+        if (x == 0) result = 0;
+        else if (x == 1 || n == 0) result = 1;
+        else {
+            result = 1;
+            for (uint i = 0; i < n; i++) {
+                result *= x;
+            }
+            // assert(result >= x); 
         }
-        assert(result >= x);
     }
 
-    function bitCount(uint x) constant returns (uint result) {
+    function bitCount(uint x) public constant returns (uint result) {
         result = 0;
-        while(x > 0) {
-            x >>= 1;
-            result++;
+        uint xx = x;
+        while(xx > 0) {
+            xx >>= 1;
+            result += 1;
         }
     }
 
-    function nthRoot(uint x, uint n) constant returns(uint) {
-        uint bits = bitCount(x) / n;
-        uint l = 1;
-        if (bits > 0) l <<= (bits - 1);
-        
-        uint r = 1 << (bits + 1);
 
-        while(l <= r) {
-            uint k = (l + r) >> 1;
-            uint p = pow(k, n);
-            if (p < x) l = k + 1;
-            else if (p > x) r = k - 1;
-            else return k;
+    /// Based on the nth root algorithm derived from Newton's method
+    /// (https://en.wikipedia.org/wiki/Nth_root_algorithm)
+    /// @return the integer root (the largest integer x for with x**n <= k)
+    function nthRoot(uint k, uint n) constant returns(uint) {
+        uint x = k;
+        uint y = (x + 1) / 2;
+        while (y < x) {
+            x = y;
+            y = ((n-1) * x + k / pow(x, n-1)) / n;
         }
-        return r;
+        return x;
     }
 }
