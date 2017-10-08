@@ -81,4 +81,38 @@ library UintLib {
             .div(avg)
             .div(len - 1);
     }
+
+    function pow(uint x, uint n) constant returns (uint result) {
+        if (x == 0) return 0;
+        result = 1;
+        for (uint i = 0; i < n; i++) {
+            result *= x;
+        }
+        assert(result >= x);
+    }
+
+    function bitCount(uint x) constant returns (uint result) {
+        result = 0;
+        while(x > 0) {
+            x >>= 1;
+            result++;
+        }
+    }
+
+    function nthRoot(uint x, uint n) constant returns(uint) {
+        uint bits = bitCount(x) / n;
+        uint l = 1;
+        if (bits > 0) l <<= (bits - 1);
+        
+        uint r = 1 << (bits + 1);
+
+        while(l <= r) {
+            uint k = (l + r) >> 1;
+            uint p = pow(k, n);
+            if (p < x) l = k + 1;
+            else if (p > x) r = k - 1;
+            else return k;
+        }
+        return r;
+    }
 }
