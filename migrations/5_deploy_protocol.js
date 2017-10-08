@@ -26,8 +26,7 @@ module.exports = function(deployer, network, accounts) {
         TokenRegistry.address,
         RinghashRegistry.address,
         TokenTransferDelegate.address,
-        5,
-        100);
+        5);
     });
   } else {
     deployer.then(() => {
@@ -50,8 +49,7 @@ module.exports = function(deployer, network, accounts) {
         TokenRegistry.address,
         RinghashRegistry.address,
         TokenTransferDelegate.address,
-        5,
-        100);
+        5);
     });
 
   }

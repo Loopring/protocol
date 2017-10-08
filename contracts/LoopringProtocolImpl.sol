@@ -49,18 +49,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     uint    public  ringIndex                   = 0;
     bool    private entered                     = false;
 
-    // Exchange rate (rate) is the amount to sell or sold divided by the amount
-    // to buy or bought.
-    //
-    // Rate ratio is the ratio between executed rate and an order's original
-    // rate.
-    //
-    // To require all orders' rate ratios to have coefficient ofvariation (CV)
-    // smaller than 2.5%, for an example , rateRatioCVSThreshold should be:
-    //     `(0.025 * RATE_RATIO_SCALE)^2` or 62500.
-    uint    public  rateRatioCVSThreshold       = 0;
-
-    uint    public constant RATE_RATIO_SCALE    = 10000;
+    uint    public constant RATE_RATIO_SCALE    = 1E6;
 
     // The following two maps are used to keep trace of order fill and
     // cancellation history.
@@ -162,8 +151,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address _tokenRegistryAddress,
         address _ringhashRegistryAddress,
         address _delegateAddress,
-        uint    _maxRingSize,
-        uint    _rateRatioCVSThreshold
+        uint    _maxRingSize
         )
         public {
 
@@ -172,14 +160,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(address(0) != _delegateAddress);
 
         require(_maxRingSize > 1);
-        require(_rateRatioCVSThreshold > 0);
 
         lrcTokenAddress             = _lrcTokenAddress;
         tokenRegistryAddress        = _tokenRegistryAddress;
         ringhashRegistryAddress     = _ringhashRegistryAddress;
         delegateAddress             = _delegateAddress;
         maxRingSize                 = _maxRingSize;
-        rateRatioCVSThreshold       = _rateRatioCVSThreshold;
     }
 
 
@@ -532,26 +518,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function calculateRates(Ring ring) internal constant {
-        // var orders = ring.orders;
-        // uint ringSize = orders.length;
-        // uint[] memory rateRatios = new uint[](ringSize);
+        var orders = ring.orders;
+        uint ringSize = orders.length;
 
-        // for (uint i = 0; i < ringSize; i++) {
-        //     uint rateAmountB = orders[i.next(ringSize)].rateAmountS;
+        uint discount = 1;
+        for (uint i = 0; i < ringSize; i++) {
+            discount  = discount
+                .mul(RATE_RATIO_SCALE)
+                .mul(orders[i].order.amountB)
+                .div(orders[i].order.amountS);
+        }
 
-        //     uint s1b0 = orders[i].rateAmountS.mul(orders[i].order.amountB);
-        //     uint s0b1 = orders[i].order.amountS.mul(rateAmountB);
+        discount = UintLib.nthRoot(discount, ringSize);
 
-        //     (s1b0 <= s0b1)
-        //         .orThrow("miner supplied exchange rate provides invalid discount");
+        (discount <= RATE_RATIO_SCALE)
+            .orThrow("bad ring with unmatchable rates");
 
-        //     rateRatios[i] = RATE_RATIO_SCALE.mul(s1b0).div(s0b1);
-        // }
-
-        // uint cvs = UintLib.cvsquare(rateRatios, RATE_RATIO_SCALE);
-
-        // (cvs <= rateRatioCVSThreshold)
-        //     .orThrow("miner supplied exchange rate is not evenly discounted");
+        for (i = 0; i < ringSize; i++) {
+            var rate = orders[i].rate;
+            rate.amountS = rate.amountB
+                .mul(discount)
+                .div(RATE_RATIO_SCALE);
+        }
     }
 
     function calculateRingFees(Ring ring) internal constant {
