@@ -80,8 +80,7 @@ contract LoopringProtocol {
     /// @param addressList  List of each order's owner and tokenS. Note that next
     ///                     order's `tokenS` equals this order's `tokenB`.
     /// @param uintArgsList List of uint-type arguments in this order:
-    ///                     amountS, AmountB, rateAmountS, timestamp, ttl, salt,
-    ///                     and lrcFee.
+    ///                     amountS, AmountB, timestamp, ttl, salt, and lrcFee.
     /// @param uint8ArgsList -
     ///                     List of unit8-type arguments, in this order:
     ///                     marginSplitPercentageList, feeSelectionList.
@@ -107,7 +106,7 @@ contract LoopringProtocol {
     ///                     minor will give up collection the LRC fee.
     function submitRing(
         address[2][]    addressList,
-        uint[7][]       uintArgsList,
+        uint[6][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
