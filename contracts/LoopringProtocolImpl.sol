@@ -81,12 +81,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint amountB;
     }
     /// @param order        The original order
+    /// @param orderHash    The order's hash
     /// @param feeSelection -
     ///                     A miner-supplied value indicating if LRC (value = 0)
     ///                     or margin split is choosen by the miner (value = 1).
     ///                     We may support more fee model in the future.
-    /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
     /// @param rate         Exchange rate provided by miner.
+    /// @param availableAmountS -
+    ///                     The actual spendable amountS.
+    /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
     /// @param lrcFee       The amount of LR paid by order owner to miner.
@@ -632,7 +635,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         for (i = 0; i < smallestIdx; i++) {
             j = i.next(ring.orders.length);
-            (calculateOrderFillAmount(ring.orders[i], ring.orders[j]) == 0)
+            (calculateOrderFillAmount(
+                ring.orders[i],
+                ring.orders[j]) == 0)
                 .orThrow("unexpected exception in calculateRingFillAmount");
         }
     }
@@ -646,40 +651,32 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         internal
         constant
-        returns (uint state2IsSmaller) {
+        returns (uint whichIsSmaller) {
 
-        // Update the amount of tokenB this order can buy, the logic could be
-        // a brain-burner:
-        // We have `fillAmountB / state.fillAmountS = state.rate.amountB / state.rate.amountS`,
-        // therefore, `fillAmountB = state.order.amountB * state.fillAmountS / state.rate.amountS`,
-        uint fillAmountB  = next.rate.amountS
-            .mul(state.fillAmountS)
+        uint fillAmountB  = state.fillAmountS
+            .mul(state.rate.amountB)
             .div(state.rate.amountS);
 
         if (state.order.buyNoMoreThanAmountB) {
             if (fillAmountB > state.order.amountB) {
                 fillAmountB = state.order.amountB;
 
-                state.fillAmountS = state.rate.amountS
-                    .mul(fillAmountB)
-                    .div(next.rate.amountS);
+                state.fillAmountS = fillAmountB
+                    .mul(state.rate.amountS)
+                    .div(state.rate.amountB);
 
-                state2IsSmaller = 1;
+                whichIsSmaller = 1;
             }
-
-            state.lrcFee = state.order.lrcFee
-                .mul(fillAmountB)
-                .div(next.order.amountS);
-        } else {
-            state.lrcFee = state.order.lrcFee
-                .mul(state.fillAmountS)
-                .div(state.order.amountS);
         }
 
+        state.lrcFee = state.order.lrcFee
+            .mul(state.fillAmountS)
+            .div(state.order.amountS);
+        
         if (fillAmountB <= next.fillAmountS) {
             next.fillAmountS = fillAmountB;
         } else {
-            state2IsSmaller = 2;
+            whichIsSmaller = 2;
         }
     }
 
@@ -689,6 +686,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function scaleRingBasedOnHistoricalRecords(Ring ring) internal constant {
 
         uint ringSize = ring.orders.length;
+
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
             var order = state.order;
@@ -839,8 +837,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0    // splitB
                 );
 
-            /* (orders[i].availableAmountS > 0) */
-            /*     .orThrow("order balance is zero"); */
+            // TODO(kongliang): we should fix the test and uncomment the following lines.
+            // (orders[i].availableAmountS > 0)
+            //     .orThrow("order spendable amountS is zero");
         }
 
         return orders;
