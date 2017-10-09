@@ -7,8 +7,8 @@ export interface OrderParams {
   amountS: BigNumber.BigNumber;
   amountB: BigNumber.BigNumber;
   timestamp: number;
-  expiration: number;
-  rand: number;
+  ttl: number;
+  salt: number;
   lrcFee: BigNumber.BigNumber;
   buyNoMoreThanAmountB: boolean;
   marginSplitPercentage: number;

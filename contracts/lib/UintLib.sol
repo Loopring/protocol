@@ -26,7 +26,7 @@ import "zeppelin-solidity/contracts/math/SafeMath.sol";
 library UintLib {
     using SafeMath  for uint;
 
-    function tolerantSub(uint x, uint y) constant returns (uint z) {
+    function tolerantSub(uint x, uint y) public constant returns (uint z) {
         if (x >= y) z = x - y; 
         else z = 0;
     }
@@ -39,46 +39,28 @@ library UintLib {
         return (i + size - 1) % size;
     }
 
-    /// @dev calculate the square of Coefficient of Variation (CV)
-    /// https://en.wikipedia.org/wiki/Coefficient_of_variation
-    function cvsquare(
-        uint[] arr,
-        uint scale
-        )
-        internal
-        constant
-        returns (uint) {
-
-        uint len = arr.length;
-        require(len > 1);
-        require(scale > 0);
-
-        uint avg = 0;
-        for (uint i = 0; i < len; i++) {
-            avg += arr[i];
-        }
-
-        avg = avg.div(len);
-
-        if (avg == 0) {
-            return 0;
-        }
-
-        uint cvs = 0;
-        for (i = 0; i < len; i++) {
-            uint sub = 0;
-            if (arr[i] > avg) {
-                sub = arr[i] - avg;
-            } else {
-                sub = avg - arr[i];
+    function pow(uint x, uint n) public constant returns (uint result) {
+        if (x == 0) result = 0;
+        else if (x == 1 || n == 0) result = 1;
+        else {
+            result = 1;
+            for (uint i = 0; i < n; i++) {
+                result *= x;
             }
-            cvs += sub.mul(sub);
+            assert(result >= x); 
         }
-        return cvs
-            .mul(scale)
-            .div(avg)
-            .mul(scale)
-            .div(avg)
-            .div(len - 1);
+    }
+
+    /// Based on the nth root algorithm derived from Newton's method
+    /// (https://en.wikipedia.org/wiki/Nth_root_algorithm)
+    /// @return the integer root (the largest integer x for with x**n <= k)
+    function nthRoot(uint k, uint n) constant returns(uint) {
+        uint x = k;
+        uint y = (x + 1) / 2;
+        while (y < x) {
+            x = y;
+            y = ((n - 1) * x + k / pow(x, n - 1)) / n;
+        }
+        return x;
     }
 }

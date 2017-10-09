@@ -45,22 +45,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     address public  ringhashRegistryAddress     = address(0);
     address public  delegateAddress             = address(0);
 
-    uint    public  maxRingSize                 = 0;
     uint    public  ringIndex                   = 0;
     bool    private entered                     = false;
 
-    // Exchange rate (rate) is the amount to sell or sold divided by the amount
-    // to buy or bought.
-    //
-    // Rate ratio is the ratio between executed rate and an order's original
-    // rate.
-    //
-    // To require all orders' rate ratios to have coefficient ofvariation (CV)
-    // smaller than 2.5%, for an example , rateRatioCVSThreshold should be:
-    //     `(0.025 * RATE_RATIO_SCALE)^2` or 62500.
-    uint    public  rateRatioCVSThreshold       = 0;
-
-    uint    public constant RATE_RATIO_SCALE    = 10000;
+    uint    public  constant RATE_RATIO_SCALE   = 1152921504606846976; // 2^^60
+    uint    public  constant MAX_RING_SIZE      = 5;
 
     // The following two maps are used to keep trace of order fill and
     // cancellation history.
@@ -76,17 +65,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
 
     /// @param order        The original order
+    /// @param orderHash    The hash of the ring.
     /// @param feeSelection -
     ///                     A miner-supplied value indicating if LRC (value = 0)
     ///                     or margin split is choosen by the miner (value = 1).
     ///                     We may support more fee model in the future.
+    /// @param rate         The actual exhcnage rate, calculated by protocol.
+    /// @param availableAmountS Current value of amountS.
     /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
-    /// @param rateAmountS  This value is initially provided by miner and is
-    ///                     calculated by based on the original information of
-    ///                     all orders of the order-ring, in other orders, this
-    ///                     value is independent of the order's current state.
-    ///                     This value and `rateAmountB` can be used to calculate
-    ///                     the proposed exchange rate calculated by miner.
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
     /// @param lrcFee       The amount of LR paid by order owner to miner.
@@ -96,13 +82,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
         Order   order;
         bytes32 orderHash;
         uint8   feeSelection;
-        uint    rateAmountS;
+        Rate    rate;
         uint    availableAmountS;
         uint    fillAmountS;
         uint    lrcReward;
         uint    lrcFee;
         uint    splitS;
         uint    splitB;
+    }
+
+    // @dev Used to represent an exchange rate instead of a float number.   
+    struct Rate {
+        uint amountS;
+        uint amountB;
     }
 
     struct Ring {
@@ -161,9 +153,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address _lrcTokenAddress,
         address _tokenRegistryAddress,
         address _ringhashRegistryAddress,
-        address _delegateAddress,
-        uint    _maxRingSize,
-        uint    _rateRatioCVSThreshold
+        address _delegateAddress
         )
         public {
 
@@ -171,15 +161,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(address(0) != _tokenRegistryAddress);
         require(address(0) != _delegateAddress);
 
-        require(_maxRingSize > 1);
-        require(_rateRatioCVSThreshold > 0);
-
         lrcTokenAddress             = _lrcTokenAddress;
         tokenRegistryAddress        = _tokenRegistryAddress;
         ringhashRegistryAddress     = _ringhashRegistryAddress;
         delegateAddress             = _delegateAddress;
-        maxRingSize                 = _maxRingSize;
-        rateRatioCVSThreshold       = _rateRatioCVSThreshold;
     }
 
 
@@ -223,7 +208,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///                     minor will give up collection the LRC fee.
     function submitRing(
         address[2][]    addressList,
-        uint[7][]       uintArgsList,
+        uint[6][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
@@ -240,7 +225,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         //Check ring size
         uint ringSize = addressList.length;
-        (ringSize > 1 && ringSize <= maxRingSize)
+        (ringSize > 1 && ringSize <= MAX_RING_SIZE)
             .orThrow("invalid ring size");
 
         verifyInputDataIntegrity(
@@ -428,13 +413,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecepient,
             throwIfLRCIsInsuffcient);
 
-        // Do the hard work.
+        // Rings with sub-rings will enable miners to drain all margins. 
+        // Therefore we have to verify no sub-ring to be found. 
         verifyRingHasNoSubRing(ring);
 
-        // Exchange rates calculation are performed by ring-miners as solidity
-        // cannot get power-of-1/n operation, therefore we have to verify
-        // these rates are correct.
-        verifyMinerSuppliedFillRates(ring);
+        // Calculate the fill exchange rates. We do this before updating order's
+        // scale, so the exchange rates are always based on the original order
+        // parameter values.
+        calculateRingFillRate(ring);
 
         // Scale down each order independently by substracting amount-filled and
         // amount-cancelled. Order owner's current balance and allowance are
@@ -533,27 +519,29 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     }
 
-    function verifyMinerSuppliedFillRates(Ring ring) internal constant {
+    function calculateRingFillRate(Ring ring) internal constant {
         var orders = ring.orders;
         uint ringSize = orders.length;
-        uint[] memory rateRatios = new uint[](ringSize);
 
+        uint oneMinusLamda = RATE_RATIO_SCALE; // This is the (1- γ) value in the whitepaper.
         for (uint i = 0; i < ringSize; i++) {
-            uint rateAmountB = orders[i.next(ringSize)].rateAmountS;
-
-            uint s1b0 = orders[i].rateAmountS.mul(orders[i].order.amountB);
-            uint s0b1 = orders[i].order.amountS.mul(rateAmountB);
-
-            (s1b0 <= s0b1)
-                .orThrow("miner supplied exchange rate provides invalid discount");
-
-            rateRatios[i] = RATE_RATIO_SCALE.mul(s1b0).div(s0b1);
+            oneMinusLamda = oneMinusLamda
+                .mul(orders[i].order.amountB)
+                .div(orders[i].order.amountS);
         }
 
-        uint cvs = UintLib.cvsquare(rateRatios, RATE_RATIO_SCALE);
+        oneMinusLamda = UintLib.nthRoot(oneMinusLamda, ringSize);
+        uint scaleNthRoot = UintLib.nthRoot(RATE_RATIO_SCALE, ringSize);
 
-        (cvs <= rateRatioCVSThreshold)
-            .orThrow("miner supplied exchange rate is not evenly discounted");
+        (oneMinusLamda <= scaleNthRoot)
+            .orThrow("bad ring with unmatchable rates");
+
+        for (i = 0; i < ringSize; i++) {
+            var rate = orders[i].rate;
+            rate.amountS = rate.amountB
+                .mul(oneMinusLamda)
+                .div(scaleNthRoot);
+        }
     }
 
     function calculateRingFees(Ring ring) internal constant {
@@ -652,20 +640,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         // Update the amount of tokenB this order can buy, whose logic could be
         // a brain-burner:
-        // We have `fillAmountB / state.fillAmountS = state.rateAmountB / state.rateAmountS`,
-        // therefore, `fillAmountB = state.rateAmountB * state.fillAmountS / state.rateAmountS`,
-        // therefore  `fillAmountB = next.rateAmountS * state.fillAmountS / state.rateAmountS`,
-        uint fillAmountB  = next.rateAmountS
+        // We have `fillAmountB / state.fillAmountS = state.rate.amountB / state.rate.amountS`,
+        // therefore, `fillAmountB = state.rate.amountB * state.fillAmountS / state.rate.amountS`,
+        uint fillAmountB  = state.rate.amountB
             .mul(state.fillAmountS)
-            .div(state.rateAmountS);
+            .div(state.rate.amountS);
 
         if (state.order.buyNoMoreThanAmountB) {
             if (fillAmountB > state.order.amountB) {
                 fillAmountB = state.order.amountB;
 
-                state.fillAmountS = state.rateAmountS
+                state.fillAmountS = state.rate.amountS
                     .mul(fillAmountB)
-                    .div(next.rateAmountS);
+                    .div(state.rate.amountB);
 
                 state2IsSmaller = 1;
             }
@@ -749,7 +736,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function verifyInputDataIntegrity(
         uint ringSize,
         address[2][]    addressList,
-        uint[7][]       uintArgsList,
+        uint[6][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
@@ -786,7 +773,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function assembleOrders(
         uint            ringSize,
         address[2][]    addressList,
-        uint[7][]       uintArgsList,
+        uint[6][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
@@ -833,7 +820,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order,
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
-                uintArgsList[i][6],   // rateAmountS
+                Rate(order.amountS, order.amountB),
                 getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
