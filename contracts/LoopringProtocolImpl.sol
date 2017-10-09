@@ -75,18 +75,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// Structs                                                              ///
     ////////////////////////////////////////////////////////////////////////////
 
+
+    struct Rate {
+        uint amountS;
+        uint amountB;
+    }
     /// @param order        The original order
     /// @param feeSelection -
     ///                     A miner-supplied value indicating if LRC (value = 0)
     ///                     or margin split is choosen by the miner (value = 1).
     ///                     We may support more fee model in the future.
     /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
-    /// @param rateAmountS  This value is initially provided by miner and is
-    ///                     calculated by based on the original information of
-    ///                     all orders of the order-ring, in other orders, this
-    ///                     value is independent of the order's current state.
-    ///                     This value and `rateAmountB` can be used to calculate
-    ///                     the proposed exchange rate calculated by miner.
+    /// @param rate         Exchange rate provided by miner.
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
     /// @param lrcFee       The amount of LR paid by order owner to miner.
@@ -96,7 +96,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         Order   order;
         bytes32 orderHash;
         uint8   feeSelection;
-        uint    rateAmountS;
+        Rate    rate;
         uint    availableAmountS;
         uint    fillAmountS;
         uint    lrcReward;
@@ -539,10 +539,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint[] memory rateRatios = new uint[](ringSize);
 
         for (uint i = 0; i < ringSize; i++) {
-            uint rateAmountB = orders[i.next(ringSize)].rateAmountS;
-
-            uint s1b0 = orders[i].rateAmountS.mul(orders[i].order.amountB);
-            uint s0b1 = orders[i].order.amountS.mul(rateAmountB);
+            uint s1b0 = orders[i].rate.amountS.mul(orders[i].order.amountB);
+            uint s0b1 = orders[i].order.amountS.mul(orders[i].rate.amountB);
 
             (s1b0 <= s0b1)
                 .orThrow("miner supplied exchange rate provides invalid discount");
@@ -650,22 +648,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
         constant
         returns (uint state2IsSmaller) {
 
-        // Update the amount of tokenB this order can buy, whose logic could be
+        // Update the amount of tokenB this order can buy, the logic could be
         // a brain-burner:
         // We have `fillAmountB / state.fillAmountS = state.rateAmountB / state.rateAmountS`,
-        // therefore, `fillAmountB = state.rateAmountB * state.fillAmountS / state.rateAmountS`,
-        // therefore  `fillAmountB = next.rateAmountS * state.fillAmountS / state.rateAmountS`,
-        uint fillAmountB  = next.rateAmountS
+        // therefore, `fillAmountB = state.order.amountB * state.fillAmountS / state.rateAmountS`,
+        uint fillAmountB  = state.order.amountB
             .mul(state.fillAmountS)
-            .div(state.rateAmountS);
+            .div(state.rate.amountS);
 
         if (state.order.buyNoMoreThanAmountB) {
             if (fillAmountB > state.order.amountB) {
                 fillAmountB = state.order.amountB;
 
-                state.fillAmountS = state.rateAmountS
+                state.fillAmountS = state.rate.amountS
                     .mul(fillAmountB)
-                    .div(next.rateAmountS);
+                    .div(next.rate.amountS);
 
                 state2IsSmaller = 1;
             }
@@ -833,7 +830,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order,
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
-                uintArgsList[i][6],   // rateAmountS
+                Rate(uintArgsList[i][6], order.amountB),
                 getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
