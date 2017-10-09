@@ -116,6 +116,50 @@ contract('UintLib', (accounts: string[])=>{
 	    		new BigNumber(3)))
 	    	.equals(new BigNumber('9223372036854775806')),
 	    	true, "784637716923335095224261902710254454442933591094742482942^1/3 == 9223372036854775806 failed");
+  
+  	});
+
+    it('works 2', async () => {
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber('1152921504606846976'),
+	    		new BigNumber(2)))
+	    	.equals((await uintLib.pow(2, 30))),
+	    	true, "");
+
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber('1152921504606846976'),
+	    		new BigNumber(3)))
+	    	.equals((await uintLib.pow(2, 20))),
+	    	true, "");
+
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber('1152921504606846976'),
+	    		new BigNumber(4)))
+	    	.equals((await uintLib.pow(2, 15))),
+	    	true, "");
+
+		assert.equal(
+	    	(await uintLib.nthRoot(
+	    		new BigNumber('1152921504606846976'),
+	    		new BigNumber(5)))
+	    	.equals((await uintLib.pow(2, 12))),
+	    	true, "");
+
+		// const x = await uintLib.nthRoot(
+	 //    		new BigNumber('1152921504606846976'),
+	 //    		new BigNumber(6));
+
+		// console.log("aaa " + x.toString());
+
+		// assert.equal(
+	 //    	(await uintLib.nthRoot(
+	 //    		new BigNumber('1152921504606846976'),
+	 //    		new BigNumber(6)))
+	 //    	.equals((await uintLib.pow(2, 10))),
+	 //    	true, "");
     });
   });
 })

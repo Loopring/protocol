@@ -25,8 +25,7 @@ module.exports = function(deployer, network, accounts) {
         lrcAddr,
         TokenRegistry.address,
         RinghashRegistry.address,
-        TokenTransferDelegate.address,
-        5);
+        TokenTransferDelegate.address);
     });
   } else {
     deployer.then(() => {
@@ -48,8 +47,7 @@ module.exports = function(deployer, network, accounts) {
         lrcAddr,
         TokenRegistry.address,
         RinghashRegistry.address,
-        TokenTransferDelegate.address,
-        5);
+        TokenTransferDelegate.address);
     });
 
   }

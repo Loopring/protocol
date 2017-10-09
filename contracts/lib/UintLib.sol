@@ -59,7 +59,7 @@ library UintLib {
         uint y = (x + 1) / 2;
         while (y < x) {
             x = y;
-            y = ((n-1) * x + k / pow(x, n-1)) / n;
+            y = ((n - 1) * x + k / pow(x, n - 1)) / n;
         }
         return x;
     }

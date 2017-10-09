@@ -45,11 +45,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     address public  ringhashRegistryAddress     = address(0);
     address public  delegateAddress             = address(0);
 
-    uint    public  maxRingSize                 = 0;
     uint    public  ringIndex                   = 0;
     bool    private entered                     = false;
 
-    uint    public constant RATE_RATIO_SCALE    = 1E6;
+    uint    public  constant RATE_RATIO_SCALE   = 1152921504606846976; // 2^^60
+    uint    public  constant MAX_RING_SIZE      = 5;
 
     // The following two maps are used to keep trace of order fill and
     // cancellation history.
@@ -65,12 +65,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
 
     /// @param order        The original order
+    /// @param orderHash    The hash of the ring.
     /// @param feeSelection -
     ///                     A miner-supplied value indicating if LRC (value = 0)
     ///                     or margin split is choosen by the miner (value = 1).
     ///                     We may support more fee model in the future.
+    /// @param rate         The actual exhcnage rate, calculated by protocol.
+    /// @param availableAmountS Current value of amountS.
     /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
-    /// @param rate         The actual exhcnage rate.
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
     /// @param lrcFee       The amount of LR paid by order owner to miner.
@@ -89,6 +91,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    splitB;
     }
 
+    // @dev Used to represent an exchange rate instead of a float number.   
     struct Rate {
         uint amountS;
         uint amountB;
@@ -150,8 +153,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address _lrcTokenAddress,
         address _tokenRegistryAddress,
         address _ringhashRegistryAddress,
-        address _delegateAddress,
-        uint    _maxRingSize
+        address _delegateAddress
         )
         public {
 
@@ -159,13 +161,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(address(0) != _tokenRegistryAddress);
         require(address(0) != _delegateAddress);
 
-        require(_maxRingSize > 1);
-
         lrcTokenAddress             = _lrcTokenAddress;
         tokenRegistryAddress        = _tokenRegistryAddress;
         ringhashRegistryAddress     = _ringhashRegistryAddress;
         delegateAddress             = _delegateAddress;
-        maxRingSize                 = _maxRingSize;
     }
 
 
@@ -226,7 +225,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         //Check ring size
         uint ringSize = addressList.length;
-        (ringSize > 1 && ringSize <= maxRingSize)
+        (ringSize > 1 && ringSize <= MAX_RING_SIZE)
             .orThrow("invalid ring size");
 
         verifyInputDataIntegrity(
@@ -414,11 +413,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecepient,
             throwIfLRCIsInsuffcient);
 
-        // Do the hard work.
+        // Rings with sub-rings will enable miners to drain all margins. 
+        // Therefore we have to verify no sub-ring to be found. 
         verifyRingHasNoSubRing(ring);
 
-        // Calculate the real exchange rate.
-        calculateRates(ring);
+        // Calculate the fill exchange rates. We do this before updating order's
+        // scale, so the exchange rates are always based on the original order
+        // parameter values.
+        calculateRingFillRate(ring);
 
         // Scale down each order independently by substracting amount-filled and
         // amount-cancelled. Order owner's current balance and allowance are
@@ -517,28 +519,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     }
 
-    function calculateRates(Ring ring) internal constant {
+    function calculateRingFillRate(Ring ring) internal constant {
         var orders = ring.orders;
         uint ringSize = orders.length;
 
-        uint discount = 1;
+        uint oneMinusLamda = RATE_RATIO_SCALE; // This is the (1- γ) value in the whitepaper.
         for (uint i = 0; i < ringSize; i++) {
-            discount  = discount
-                .mul(RATE_RATIO_SCALE)
+            oneMinusLamda = oneMinusLamda
                 .mul(orders[i].order.amountB)
                 .div(orders[i].order.amountS);
         }
 
-        discount = UintLib.nthRoot(discount, ringSize);
+        oneMinusLamda = UintLib.nthRoot(oneMinusLamda, ringSize);
+        uint scaleNthRoot = UintLib.nthRoot(RATE_RATIO_SCALE, ringSize);
 
-        (discount <= RATE_RATIO_SCALE)
+        (oneMinusLamda <= scaleNthRoot)
             .orThrow("bad ring with unmatchable rates");
 
         for (i = 0; i < ringSize; i++) {
             var rate = orders[i].rate;
             rate.amountS = rate.amountB
-                .mul(discount)
-                .div(RATE_RATIO_SCALE);
+                .mul(oneMinusLamda)
+                .div(scaleNthRoot);
         }
     }
 
