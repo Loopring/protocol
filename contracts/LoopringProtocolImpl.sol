@@ -650,9 +650,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         // Update the amount of tokenB this order can buy, the logic could be
         // a brain-burner:
-        // We have `fillAmountB / state.fillAmountS = state.rateAmountB / state.rateAmountS`,
-        // therefore, `fillAmountB = state.order.amountB * state.fillAmountS / state.rateAmountS`,
-        uint fillAmountB  = state.order.amountB
+        // We have `fillAmountB / state.fillAmountS = state.rate.amountB / state.rate.amountS`,
+        // therefore, `fillAmountB = state.order.amountB * state.fillAmountS / state.rate.amountS`,
+        uint fillAmountB  = next.rate.amountS
             .mul(state.fillAmountS)
             .div(state.rate.amountS);
 
