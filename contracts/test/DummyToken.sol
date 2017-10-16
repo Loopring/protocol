@@ -12,8 +12,7 @@ contract DummyToken is MintableToken {
         string _name,
         string _symbol,
         uint _decimals,
-        uint _totalSupply)
-    {
+        uint _totalSupply) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;

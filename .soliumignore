@@ -1,7 +1,5 @@
 node_modules
-contracts/test
 deploy
-util
 test
 transpiled
 build
