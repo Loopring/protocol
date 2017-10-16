@@ -31,6 +31,13 @@ library ErrorLib {
         }
     }
 
+    /// @dev Check if condition hold, if not, log an exception and revert.
+    function check(bool condition, string message) public constant {
+        if (!condition) {
+            error(message);
+        }
+    }
+
     function error(string message) public constant {
         Error(message);
         revert();
