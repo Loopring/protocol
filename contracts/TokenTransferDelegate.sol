@@ -140,7 +140,7 @@ contract TokenTransferDelegate is Ownable {
         public
     {
         if (from != to && value > 0) {
-            ERC20(token).transferFrom(from, to, value);
+            assert(ERC20(token).transferFrom(from, to, value));
         }
     }
 
