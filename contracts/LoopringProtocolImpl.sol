@@ -69,7 +69,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     // A map from address to its cutoff timestamp.
     mapping (address => uint) public cutoffs;
 
-
+    // A map from address to Order Token Address count in ring
+    mapping (address => uint) public addressTokenMap;
     ////////////////////////////////////////////////////////////////////////////
     /// Structs                                                              ///
     ////////////////////////////////////////////////////////////////////////////
@@ -415,15 +416,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
         constant
     {
         uint ringSize = ring.orders.length;
-        // Check the ring has no sub-ring.
         for (uint i = 0; i < ringSize - 1; i++) {
-            address tokenS = ring.orders[i].order.tokenS;
-            for (uint j = i + 1; j < ringSize; j++) {
-                ErrorLib.check(
-                    tokenS != ring.orders[j].order.tokenS,
-                    "found sub-ring"
-                );
-            }
+            addressTokenMap[ring.orders[i].order.tokenS] = 0;
+        }
+        // Check the ring has no sub-ring.
+        for (i = 0; i < ringSize - 1; i++) {
+            addressTokenMap[ring.orders[i].order.tokenS] += 1;
+            ErrorLib.check(
+                addressTokenMap[ring.orders[i].order.tokenS] == 1,
+                "found sub-ring"
+            );
         }
     }
 
