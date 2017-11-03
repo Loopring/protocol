@@ -238,15 +238,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         public
     {
-        ErrorLib.check(!entered, "attempted to re-ent submitRing function");
+        if (entered) {
+            ErrorLib.error("attempted to re-ent submitRing function");
+        }
+
         entered = true;
 
         //Check ring size
         uint ringSize = addressList.length;
-        ErrorLib.check(
-            ringSize > 1 && ringSize <= maxRingSize,
-            "invalid ring size"
-        );
+        if (ringSize <= 1 || ringSize > maxRingSize) {
+            ErrorLib.error("invalid ring size");
+        }
 
         verifyInputDataIntegrity(
             ringSize,
@@ -270,10 +272,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList
         );
 
-        ErrorLib.check(
-            ringhashRegistry.canSubmit(ringhash, feeRecepient),
-            "Ring claimed by others"
-        );
+        if (!ringhashRegistry.canSubmit(ringhash, feeRecepient)) {
+            ErrorLib.error("Ring claimed by others");
+        }
 
         verifySignature(
             ringminer,
@@ -336,7 +337,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         public
     {
         uint cancelAmount = orderValues[6];
-        ErrorLib.check(cancelAmount > 0, "amount to cancel is zero");
+
+        if (cancelAmount == 0) {
+            ErrorLib.error("amount to cancel is zero");
+        } 
 
         var order = Order(
             addresses[0],
@@ -355,7 +359,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             s
         );
 
-        ErrorLib.check(msg.sender == order.owner, "cancelOrder not submitted by order owner");
+        if (msg.sender != order.owner) {
+            ErrorLib.error("cancelOrder not submitted by order owner");
+        }
 
         bytes32 orderHash = calculateOrderHash(order);
 
@@ -390,10 +396,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             t = block.timestamp;
         }
 
-        ErrorLib.check(
-            cutoffs[msg.sender] < t,
-            "attempted to set cutoff to a smaller value"
-        );
+        if (cutoffs[msg.sender] >= t) {
+            ErrorLib.error("attempted to set cutoff to a smaller value");
+        }
 
         cutoffs[msg.sender] = t;
 
@@ -587,10 +592,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         uint cvs = UintLib.cvsquare(rateRatios, RATE_RATIO_SCALE);
 
-        ErrorLib.check(
-            cvs <= rateRatioCVSThreshold,
-            "miner supplied exchange rate is not evenly discounted"
-        );
+        if (cvs > rateRatioCVSThreshold) {
+            ErrorLib.error("miner supplied exchange rate is not evenly discounted");
+        }
     }
 
     function calculateRingFees(Ring ring)
