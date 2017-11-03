@@ -468,7 +468,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         verifyMinerSuppliedFillRates(ring);
 
         // Scale down each order independently by substracting amount-filled and
-        // amount-cancelledOrFilled. Order owner's current balance and allowance are
+        // amount-cancelled. Order owner's current balance and allowance are
         // not taken into consideration in these operations.
         scaleRingBasedOnHistoricalRecords(ring);
 
