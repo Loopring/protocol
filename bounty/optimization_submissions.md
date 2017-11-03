@@ -121,8 +121,7 @@ Hi,
 
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 00:55 01/11/2017 Beijing Time
-- PR: https://github.com/Loopring/protocol/pull/43
-- Result: reduced gas usage from 447740 to 446542 (=14881), a 0.23% reduction of 511465.
+
 
 Hi,
  
@@ -253,11 +252,12 @@ Brecht Devos
 - PR: https://github.com/Loopring/protocol/pull/41
 
 
-## #07 [TBD]
+## #08 [Merged]
 
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 10:01 03/11/2017 Beijing Time
-- PR: 
+- PR: https://github.com/Loopring/protocol/pull/43
+- Result: reduced gas usage from 447740 to 446542 (=14881), a 0.23% reduction of 511465.
 
 Hi,
  
