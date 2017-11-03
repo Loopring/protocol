@@ -2,12 +2,13 @@
 
 We'll be collecting optimization bounty submissions and their responses here. Please be sure to take a look before making a submission. Thank you!
 
-## #01 [merged]
+## #01 [Merged]
 
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 11:22 29/10/2017 Beijing Time
 - PR: https://github.com/Loopring/protocol/pull/35
-- Result: This PR simplies the code but doesn't reduce gas usage. We encourage Brecht to confirm our findings.
+- Result: reduced gas usage from 508406 to 462621 (=45785), a 8.95% reduction of 511465.
+
 
 Hey,
  
@@ -35,12 +36,12 @@ If there any issues or additional questions please let me know.
 Brecht Devos
 
 
-## #02 [TBD]
+## #02 [Merged]
 
 - From: Kecheng Yue <yuekec@gmail.com>
 - Time: 00:46 01/11/2017 Beijing Time
 - PR: https://github.com/Loopring/protocol/pull/37
-- Result: TBD
+- Result: reduced gas usage from 462621 to 447740 (=14881), a 2.91% reduction of 511465.
 
 Hi,  
 
@@ -115,14 +116,13 @@ Hi,
 
 2 对多处使用到ErrorLib.check的地方做了优化。其实就是将其inline化。即：ErrorLib.check(condition, message) => If (!condition) {ErrorLib.error(message)}。之所以这么做是因为考虑到ErrorLib.check出现在了很多关键操作中，并且无论condition为何值，都会引起一个函数调用，将其inline化可以避免函数调用所引起的额外消耗。当然，这样的inline化通常是交给编译器来进行的，不过就目前为止，inline function 并未被支持（但已在计划中）。此项优化大约减少了1.5%左右的gas消耗。考虑到以后inline function可能会被官方支持，并且此优化所带来的改进较小，是否需要如此优化值得商榷。
 
-代码见附件
 
-## #03 [TBD]
+## #03 [Merged]
 
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 00:55 01/11/2017 Beijing Time
-- PR: TBD
-- Result: TBD
+- PR: https://github.com/Loopring/protocol/pull/44
+- Result: reduced gas usage from 446542 to 426942 (=14881), a 3.83% reduction of 511465.
 
 Hi,
  
@@ -143,12 +143,12 @@ I had to put the calculateRinghash inside its own function to save on local vari
  
 Brecht Devos
 
-## #03 [TBD]
+## #04 [Rejected]
 
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 04:35 01/11/2017 Beijing Time
-- PR: TBD
-- Result: TBD
+- PR: https://github.com/Loopring/protocol/pull/45
+- Result: We need to keep an list of tokens so they can be browsered by normal user using Geth. Maps are not enumeratable.
 
 Hi,
  
@@ -219,4 +219,53 @@ contract TokenRegistry is Ownable {
     {
         return tokenSymbolMap[symbol];
     }
-}
+ }
+
+## #05 [Rejected]
+
+- From: Akash Bansal <akash.bansal2504@gmail.com>
+- Time: 21:58 01/11/2017 Beijing Time
+- PR: https://github.com/Loopring/protocol/pull/38
+- Our test shows that this change actually increased gas usage. This is probably because 1) our test is not written to test TokenTransferDelegate and 2) we prefer less storage on-chain over less computation.
+
+Description : Adding and removing loopring protocol Address in TokenTransferDelegate.sol in O(1)
+I think this will reduce gas significantly.
+
+Thanks.
+
+## #06 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: 23:00 01/11/2017 Beijing Time
+- PR: https://github.com/Loopring/protocol/pull/39
+- Result: reduced gas usage from 426942 to 426590 (=14881), a 0.07% reduction of 511465.
+
+Hi,
+ 
+Shouldn’t the return value of delegate.transferToken() be checked in settleRing()? Even if you’ve done some checks before, it still seems like a good idea to check the return value of the function because it seems like it could fail for multiple reasons. It’s also a very critical part of the codebase.
+I haven’t thought that much yet if or how it could be abused, though I don’t see any reason not to check the return value.
+ 
+Brecht Devos
+
+
+## #07 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: 10:01 03/11/2017 Beijing Time
+- PR: https://github.com/Loopring/protocol/pull/43
+- Result: reduced gas usage from 447740 to 446542 (=14881), a 0.23% reduction of 511465.
+
+Hi,
+ 
+Currently there are 2 storage fields for filled and cancelled separately. The code as is it works now does not need to have separate lists for both because they are only used added together like this:
+uint amountB = order.amountB.sub(filled[state.orderHash]).tolerantSub(cancelled[state.orderHash]);
+ 
+If the amount cancelled is simply added to filled the code would simply become:
+uint amountB = order.amountB. tolerantSub (filled[state.orderHash]);
+ 
+Of course this is only possible when future features don’t depend on having these separate.
+ 
+In the 3 order test case this saves 3 SLOADs, which is currently about 0.25% in gas, which is pretty minor. Though it can also reduce future expensive SSTOREs (zero to non-zero) when either the filled or cancelled amount is already non-zero
+(e.g. when the filled amount is already non-zero but the cancelled amount is still zero, cancelling an order would not bring about an expensive SSTORE to bring the cancelled amount to non-zero -> this would save 15000 gas).
+ 
+Brecht Devos

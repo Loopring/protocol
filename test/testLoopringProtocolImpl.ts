@@ -329,6 +329,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                        {from: owner});
 
       //console.log(tx.receipt.logs);
+      console.log("cumulativeGasUsed for a ring of 3 orders: " + tx.receipt.cumulativeGasUsed);
 
       const ethOfOwnerAfter = await getEthBalanceAsync(owner);
       const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
@@ -419,8 +420,6 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                        p.throwIfLRCIsInsuffcient,
                                                        {from: owner});
 
-      //console.log(tx.receipt.logs);
-
       const ethOfOwnerAfter = await getEthBalanceAsync(owner);
       const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
       //console.log("all gas cost(ether):", allGas);
@@ -490,6 +489,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                            order.params.lrcFee,
                            cancelAmount];
 
+      const cancelledOrFilledAmount0 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);                       
       const tx = await loopringProtocolImpl.cancelOrder(addresses,
                                                         orderValues,
                                                         order.params.buyNoMoreThanAmountB,
@@ -499,8 +499,9 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                         order.params.s,
                                                         {from: order.owner});
 
-      const cancelledAmount = await loopringProtocolImpl.cancelled(order.params.orderHashHex);
-      assert.equal(cancelledAmount.toNumber(), cancelAmount.toNumber(), "cancelled amount not match");
+      const cancelledOrFilledAmount1 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
+      assert.equal(cancelledOrFilledAmount1.minus(cancelledOrFilledAmount0).toNumber(), 
+        cancelAmount.toNumber(), "cancelled amount not match");
     });
 
     it('should not be able to cancell order by other address.', async () => {
