@@ -144,6 +144,7 @@ contract TokenTransferDelegate is Ownable {
         if (from == to) {
             return false;
         } else {
+            //Check for short address attack http://vessenes.com/the-erc20-short-address-attack-explained/
             return ERC20(token).transferFrom(from, to, value);
         }
     }
