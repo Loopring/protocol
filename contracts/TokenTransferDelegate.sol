@@ -36,6 +36,7 @@ contract TokenTransferDelegate is Ownable {
     uint public lastVersion = 0;
     address[] public versions;
     mapping (address => uint) public versioned;
+    mapping (address => uint) public addressPos;
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -78,6 +79,7 @@ contract TokenTransferDelegate is Ownable {
         public
     {
         versioned[addr] = ++lastVersion;
+        addressPos[addr] = versions.length;
         versions.push(addr);
         VersionAdded(addr, lastVersion);
     }
@@ -92,15 +94,11 @@ contract TokenTransferDelegate is Ownable {
         require(versioned[addr] > 0);
         uint version = versioned[addr];
         delete versioned[addr];
+        versions[addressPos[addr]] = versions[versions.length - 1];
+        addressPos[versions[versions.length - 1]] = addressPos[addr];
+        versions.length -= 1;
+        delete addressPos[addr];
 
-        uint length = versions.length;
-        for (uint i = 0; i < length; i++) {
-            if (versions[i] == addr) {
-                versions[i] = versions[length - 1];
-                versions.length -= 1;
-                break;
-            }
-        }
         VersionRemoved(addr, version);
     }
 
