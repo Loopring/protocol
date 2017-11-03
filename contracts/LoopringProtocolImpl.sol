@@ -239,7 +239,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         public
     {
         // Check if the highest bit of ringIndex is '1'.
-        if (ringIndex | ENTERED_MASK == ENTERED_MASK) {
+        if (ringIndex & ENTERED_MASK == ENTERED_MASK) {
             ErrorLib.error("attempted to re-ent submitRing function");
         }
 
