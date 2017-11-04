@@ -258,7 +258,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ErrorLib.error("invalid ring size");
         }
 
-        verifyInputDataIntegrityIntegrityIntegrityIntegrityIntegrityIntegrity(
+        verifyInputDataIntegrity(
             ringSize,
             addressList,
             uintArgsList,
@@ -796,7 +796,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     /// @dev verify input data's basic integrity.
-    function verifyInputDataIntegrityIntegrityIntegrityIntegrityIntegrityIntegrity(
+    function verifyInputDataIntegrity(
         uint ringSize,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
