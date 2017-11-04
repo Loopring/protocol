@@ -72,7 +72,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     RinghashRegistry        ringhashRegistry;
     TokenTransferDelegate   delegate;
 
-
     ////////////////////////////////////////////////////////////////////////////
     /// Structs                                                              ///
     ////////////////////////////////////////////////////////////////////////////
