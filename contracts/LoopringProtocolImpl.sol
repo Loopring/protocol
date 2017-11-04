@@ -69,6 +69,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     // A map from address to its cutoff timestamp.
     mapping (address => uint) public cutoffs;
 
+    TokenRegistry           tokenRegistry;
     RinghashRegistry        ringhashRegistry;
     TokenTransferDelegate   delegate;
 
@@ -185,6 +186,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         maxRingSize = _maxRingSize;
         rateRatioCVSThreshold = _rateRatioCVSThreshold;
 
+        tokenRegistry = TokenRegistry(tokenRegistryAddress);
         ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
         delegate = TokenTransferDelegate(delegateAddress);
     }
@@ -447,7 +449,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         // Test all token addresses at once
-        if (!TokenRegistry(tokenRegistryAddress).areAllTokensRegistered(tokens)) {
+        if (!tokenRegistry.areAllTokensRegistered(tokens)) {
             ErrorLib.error("token not registered");
         }
     }
