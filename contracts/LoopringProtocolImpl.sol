@@ -69,6 +69,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     // A map from address to its cutoff timestamp.
     mapping (address => uint) public cutoffs;
 
+    RinghashRegistry        ringhashRegistry;
+    TokenTransferDelegate   delegate;
+
 
     ////////////////////////////////////////////////////////////////////////////
     /// Structs                                                              ///
@@ -182,6 +185,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         delegateAddress = _delegateAddress;
         maxRingSize = _maxRingSize;
         rateRatioCVSThreshold = _rateRatioCVSThreshold;
+
+        ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
+        delegate = TokenTransferDelegate(delegateAddress);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -252,7 +258,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ErrorLib.error("invalid ring size");
         }
 
-        verifyInputDataIntegrity(
+        verifyInputDataIntegrityIntegrityIntegrityIntegrityIntegrityIntegrity(
             ringSize,
             addressList,
             uintArgsList,
@@ -264,8 +270,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
         verifyTokensRegistered(addressList);
-
-        var ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
 
         bytes32 ringhash = ringhashRegistry.calculateRinghash(
             ringSize,
@@ -500,7 +504,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ring.ringhash,
             ring.miner,
             ring.feeRecepient,
-            RinghashRegistry(ringhashRegistryAddress).ringhashFound(ring.ringhash)
+            ringhashRegistry.ringhashFound(ring.ringhash)
         );
     }
 
@@ -508,7 +512,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
     {
         uint ringSize = ring.orders.length;
-        var delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
@@ -607,8 +610,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         constant
     {
-        TokenTransferDelegate tokenTransferDelegate = TokenTransferDelegate(delegateAddress);
-        uint minerLrcSpendable = tokenTransferDelegate.getSpendable(lrcTokenAddress, ring.feeRecepient);
+        uint minerLrcSpendable = delegate.getSpendable(lrcTokenAddress, ring.feeRecepient);
         uint ringSize = ring.orders.length;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -617,7 +619,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             if (state.feeSelection == FEE_SELECT_LRC) {
 
-                uint lrcSpendable = tokenTransferDelegate.getSpendable(lrcTokenAddress, state.order.owner);
+                uint lrcSpendable = delegate.getSpendable(lrcTokenAddress, state.order.owner);
 
                 if (lrcSpendable < state.lrcFee) {
                     if (ring.throwIfLRCIsInsuffcient) {
@@ -793,25 +795,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
     }
 
-    /// @return Amount of ERC20 token that can be spent by this contract.
-    function getSpendable(
-        address tokenAddress,
-        address tokenOwner
-        )
-        internal
-        constant
-        returns (uint)
-    {
-        return TokenTransferDelegate(
-            delegateAddress
-        ).getSpendable(
-            tokenAddress,
-            tokenOwner
-        );
-    }
-
     /// @dev verify input data's basic integrity.
-    function verifyInputDataIntegrity(
+    function verifyInputDataIntegrityIntegrityIntegrityIntegrityIntegrityIntegrity(
         uint ringSize,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
@@ -836,26 +821,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ErrorLib.error("ring data is inconsistent - uint8ArgsList");
         }
         
-
         if (ringSize != buyNoMoreThanAmountBList.length) {
             ErrorLib.error("ring data is inconsistent - buyNoMoreThanAmountBList");
         }
-        
 
         if (ringSize + 1 != vList.length) {
             ErrorLib.error("ring data is inconsistent - vList");
         }
-        
 
         if (ringSize + 1 != rList.length) {
             ErrorLib.error("ring data is inconsistent - rList");
         }
-        
 
         if (ringSize + 1 != sList.length) {
             ErrorLib.error("ring data is inconsistent - sList");
         }
-        
 
         // Validate ring-mining related arguments.
         for (uint i = 0; i < ringSize; i++) {
@@ -867,6 +847,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 ErrorLib.error("invalid order fee selection");
             }
         }
+
+        
     }
 
     /// @dev        assmble order parameters into Order struct.
@@ -924,7 +906,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                getSpendable(order.tokenS, order.owner),
+                delegate.getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
