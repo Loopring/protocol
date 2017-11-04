@@ -69,10 +69,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     // A map from address to its cutoff timestamp.
     mapping (address => uint) public cutoffs;
 
-    TokenRegistry           tokenRegistry;
-    RinghashRegistry        ringhashRegistry;
-    TokenTransferDelegate   delegate;
-
     ////////////////////////////////////////////////////////////////////////////
     /// Structs                                                              ///
     ////////////////////////////////////////////////////////////////////////////
@@ -185,10 +181,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         delegateAddress = _delegateAddress;
         maxRingSize = _maxRingSize;
         rateRatioCVSThreshold = _rateRatioCVSThreshold;
-
-        tokenRegistry = TokenRegistry(tokenRegistryAddress);
-        ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
-        delegate = TokenTransferDelegate(delegateAddress);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -272,6 +264,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(addressList);
 
+        RinghashRegistry ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
+
         bytes32 ringhash = ringhashRegistry.calculateRinghash(
             ringSize,
             vList,
@@ -308,6 +302,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         handleRing(
+            ringhashRegistry,
             ringhash,
             orders,
             ringminer,
@@ -449,12 +444,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         // Test all token addresses at once
-        if (!tokenRegistry.areAllTokensRegistered(tokens)) {
+        if (!TokenRegistry(tokenRegistryAddress).areAllTokensRegistered(tokens)) {
             ErrorLib.error("token not registered");
         }
     }
 
     function handleRing(
+        RinghashRegistry ringhashRegistry,
         bytes32 ringhash,
         OrderState[] orders,
         address miner,
@@ -513,6 +509,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
     {
         uint ringSize = ring.orders.length;
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
@@ -611,6 +608,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         constant
     {
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
         uint minerLrcSpendable = delegate.getSpendable(lrcTokenAddress, ring.feeRecepient);
         uint ringSize = ring.orders.length;
 
@@ -905,7 +903,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                delegate.getSpendable(order.tokenS, order.owner),
+                TokenTransferDelegate(delegateAddress).getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
