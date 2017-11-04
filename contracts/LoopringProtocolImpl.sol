@@ -847,8 +847,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 ErrorLib.error("invalid order fee selection");
             }
         }
-
-        
     }
 
     /// @dev        assmble order parameters into Order struct.
