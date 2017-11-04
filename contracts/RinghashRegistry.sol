@@ -65,7 +65,7 @@ contract RinghashRegistry {
         bytes32[]   rList,
         bytes32[]   sList)
         public
-    {        
+    {
         bytes32 ringhash = calculateRinghash(
             ringSize,
             vList,
