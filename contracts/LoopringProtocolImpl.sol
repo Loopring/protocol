@@ -281,7 +281,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         //Assemble input data into a struct so we can pass it to functions.
         var orders = assembleOrders(
-            ringSize,
             addressList,
             uintArgsList,
             uint8ArgsList,
@@ -800,7 +799,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
-        uint            ringSize,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
@@ -808,20 +806,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList
-        )
+    )
         internal
         constant
         returns (OrderState[])
     {
-        var orders = new OrderState[](ringSize);
-
-        for (uint i = 0; i < ringSize; i++) {
-            uint j = i.next(ringSize);
+        var orders = new OrderState[](addressList.length);
+        TokenTransferDelegate tok = TokenTransferDelegate(delegateAddress);
+        for (uint i = 0; i < addressList.length; i++) {
 
             var order = Order(
                 addressList[i][0],
                 addressList[i][1],
-                addressList[j][1],
+                addressList[((i+1)%(addressList.length))][1],
                 uintArgsList[i][0],
                 uintArgsList[i][1],
                 uintArgsList[i][2],
@@ -852,7 +849,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                TokenTransferDelegate(delegateAddress).getSpendable(order.tokenS, order.owner),
+                tok.getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
@@ -916,14 +913,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         constant
     {
-        address addr = ecrecover(
-            keccak256("\x19Ethereum Signed Message:\n32", hash),
-            v,
-            r,
-            s
-        );
-
-        require(signer == addr); //, "invalid signature");
+        require(signer == ecrecover(
+                            keccak256("\x19Ethereum Signed Message:\n32", hash),
+                            v,
+                            r,
+                            s
+        )); //, "invalid signature");
     }
 
 }
