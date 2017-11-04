@@ -65,11 +65,7 @@ contract RinghashRegistry {
         bytes32[]   rList,
         bytes32[]   sList)
         public
-    {
-        if (ringminer == address(0)) {
-            ErrorLib.error("invalid ring miner address");
-        }
-        
+    {        
         bytes32 ringhash = calculateRinghash(
             ringSize,
             vList,
