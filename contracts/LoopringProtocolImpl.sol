@@ -264,7 +264,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(addressList);
 
-        RinghashRegistry ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
+        var ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
 
         bytes32 ringhash = ringhashRegistry.calculateRinghash(
             ringSize,
@@ -486,13 +486,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ring);
 
+
+        var delegate = TokenTransferDelegate(delegateAddress);
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
-        calculateRingFees(ring);
+        
+        calculateRingFees(delegate, ring);
 
         /// Make payments.
-        settleRing(ring);
+        settleRing(delegate, ring);
 
         RingMined(
             ringIndex ^ ENTERED_MASK,
@@ -505,11 +508,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function settleRing(Ring ring)
+    function settleRing(TokenTransferDelegate delegate, Ring ring)
         internal
     {
         uint ringSize = ring.orders.length;
-        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
@@ -604,11 +606,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
     }
 
-    function calculateRingFees(Ring ring)
+    function calculateRingFees(TokenTransferDelegate delegate, Ring ring)
         internal
         constant
     {
-        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
         uint minerLrcSpendable = delegate.getSpendable(lrcTokenAddress, ring.feeRecepient);
         uint ringSize = ring.orders.length;
 
