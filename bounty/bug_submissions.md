@@ -7,7 +7,7 @@ We'll be collecting bug bounty submissions and their responses here. Please be s
 - From: Akash Bansal <akash.bansal2504@gmail.com>
 - Time: 01:57 03/11/2017 Beijing Time
 - PR: https://github.com/Loopring/protocol/pull/41
-- Resoluton: Will not implemented. See https://blog.coinfabrik.com/smart-contract-short-address-attack-mitigation-failure/
+- Resolution: Will not implemented. See https://blog.coinfabrik.com/smart-contract-short-address-attack-mitigation-failure/
 
 ## #02 [Merged]
 
@@ -46,11 +46,12 @@ Regards,
 
 
 
-## #04 [TBD]
+## #04 [Rejected]
 
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 09:17 05/11/2017 Beijing Time
-- PR: 
+- PR: https://github.com/Loopring/protocol/pull/54
+- Resolution: We consider the current math to be safe.
  
 Hi,
  
