@@ -282,6 +282,39 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
+        handleOrdersAndRing(addressList,
+            uintArgsList,
+            uint8ArgsList,
+            buyNoMoreThanAmountBList,
+            vList,
+            rList,
+            sList,
+            ringminer,
+            feeRecepient,
+            throwIfLRCIsInsuffcient,
+            ringhashRegistry,
+            ringhash);
+
+            ringIndex = ringIndex ^ ENTERED_MASK + 1;
+        }
+
+    function handleOrdersAndRing(
+        address[2][]        addressList,
+        uint[7][]           uintArgsList,
+        uint8[2][]          uint8ArgsList,
+        bool[]              buyNoMoreThanAmountBList,
+        uint8[]             vList,
+        bytes32[]           rList,
+        bytes32[]           sList,
+        address             ringminer,
+        address             feeRecepient,
+        bool                throwIfLRCIsInsuffcient,
+        RinghashRegistry    ringhashRegistry,
+        bytes32             ringhash
+    )
+    public
+    {
+        var delegate = TokenTransferDelegate(delegateAddress);
         //Assemble input data into a struct so we can pass it to functions.
         var orders = assembleOrders(
             addressList,
@@ -290,7 +323,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             buyNoMoreThanAmountBList,
             vList,
             rList,
-            sList
+            sList,
+            delegate
         );
 
         if (feeRecepient == address(0)) {
@@ -303,7 +337,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orders,
             ringminer,
             feeRecepient,
-            throwIfLRCIsInsuffcient
+            throwIfLRCIsInsuffcient,
+            delegate
         );
 
         ringIndex = ringIndex ^ ENTERED_MASK + 1;
@@ -442,7 +477,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderState[] orders,
         address miner,
         address feeRecepient,
-        bool throwIfLRCIsInsuffcient
+        bool throwIfLRCIsInsuffcient,
+        TokenTransferDelegate delegate
         )
         internal
     {
@@ -473,7 +509,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ring);
 
-        var delegate = TokenTransferDelegate(delegateAddress);
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
@@ -809,14 +844,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
         bytes32[]       rList,
-        bytes32[]       sList
+        bytes32[]       sList,
+        TokenTransferDelegate delegate
         )
         internal
         constant
         returns (OrderState[])
     {
         var orders = new OrderState[](addressList.length);
-        var delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < addressList.length; i++) {
             var order = Order(
