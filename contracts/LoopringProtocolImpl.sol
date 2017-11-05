@@ -60,7 +60,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public constant RATE_RATIO_SCALE    = 10000;
 
-    uint    public constant ENTERED_MASK = 1 << 255;
+    uint32    public constant ENTERED_MASK = 1 << 31;
 
     // The following map is used to keep trace of order fill and cancellation
     // history.
