@@ -7,7 +7,7 @@ We'll be collecting bug bounty submissions and their responses here. Please be s
 - From: Akash Bansal <akash.bansal2504@gmail.com>
 - Time: 01:57 03/11/2017 Beijing Time
 - PR: https://github.com/Loopring/protocol/pull/41
-- Resoluton: Will not implemented. See https://blog.coinfabrik.com/smart-contract-short-address-attack-mitigation-failure/
+- Resolution: Will not implemented. See https://blog.coinfabrik.com/smart-contract-short-address-attack-mitigation-failure/
 
 ## #02 [Merged]
 
@@ -43,3 +43,21 @@ assert(ERC20(token).transferFrom(from, to, value));
 Please make sure that "assert" is used intentionally, as if it fails, all the gas is consumed. Consider replacing "assert" with "require". Require() is used for checking that the input of the function is well formatted, while assert() function is used to validate contract state after making changes . Read more: https://media.consensys.net/when-to-use-revert-assert-and-require-in-solidity-61fb2c0e5a
 That’s all for now. Please, let me know if you find any of these relevant. Good luck with your project!
 Regards,
+
+
+
+## #04 [Rejected]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: 09:17 05/11/2017 Beijing Time
+- PR: https://github.com/Loopring/protocol/pull/54
+- Resolution: We consider the current math to be safe.
+ 
+Hi,
+ 
+So it seems like every calculation you’re doing that is critical (i.e. involves money in some way) is done using SafeMath functions, which is great. Though there are a few places that this isn’t the case:
+In settleRing there’s a (state.fillAmountS - prev.splitB) and a (prev.splitB + state.splitS) to calculate transfer balances. Seems like this is very critical and should be using SafeMath functions, even though you could argue all code before should make this unnecessary, it still seems like the safe thing to do. You never know how the code might be modified in the future.
+In calculateRingFees there’s (minerLrcSpendable += lrcSpendable). Again, probably unnecessary now, but the calculation involves real money so probably smart to take all precautions.
+ 
+ 
+Brecht Devos
