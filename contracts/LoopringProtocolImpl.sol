@@ -507,15 +507,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.order.tokenS,
                 state.order.owner,
                 prev.order.owner,
-                state.fillAmountS - prev.splitB
+                state.fillAmountS.sub(prev.splitB)
             );
 
-            if (prev.splitB + state.splitS > 0) {
+            if (prev.splitB.add(state.splitS) > 0) {
                 delegate.transferToken(
                     state.order.tokenS,
                     state.order.owner,
                     ring.feeRecepient,
-                    prev.splitB + state.splitS
+                    prev.splitB.add(state.splitS)
                 );
             }
 
@@ -540,9 +540,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
-                cancelledOrFilled[state.orderHash] += next.fillAmountS;
+                cancelledOrFilled[state.orderHash] =
+                    cancelledOrFilled[state.orderHash].add(next.fillAmountS);
             } else {
-                cancelledOrFilled[state.orderHash] += state.fillAmountS;
+                cancelledOrFilled[state.orderHash] =
+                    cancelledOrFilled[state.orderHash].add(state.fillAmountS);
             }
 
             OrderFilled(
@@ -553,8 +555,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 prev.orderHash,
                 state.orderHash,
                 next.orderHash,
-                state.fillAmountS + state.splitS,
-                next.fillAmountS - state.splitB,
+                state.fillAmountS.add(state.splitS),
+                next.fillAmountS.sub(state.splitB),
                 state.lrcReward,
                 state.lrcFee
             );
@@ -603,7 +605,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     require(!ring.throwIfLRCIsInsuffcient); //, "order LRC balance insuffcient");
 
                     state.lrcFee = lrcSpendable;
-                    minerLrcSpendable += lrcSpendable;
+                    minerLrcSpendable = minerLrcSpendable.add(lrcSpendable);
                 }
 
             } else if (state.feeSelection == FEE_SELECT_MARGIN_SPLIT) {
@@ -876,7 +878,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.timestamp <= block.timestamp); //, "order is too early to match");
         require(order.timestamp > cutoffs[order.owner]); //, "order is cut off");
         require(order.ttl != 0); //, "order ttl is 0");
-        require(order.timestamp + order.ttl > block.timestamp); //, "order is expired");
+        require(order.timestamp.add(order.ttl) > block.timestamp); //, "order is expired");
         require(order.salt != 0); //, "invalid order salt");
         require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE); //, "invalid order marginSplitPercentage");
     }
