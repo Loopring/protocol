@@ -84,12 +84,7 @@ contract RinghashRegistry {
         constant
         returns (bool)
     {
-        var submission = submissions[ringhash];
-        return (
-            submission.ringminer == address(0) || (
-            submission.block + blocksToLive < block.number || (
-            submission.ringminer == ringminer))
-        );
+        return canSubmit(submissions[ringhash], ringminer);
     }
 
     /// @return True if a ring's hash has ever been submitted; false otherwise.
@@ -100,11 +95,7 @@ contract RinghashRegistry {
         constant
         returns (bool)
     {
-        var submission = submissions[ringhash];
-        return (
-            submission.block + blocksToLive >= block.number && (
-            submission.ringminer == ringminer)
-        );
+        return isRinghashFound(submissions[ringhash], ringminer);
     }
 
     /// @dev Calculate the hash of a ring.
@@ -127,6 +118,60 @@ contract RinghashRegistry {
             vList.xorReduce(ringSize),
             rList.xorReduce(ringSize),
             sList.xorReduce(ringSize)
+        );
+    }
+
+     /// return value boolValues[2] contains the following values in this order: ringhashFound, canSubmit
+    function collectInfoForRingSubmit(
+        uint        ringSize,
+        uint8[]     vList,
+        bytes32[]   rList,
+        bytes32[]   sList,
+        address     ringminer,
+        address     feeRecepient)
+        public
+        constant
+        returns (bytes32 ringhash, bool[2] memory boolValues)
+    {
+        ringhash = calculateRinghash(
+            ringSize,
+            vList,
+            rList,
+            sList
+        );
+
+        var submission = submissions[ringhash];
+        boolValues[0] = isRinghashFound(submission, ringminer);
+        boolValues[1] = canSubmit(submission, feeRecepient);
+    }
+
+    /// Private functions
+
+    function canSubmit(
+        Submission submission,
+        address ringminer)
+        private
+        constant
+        returns (bool)
+    {
+        return (
+            submission.ringminer == address(0) || (
+            submission.block + blocksToLive < block.number) || (
+            submission.ringminer == ringminer)
+        );
+    }
+
+    /// @return True if a ring's hash has ever been submitted; false otherwise.
+    function isRinghashFound(
+        Submission submission,
+        address ringminer)
+        private
+        constant
+        returns (bool)
+    {
+        return (
+            submission.block + blocksToLive >= block.number && (
+            submission.ringminer == ringminer)
         );
     }
 }

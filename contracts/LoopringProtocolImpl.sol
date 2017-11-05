@@ -263,16 +263,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(addressList);
 
-        var ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
-
-        bytes32 ringhash = ringhashRegistry.calculateRinghash(
+        bytes32 ringhash;
+        bool[2] memory hashRegistryBoolValues;
+        (ringhash, hashRegistryBoolValues) = RinghashRegistry(ringhashRegistryAddress).collectInfoForRingSubmit(
             ringSize,
             vList,
             rList,
-            sList
+            sList,
+            ringminer,
+            feeRecepient
         );
 
-        require(ringhashRegistry.canSubmit(ringhash, feeRecepient)); // "Ring claimed by others");
+        //Check if we can submit
+        require(hashRegistryBoolValues[1]); // "Ring claimed by others");
 
         verifySignature(
             ringminer,
@@ -298,12 +301,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         handleRing(
-            ringhashRegistry,
             ringhash,
             orders,
             ringminer,
             feeRecepient,
-            throwIfLRCIsInsuffcient
+            throwIfLRCIsInsuffcient,
+            hashRegistryBoolValues[0]
         );
 
         ringIndex = ringIndex ^ ENTERED_MASK + 1;
@@ -437,12 +440,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
-        RinghashRegistry ringhashRegistry,
         bytes32 ringhash,
         OrderState[] orders,
         address miner,
         address feeRecepient,
-        bool throwIfLRCIsInsuffcient
+        bool throwIfLRCIsInsuffcient,
+        bool ringHashFound
         )
         internal
     {
@@ -490,7 +493,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ring.ringhash,
             ring.miner,
             ring.feeRecepient,
-            ringhashRegistry.isRinghashFound(ring.ringhash, ring.miner)
+            ringHashFound
         );
     }
 
