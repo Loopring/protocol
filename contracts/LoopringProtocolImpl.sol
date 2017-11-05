@@ -514,12 +514,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.fillAmountS - prev.splitB
             );
 
-            if (prev.splitB + state.splitS > 0) {
+            var splitDiff = prev.splitB + state.splitS;
+            if (splitDiff > 0) {
                 delegate.transferToken(
                     state.order.tokenS,
                     state.order.owner,
                     ring.feeRecepient,
-                    prev.splitB + state.splitS
+                    splitDiff
                 );
             }
 
