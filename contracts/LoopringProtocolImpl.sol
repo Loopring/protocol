@@ -19,6 +19,7 @@ pragma solidity 0.4.15;
 
 import "zeppelin-solidity/contracts/math/Math.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "zeppelin-solidity/contracts/token/ERC20.sol";
 
 import "./lib/UintLib.sol";
 import "./LoopringProtocol.sol";
@@ -473,15 +474,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ring);
 
-        var delegate = TokenTransferDelegate(delegateAddress);
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
-        
-        calculateRingFees(delegate, ring);
+
+        calculateRingFees(ring);
 
         /// Make payments.
-        settleRing(delegate, ring);
+        settleRing(ring);
 
         RingMined(
             ringIndex ^ ENTERED_MASK,
@@ -494,9 +494,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function settleRing(TokenTransferDelegate delegate, Ring ring)
+    function settleRing(Ring ring)
         internal
     {
+        var delegate = TokenTransferDelegate(delegateAddress);
         uint ringSize = ring.orders.length;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -588,11 +589,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(cvs <= rateRatioCVSThreshold); // "miner supplied exchange rate is not evenly discounted");
     }
 
-    function calculateRingFees(TokenTransferDelegate delegate, Ring ring)
+    function calculateRingFees(Ring ring)
         internal
         constant
     {
-        uint minerLrcSpendable = delegate.getSpendable(lrcTokenAddress, ring.feeRecepient);
+        uint minerLrcSpendable = getSpendable(lrcTokenAddress, ring.feeRecepient);
         uint ringSize = ring.orders.length;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -601,7 +602,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             if (state.feeSelection == FEE_SELECT_LRC) {
 
-                uint lrcSpendable = delegate.getSpendable(lrcTokenAddress, state.order.owner);
+                uint lrcSpendable = getSpendable(lrcTokenAddress, state.order.owner);
 
                 if (lrcSpendable < state.lrcFee) {
                     require(!ring.throwIfLRCIsInsuffcient); // "order LRC balance insuffcient");
@@ -771,6 +772,24 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
     }
 
+    /// @return Amount of ERC20 token that can be spent by this contract.
+    function getSpendable(
+        address tokenAddress,
+        address tokenOwner
+        )
+        internal
+        constant
+        returns (uint)
+    {
+        var token = ERC20(tokenAddress);
+        return token.allowance(
+            tokenOwner,
+            delegateAddress
+        ).min256(
+            token.balanceOf(tokenOwner)
+        );
+    }
+
     /// @dev verify input data's basic integrity.
     function verifyInputDataIntegrity(
         uint ringSize,
@@ -816,7 +835,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (OrderState[])
     {
         var orders = new OrderState[](addressList.length);
-        var delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < addressList.length; i++) {
             var order = Order(
@@ -853,7 +871,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                delegate.getSpendable(order.tokenS, order.owner),
+                getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
