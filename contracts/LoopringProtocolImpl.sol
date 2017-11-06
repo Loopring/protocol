@@ -25,7 +25,7 @@ import "./lib/UintLib.sol";
 import "./LoopringProtocol.sol";
 import "./RinghashRegistry.sol";
 import "./TokenRegistry.sol";
-import "./TokenTransferDelegate.sol";
+import "./ERC20TransferDelegate.sol";
 
 
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
@@ -497,7 +497,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function settleRing(Ring ring)
         internal
     {
-        var delegate = TokenTransferDelegate(delegateAddress);
+        var erc20Delegate = ERC20TransferDelegate(delegateAddress);
         uint ringSize = ring.orders.length;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -508,7 +508,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
 
-            delegate.transferToken(
+            erc20Delegate.transferToken(
                 state.order.tokenS,
                 state.order.owner,
                 prev.order.owner,
@@ -516,7 +516,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
 
             if (prev.splitB + state.splitS > 0) {
-                delegate.transferToken(
+                erc20Delegate.transferToken(
                     state.order.tokenS,
                     state.order.owner,
                     ring.feeRecepient,
@@ -526,7 +526,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             // Pay LRC
             if (state.lrcReward > 0) {
-                delegate.transferToken(
+                erc20Delegate.transferToken(
                     lrcTokenAddress,
                     ring.feeRecepient,
                     state.order.owner,
@@ -535,7 +535,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
 
             if (state.lrcFee > 0) {
-                delegate.transferToken(
+                erc20Delegate.transferToken(
                     lrcTokenAddress,
                     state.order.owner,
                     ring.feeRecepient,

@@ -11,7 +11,7 @@ import promisify = require('es6-promisify');
 const {
   LoopringProtocolImpl,
   TokenRegistry,
-  TokenTransferDelegate,
+  ERC20TransferDelegate,
   DummyToken,
 } = new Artifacts(artifacts);
 
@@ -26,7 +26,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
   const feeRecepient = accounts[6];
   let loopringProtocolImpl: any;
   let tokenRegistry: any;
-  let tokenTransferDelegate: any;
+  let erc20TransferDelegate: any;
   let order1: Order;
   let order2: Order;
   let ring: Ring;
@@ -78,19 +78,19 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
   }
 
   before( async () => {
-    [loopringProtocolImpl, tokenRegistry, tokenTransferDelegate] = await Promise.all([
+    [loopringProtocolImpl, tokenRegistry, erc20TransferDelegate] = await Promise.all([
       LoopringProtocolImpl.deployed(),
       TokenRegistry.deployed(),
-      TokenTransferDelegate.deployed(),
+      ERC20TransferDelegate.deployed(),
     ]);
 
     lrcAddress = await tokenRegistry.getAddressBySymbol("LRC");
     eosAddress = await tokenRegistry.getAddressBySymbol("EOS");
     neoAddress = await tokenRegistry.getAddressBySymbol("NEO");
     qtumAddress = await tokenRegistry.getAddressBySymbol("QTUM");
-    delegateAddr = TokenTransferDelegate.address;
+    delegateAddr = ERC20TransferDelegate.address;
 
-    tokenTransferDelegate.addVersion(LoopringProtocolImpl.address);
+    erc20TransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
 
     [lrc, eos, neo, qtum] = await Promise.all([
       DummyToken.at(lrcAddress),
@@ -145,7 +145,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
       } catch (err) {
         const errMsg = `${err}`;
         //console.log("errMsg:", errMsg);
-        assert(_.includes(errMsg, 'invalid opcode'), `Expected contract to throw, got: ${err}`);
+        assert(_.includes(errMsg, 'revert'), `Expected contract to throw, got: ${err}`);
       }
 
       await lrc.setBalance(order1Owner, web3.toWei(100),   {from: owner});
@@ -489,7 +489,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                            order.params.lrcFee,
                            cancelAmount];
 
-      const cancelledOrFilledAmount0 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);                       
+      const cancelledOrFilledAmount0 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
       const tx = await loopringProtocolImpl.cancelOrder(addresses,
                                                         orderValues,
                                                         order.params.buyNoMoreThanAmountB,
@@ -500,7 +500,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                         {from: order.owner});
 
       const cancelledOrFilledAmount1 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
-      assert.equal(cancelledOrFilledAmount1.minus(cancelledOrFilledAmount0).toNumber(), 
+      assert.equal(cancelledOrFilledAmount1.minus(cancelledOrFilledAmount0).toNumber(),
         cancelAmount.toNumber(), "cancelled amount not match");
     });
 
@@ -528,7 +528,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                           {from: order2Owner});
       } catch (err) {
         const errMsg = `${err}`;
-        assert(_.includes(errMsg, 'invalid opcode'), `Expected contract to throw, got: ${err}`);
+        assert(_.includes(errMsg, 'revert'), `Expected contract to throw, got: ${err}`);
       }
     });
   });
