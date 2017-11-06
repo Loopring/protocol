@@ -836,9 +836,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 sList[i]
             );
 
-            bytes32 orderHash = calculateOrderHash(order);
-
             validateOrder(order);
+
+            bytes32 orderHash = calculateOrderHash(order);
 
             orders[i] = OrderState(
                 order,
