@@ -123,6 +123,25 @@ contract TokenTransferDelegate is Ownable {
         }
     }
 
+    function transferTokenBatch(bytes32[] batch)
+        isVersioned(msg.sender)
+        public
+    {
+        uint len = batch.length;
+        for (uint i = 0; i < len; i += 4) {
+            address token = address(batch[i]);
+            address from = address(batch[i + 1]);
+            address to = address(batch[i + 2]);
+            uint value = uint(batch[i + 3]);
+
+            if (from != to) {
+                require(
+                    ERC20(token).transferFrom(from, to, value)
+                );
+            }
+        }
+    }
+
     /// @dev Gets all versioned addresses.
     /// @return Array of versioned addresses.
     function getVersions()
