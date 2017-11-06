@@ -1,14 +1,6 @@
 # Loopring Protocol Smart Contracts
 
-## Lint Solidity Files
-
-```
-npm install -g solium
-solium --dir contracts
-```
-
 ## Compile
-
 
 If you are using Windows:
 ```
