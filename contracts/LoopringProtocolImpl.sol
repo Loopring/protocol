@@ -494,7 +494,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function calculateTransferBatchLength(OrderState [] orders)
+    function calculateTransferBatchLength(OrderState[] orders)
         internal
         constant
         returns (uint)
@@ -507,22 +507,29 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var prev = orders[(i + ringSize - 1) % ringSize];
             var next = orders[(i + 1) % ringSize];
 
-            if (prev.splitB + state.splitS > 0) batchLength++;
-            if (state.lrcReward > 0) batchLength++;
-            if (state.lrcFee > 0) batchLength++;
+            if (prev.splitB + state.splitS > 0) {
+                batchLength++;
+            }
+            if (state.lrcReward > 0) {
+                batchLength++;
+            }
+            if (state.lrcFee > 0) {
+                batchLength++;
+            }
         }
 
         return batchLength;
     }
 
-    function fillItemTransferBatch(
-      bytes32[] memory batch,
-      uint position,
-      address token,
-      address from,
-      address to,
-      uint value)
-      internal
+    function fillTransferBatchItem(
+        bytes32[] memory batch,
+        uint position,
+        address token,
+        address from,
+        address to,
+        uint value)
+        internal
+        constant
     {
         batch[position] = bytes32(token);
         batch[position + 1] = bytes32(from);
@@ -548,7 +555,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
 
-            fillItemTransferBatch(
+            fillTransferBatchItem(
                 batch,
                 position,
                 state.order.tokenS,
@@ -556,10 +563,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 prev.order.owner,
                 state.fillAmountS - prev.splitB
             );
-            position+=4;
+            position += 4;
 
             if (prev.splitB + state.splitS > 0) {
-                fillItemTransferBatch(
+                fillTransferBatchItem(
                     batch,
                     position,
                     state.order.tokenS,
@@ -567,12 +574,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     ring.feeRecepient,
                     prev.splitB + state.splitS
                 );
-                position+=4;
+                position += 4;
             }
 
             // Pay LRC
             if (state.lrcReward > 0) {
-                fillItemTransferBatch(
+                fillTransferBatchItem(
                     batch,
                     position,
                     lrcTokenAddress,
@@ -580,11 +587,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     state.order.owner,
                     state.lrcReward
                 );
-                position+=4;
+                position += 4;
             }
 
             if (state.lrcFee > 0) {
-                fillItemTransferBatch(
+                fillTransferBatchItem(
                     batch,
                     position,
                     lrcTokenAddress,
@@ -592,7 +599,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     ring.feeRecepient,
                     state.lrcFee
                 );
-                position+=4;
+                position += 4;
             }
         }
 
@@ -602,7 +609,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function settleRing(Ring ring)
         internal
     {
-        var delegate = TokenTransferDelegate(delegateAddress);
         bytes32[] memory batch = createTransferBatch(ring);
         uint ringSize = ring.orders.length;
 
@@ -633,7 +639,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
 
-        delegate.transferTokenBatch(batch);
+        TokenTransferDelegate(delegateAddress).transferTokenBatch(batch);
     }
 
     function verifyMinerSuppliedFillRates(Ring ring)
