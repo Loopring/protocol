@@ -838,14 +838,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             bytes32 orderHash = calculateOrderHash(order);
 
-            verifySignature(
-                order.owner,
-                orderHash,
-                order.v,
-                order.r,
-                order.s
-            );
-
             validateOrder(order);
 
             orders[i] = OrderState(
