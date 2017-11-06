@@ -817,6 +817,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         var orders = new OrderState[](addressList.length);
         var delegate = TokenTransferDelegate(delegateAddress);
+        uint splitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
 
         for (uint i = 0; i < addressList.length; i++) {
             var order = Order(
@@ -836,13 +837,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 sList[i]
             );
 
-            validateOrder(order);
-
-            bytes32 orderHash = calculateOrderHash(order);
+            validateOrder(order, splitPercentage);
 
             orders[i] = OrderState(
                 order,
-                orderHash,
+                calculateOrderHash(order),
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
                 delegate.getSpendable(order.tokenS, order.owner),
@@ -860,7 +859,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     /// @dev validate order's parameters are OK.
-    function validateOrder(Order order)
+    function validateOrder(Order order, uint splitPercentage)
         internal
         constant
     {
@@ -874,7 +873,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.ttl != 0); // "order ttl is 0");
         require(order.timestamp + order.ttl > block.timestamp); // "order is expired");
         require(order.salt != 0); // "invalid order salt");
-        require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE); // "invalid order marginSplitPercentage");
+        require(order.marginSplitPercentage <= splitPercentage); // "invalid order marginSplitPercentage");
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
