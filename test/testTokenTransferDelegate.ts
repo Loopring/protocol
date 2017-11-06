@@ -60,22 +60,9 @@ contract('TokenTransferDelegate', (accounts: string[])=>{
       assert(version == 0, "loopring protocol version value is not 0 after removed.")
     });
 
-    it('should be able to get spendable amount of token for address', async () => {
+    it('should be able to transfer ERC20 token if properly approved.', async () => {
       await tokenTransferDelegate.addVersion(loopringProtocolV1, {from: owner});
 
-      await lrc.setBalance(trader1, web3.toWei(10), {from: owner});
-      await lrc.approve(delegateAddr, web3.toWei(5), {from: trader1});
-
-      const spendable = await tokenTransferDelegate.getSpendable(lrcAddress, trader1, {from: loopringProtocolV1});
-      assert.equal(spendable.toNumber(), 5e18, "get wrong spendable amount");
-
-      await lrc.approve(delegateAddr, 0, {from: trader1});
-      await lrc.approve(delegateAddr, web3.toWei(15), {from: trader1});
-      const spendable2 = await tokenTransferDelegate.getSpendable(lrcAddress, trader1, {from: loopringProtocolV1});
-      assert.equal(spendable2.toNumber(), 10e18, "get wrong spendable amount");
-    });
-
-    it('should be able to transfer ERC20 token if properly approved.', async () => {
       await lrc.setBalance(trader1, web3.toWei(5), {from: owner});
       await lrc.approve(delegateAddr, web3.toWei(0), {from: trader1});
       await lrc.approve(delegateAddr, web3.toWei(5), {from: trader1});
@@ -94,7 +81,7 @@ contract('TokenTransferDelegate', (accounts: string[])=>{
         await tokenTransferDelegate.transferToken(lrcAddress, trader1, trader2, web3.toWei(1.1), {from: loopringProtocolV2});
       } catch (err) {
         const errMsg = `${err}`;
-        assert(_.includes(errMsg, 'invalid opcode'), `Expected contract to throw, got: ${err}`);
+        assert(_.includes(errMsg, 'revert'), `Expected contract to throw, got: ${err}`);
       }
     });
 

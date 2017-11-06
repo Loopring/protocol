@@ -103,28 +103,6 @@ contract TokenTransferDelegate is Ownable {
         VersionRemoved(addr, version);
     }
 
-    /// @return Amount of ERC20 token that can be spent by this contract.
-    /// @param tokenAddress Address of token to transfer.
-    /// @param _owner Address of the token owner.
-    function getSpendable(
-        address tokenAddress,
-        address _owner
-        )
-        isVersioned(msg.sender)
-        public
-        constant
-        returns (uint)
-    {
-
-        var token = ERC20(tokenAddress);
-        return token.allowance(
-            _owner,
-            address(this)
-        ).min256(
-            token.balanceOf(_owner)
-        );
-    }
-
     /// @dev Invoke ERC20 transferFrom method.
     /// @param token Address of token to transfer.
     /// @param from Address to transfer token from.
