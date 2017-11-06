@@ -494,11 +494,51 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function settleRing(Ring ring)
+    function calculateTransferBatchLength(OrderState [] orders)
         internal
+        constant
+        returns (uint)
     {
-        var delegate = TokenTransferDelegate(delegateAddress);
+        uint ringSize = orders.length;
+        uint batchLength = ringSize;
+
+        for (uint i = 0; i < ringSize; i++) {
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
+            var next = orders[(i + 1) % ringSize];
+
+            if (prev.splitB + state.splitS > 0) batchLength++;
+            if (state.lrcReward > 0) batchLength++;
+            if (state.lrcFee > 0) batchLength++;
+        }
+
+        return batchLength;
+    }
+
+    function fillItemTransferBatch(
+      bytes32[] memory batch,
+      uint position,
+      address token,
+      address from,
+      address to,
+      uint value)
+      internal
+    {
+        batch[position] = bytes32(token);
+        batch[position + 1] = bytes32(from);
+        batch[position + 2] = bytes32(to);
+        batch[position + 3] = bytes32(value);
+    }
+
+    function createTransferBatch(Ring ring)
+        internal
+        constant
+        returns (bytes32[])
+    {
+        uint batchLength = calculateTransferBatchLength(ring.orders);
+        bytes32[] memory batch = new bytes32[](batchLength * 4); // ringSize * (token + from + to + value)
         uint ringSize = ring.orders.length;
+        uint position = 0;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
@@ -508,40 +548,68 @@ contract LoopringProtocolImpl is LoopringProtocol {
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
 
-            delegate.transferToken(
+            fillItemTransferBatch(
+                batch,
+                position,
                 state.order.tokenS,
                 state.order.owner,
                 prev.order.owner,
                 state.fillAmountS - prev.splitB
             );
+            position+=4;
 
             if (prev.splitB + state.splitS > 0) {
-                delegate.transferToken(
+                fillItemTransferBatch(
+                    batch,
+                    position,
                     state.order.tokenS,
                     state.order.owner,
                     ring.feeRecepient,
                     prev.splitB + state.splitS
                 );
+                position+=4;
             }
 
             // Pay LRC
             if (state.lrcReward > 0) {
-                delegate.transferToken(
+                fillItemTransferBatch(
+                    batch,
+                    position,
                     lrcTokenAddress,
                     ring.feeRecepient,
                     state.order.owner,
                     state.lrcReward
                 );
+                position+=4;
             }
 
             if (state.lrcFee > 0) {
-                delegate.transferToken(
+                fillItemTransferBatch(
+                    batch,
+                    position,
                     lrcTokenAddress,
                     state.order.owner,
                     ring.feeRecepient,
                     state.lrcFee
                 );
+                position+=4;
             }
+        }
+
+        return batch;
+    }
+
+    function settleRing(Ring ring)
+        internal
+    {
+        var delegate = TokenTransferDelegate(delegateAddress);
+        bytes32[] memory batch = createTransferBatch(ring);
+        uint ringSize = ring.orders.length;
+
+        for (uint i = 0; i < ringSize; i++) {
+            var state = ring.orders[i];
+            var prev = ring.orders[(i + ringSize - 1) % ringSize];
+            var next = ring.orders[(i + 1) % ringSize];
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
@@ -565,6 +633,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
 
+        delegate.transferTokenBatch(batch);
     }
 
     function verifyMinerSuppliedFillRates(Ring ring)
