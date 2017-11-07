@@ -323,14 +323,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
         var delegate = TokenTransferDelegate(delegateAddress);
         //Assemble input data into a struct so we can pass it to functions.
         var orders = assembleOrders(
+            delegate,
             addressList,
             uintArgsList,
             uint8ArgsList,
             buyNoMoreThanAmountBList,
             vList,
             rList,
-            sList,
-            delegate
+            sList
         );
 
         if (feeRecepient == address(0)) {
@@ -850,14 +850,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
+        TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
         bytes32[]       rList,
-        bytes32[]       sList,
-        TokenTransferDelegate delegate
+        bytes32[]       sList
         )
         internal
         view
