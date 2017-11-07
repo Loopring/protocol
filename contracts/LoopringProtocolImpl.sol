@@ -109,6 +109,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     struct Ring {
         bytes32      ringhash;
         OrderState[] orders;
+        uint         ordersLength;
         address      miner;
         address      feeRecepient;
         bool         throwIfLRCIsInsuffcient;
@@ -413,7 +414,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         pure
     {
-        uint ringSize = ring.orders.length;
+        uint ringSize = ring.ordersLength;
         // Check the ring has no sub-ring.
         for (uint i = 0; i < ringSize - 1; i++) {
             address tokenS = ring.orders[i].order.tokenS;
@@ -452,6 +453,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         var ring = Ring(
             ringhash,
             orders,
+            orders.length,
             miner,
             feeRecepient,
             throwIfLRCIsInsuffcient
@@ -503,7 +505,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         internal
     {
-        uint ringSize = ring.orders.length;
+        uint ringSize = ring.ordersLength;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
@@ -577,7 +579,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         var orders = ring.orders;
-        uint ringSize = orders.length;
+        uint ringSize = ring.ordersLength;
         uint[] memory rateRatios = new uint[](ringSize);
 
         for (uint i = 0; i < ringSize; i++) {
@@ -672,7 +674,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         view
     {
-        uint ringSize = ring.orders.length;
+        uint ringSize = ring.ordersLength;
         uint smallestIdx = 0;
         uint i;
         uint j;
@@ -751,7 +753,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         view
     {
-        uint ringSize = ring.orders.length;
+        uint ringSize = ring.ordersLength;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = ring.orders[i];
