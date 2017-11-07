@@ -103,7 +103,7 @@ contract RinghashRegistry {
     }
 
      /// return value attributes[2] contains the following values in this order:
-     /// isRinghashRerserved, isSubmittable
+     /// isSubmittable, isReserved.
     function computeAndGetRinghashInfo(
         uint        ringSize,
         address     ringminer,
