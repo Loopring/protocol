@@ -624,23 +624,30 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         ).sub(
                             state.fillAmountS
                         );
-
-                        state.splitS = splitS.mul(
-                            state.order.marginSplitPercentage
-                        ).div(
-                            MARGIN_SPLIT_PERCENTAGE_BASE
-                        );
+                        if (lrcSpendable != 0) {
+                            state.splitS = splitS.mul(
+                                state.order.marginSplitPercentage
+                            ).div(
+                                MARGIN_SPLIT_PERCENTAGE_BASE
+                            );
+                        } else {
+                            state.splitS = splitS;
+                        }
                     } else {
                         uint splitB = next.fillAmountS.sub(state.fillAmountS
                             .mul(state.order.amountB)
                             .div(state.order.amountS)
                         );
 
-                        state.splitB = splitB.mul(
-                            state.order.marginSplitPercentage
-                        ).div(
-                            MARGIN_SPLIT_PERCENTAGE_BASE
-                        );
+                        if (lrcSpendable != 0) {
+                            state.splitB = splitB.mul(
+                                state.order.marginSplitPercentage
+                            ).div(
+                                MARGIN_SPLIT_PERCENTAGE_BASE
+                            );
+                        } else {
+                            state.splitB = splitB;
+                        }
                     }
 
                     // This implicits order with smaller index in the ring will

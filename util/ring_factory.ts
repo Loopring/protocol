@@ -95,7 +95,7 @@ export class RingFactory {
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
-      marginSplitPercentage: 45,
+      marginSplitPercentage: 100,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -123,7 +123,7 @@ export class RingFactory {
       salt: new BigNumber(1234),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
-      marginSplitPercentage: 65,
+      marginSplitPercentage: 100,
     };
 
     const orderPrams2 = {
@@ -166,7 +166,7 @@ export class RingFactory {
       salt: new BigNumber(1234),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
-      marginSplitPercentage: 55,
+      marginSplitPercentage: 100,
     };
 
     const orderPrams2 = {
@@ -194,7 +194,7 @@ export class RingFactory {
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
-      marginSplitPercentage: 60,
+      marginSplitPercentage: 100,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -225,7 +225,7 @@ export class RingFactory {
       salt: new BigNumber(1111),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
-      marginSplitPercentage: 55,
+      marginSplitPercentage: 100,
     };
 
     const orderPrams2 = {
@@ -253,7 +253,7 @@ export class RingFactory {
       salt: new BigNumber(3333),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
-      marginSplitPercentage: 60,
+      marginSplitPercentage: 100,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
