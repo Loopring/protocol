@@ -126,8 +126,8 @@ contract RinghashRegistry {
         attributes[1] = isRinghashReserved(ringhash, ringminer);
     }
 
-    /// Private functions
-
+    /// @return true if a ring's hash can be submitted;
+    /// false otherwise.
     function isRinghashSubmittable(
         bytes32 ringhash,
         address ringminer)
