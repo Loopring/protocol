@@ -484,7 +484,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
-
         calculateRingFees(ring);
 
         /// Make payments.
@@ -571,14 +570,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
             position += 4;
 
-            if (prev.splitB + state.splitS > 0) {
+            uint splitSum = prev.splitB + state.splitS;
+            if (splitSum > 0) {
                 fillTransferBatchItem(
                     batch,
                     position,
                     state.order.tokenS,
                     state.order.owner,
                     ring.feeRecepient,
-                    prev.splitB + state.splitS
+                    splitSum
                 );
                 position += 4;
             }

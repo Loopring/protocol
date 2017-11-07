@@ -157,7 +157,7 @@ contract ERC20TransferDelegate is Ownable {
         onlyAuthorized
         public
     {
-        if (from != to) {
+        if (from != to && value > 0) {
             require(
                 ERC20(token).transferFrom(from, to, value)
             );
