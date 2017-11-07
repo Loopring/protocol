@@ -72,33 +72,10 @@ contract RinghashRegistry {
             sList
         );
 
-        require(canSubmit(ringhash, ringminer)); //, "Ringhash submitted");
+        require(isRinghashSubmittable(ringhash, ringminer)); //, "Ringhash submitted");
 
         submissions[ringhash] = Submission(ringminer, block.number);
         RinghashSubmitted(ringminer, ringhash);
-    }
-
-    function canSubmit(
-        bytes32 ringhash,
-        address ringminer
-        )
-        public
-        view
-        returns (bool)
-    {
-        return canSubmit(submissions[ringhash], ringminer);
-    }
-
-    /// @return True if a ring's hash has ever been submitted; false otherwise.
-    function isRinghashFound(
-        bytes32 ringhash,
-        address ringminer
-        )
-        public
-        view
-        returns (bool)
-    {
-        return isRinghashFound(submissions[ringhash], ringminer);
     }
 
     /// @dev Calculate the hash of a ring.
@@ -125,17 +102,18 @@ contract RinghashRegistry {
         );
     }
 
-     /// return value boolValues[2] contains the following values in this order: ringhashFound, canSubmit
-    function collectInfoForRingSubmit(
+     /// return value attributes[2] contains the following values in this order:
+     /// isRinghashRerserved, isRinghashSubmittable
+    function computeAndGetRinghashInfo(
         uint        ringSize,
+        address     ringminer,
         uint8[]     vList,
         bytes32[]   rList,
-        bytes32[]   sList,
-        address     ringminer,
-        address     feeRecepient)
+        bytes32[]   sList
+        )
         public
-        constant
-        returns (bytes32 ringhash, bool[2] memory boolValues)
+        view
+        returns (bytes32 ringhash, bool[2] memory attributes)
     {
         ringhash = calculateRinghash(
             ringSize,
@@ -144,20 +122,20 @@ contract RinghashRegistry {
             sList
         );
 
-        var submission = submissions[ringhash];
-        boolValues[0] = isRinghashFound(submission, ringminer);
-        boolValues[1] = canSubmit(submission, feeRecepient);
+        attributes[0] = isRinghashSubmittable(ringhash, ringminer);
+        attributes[1] = isRinghashReserved(ringhash, ringminer);
     }
 
     /// Private functions
 
-    function canSubmit(
-        Submission submission,
+    function isRinghashSubmittable(
+        bytes32 ringhash,
         address ringminer)
-        private
-        constant
+        public
+        view
         returns (bool)
     {
+        var submission = submissions[ringhash];
         return (
             submission.ringminer == address(0) || (
             submission.block + blocksToLive < block.number) || (
@@ -165,14 +143,16 @@ contract RinghashRegistry {
         );
     }
 
-    /// @return True if a ring's hash has ever been submitted; false otherwise.
-    function isRinghashFound(
-        Submission submission,
+    /// @return true if a ring's hash was submitted and still valid;
+    /// false otherwise.
+    function isRinghashReserved(
+        bytes32 ringhash,
         address ringminer)
-        private
-        constant
+        public
+        view
         returns (bool)
     {
+        var submission = submissions[ringhash];
         return (
             submission.block + blocksToLive >= block.number && (
             submission.ringminer == ringminer)
