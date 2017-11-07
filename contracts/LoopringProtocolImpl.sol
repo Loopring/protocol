@@ -25,7 +25,7 @@ import "./lib/UintLib.sol";
 import "./LoopringProtocol.sol";
 import "./RinghashRegistry.sol";
 import "./TokenRegistry.sol";
-import "./TokenTransferDelegate.sol";
+import "./ERC20TransferDelegate.sol";
 
 
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
@@ -639,7 +639,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
 
-        TokenTransferDelegate(delegateAddress).transferTokenBatch(batch);
+        ERC20TransferDelegate(delegateAddress).transferTokenBatch(batch);
     }
 
     function verifyMinerSuppliedFillRates(Ring ring)

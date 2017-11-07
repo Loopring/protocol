@@ -3,12 +3,12 @@ import { BigNumber } from 'bignumber.js';
 import { Artifacts } from '../util/artifacts';
 
 const {
-  TokenTransferDelegate,
+  ERC20TransferDelegate,
   TokenRegistry,
   DummyToken,
 } = new Artifacts(artifacts);
 
-contract('TokenTransferDelegate', (accounts: string[])=>{
+contract('ERC20TransferDelegate', (accounts: string[])=>{
   const owner = accounts[0];
   const loopringProtocolV1 = accounts[1];  // mock loopring protocol v1
   const loopringProtocolV2 = accounts[2];  // mock loopring protocol v2
@@ -16,7 +16,7 @@ contract('TokenTransferDelegate', (accounts: string[])=>{
   const trader2 = accounts[4];
 
   let tokenRegistry: any;
-  let tokenTransferDelegate: any;
+  let erc20TransferDelegate: any;
 
   let lrc: any;
   let lrcAddress: string;
@@ -29,45 +29,38 @@ contract('TokenTransferDelegate', (accounts: string[])=>{
   }
 
   before(async () => {
-    [tokenRegistry, tokenTransferDelegate] = await Promise.all([
+    [tokenRegistry, erc20TransferDelegate] = await Promise.all([
       TokenRegistry.deployed(),
-      TokenTransferDelegate.deployed(),
+      ERC20TransferDelegate.deployed(),
     ]);
 
-    delegateAddr = TokenTransferDelegate.address;
+    delegateAddr = ERC20TransferDelegate.address;
     lrcAddress = await tokenRegistry.getAddressBySymbol("LRC");
     lrc = await DummyToken.at(lrcAddress);
   });
 
-  describe('TokenTransferDelegate', () => {
-
+  describe('ERC20TransferDelegate', () => {
     it('should be able to add loopring protocol version', async () => {
-      const addVersionTx = await tokenTransferDelegate.addVersion(loopringProtocolV1, {from: owner});
-
-      const versions = await tokenTransferDelegate.getVersions({from: owner});
-      assert(_.includes(versions, loopringProtocolV1), "loopring protocol not added successfully.")
-
-      const version = await tokenTransferDelegate.versioned(loopringProtocolV1, {from: owner});
-      assert(version > 0, "loopring protocol version value is 0 after added.")
+      await erc20TransferDelegate.authorizeAddress(loopringProtocolV1, {from: owner});
+      const authorized = await erc20TransferDelegate.authorizedAddresses(loopringProtocolV1);
+      assert(authorized, "loopring protocol is not authorized.")
     });
 
     it('should be able to remove loopring protocol version', async () => {
-      const removeVersionTx = await tokenTransferDelegate.removeVersion(loopringProtocolV1, {from: owner});
-      const versions = await tokenTransferDelegate.getVersions({from: owner});
-      assert(!_.includes(versions, loopringProtocolV1), "loopring protocol not removed successfully.")
-
-      const version = await tokenTransferDelegate.versioned(loopringProtocolV1, {from: owner});
-      assert(version == 0, "loopring protocol version value is not 0 after removed.")
+      await erc20TransferDelegate.authorizeAddress(loopringProtocolV1, {from: owner});
+      await erc20TransferDelegate.unauthorizeAddress(loopringProtocolV1, {from: owner});
+      const authorized = await erc20TransferDelegate.authorizedAddresses(loopringProtocolV1);
+      assert(authorized == false, "loopring protocol is authorized.")
     });
 
     it('should be able to transfer ERC20 token if properly approved.', async () => {
-      await tokenTransferDelegate.addVersion(loopringProtocolV1, {from: owner});
+      await erc20TransferDelegate.authorizeAddress(loopringProtocolV1, {from: owner});
 
       await lrc.setBalance(trader1, web3.toWei(5), {from: owner});
       await lrc.approve(delegateAddr, web3.toWei(0), {from: trader1});
       await lrc.approve(delegateAddr, web3.toWei(5), {from: trader1});
 
-      const transferTx = await tokenTransferDelegate.transferToken(lrcAddress, trader1, trader2, web3.toWei(2.1), {from: loopringProtocolV1});
+      await erc20TransferDelegate.transferToken(lrcAddress, trader1, trader2, web3.toWei(2.1), {from: loopringProtocolV1});
 
       const balanceOfTrader1 = await getTokenBalanceAsync(lrc, trader1);
       const balanceOfTrader2 = await getTokenBalanceAsync(lrc, trader2);
@@ -76,9 +69,9 @@ contract('TokenTransferDelegate', (accounts: string[])=>{
 
     });
 
-    it('should not be able to transfer ERC20 token if msg.sender not versioned.', async () => {
+    it('should not be able to transfer ERC20 token if msg.sender not authorized.', async () => {
       try {
-        await tokenTransferDelegate.transferToken(lrcAddress, trader1, trader2, web3.toWei(1.1), {from: loopringProtocolV2});
+        await erc20TransferDelegate.transferToken(lrcAddress, trader1, trader2, web3.toWei(1.1), {from: loopringProtocolV2});
       } catch (err) {
         const errMsg = `${err}`;
         assert(_.includes(errMsg, 'revert'), `Expected contract to throw, got: ${err}`);

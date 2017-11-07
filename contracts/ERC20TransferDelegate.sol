@@ -22,35 +22,26 @@ import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-/// @title TokenTransferDelegate - Acts as a middle man to transfer ERC20 tokens
-/// on behalf of different versioned of Loopring protocol to avoid ERC20
+/// @title ERC20TransferDelegate - Acts as a middle man to transfer ERC20 tokens
+/// on behalf of different versions of Loopring protocol to avoid ERC20
 /// re-authorization.
 /// @author Daniel Wang - <daniel@loopring.org>.
-contract TokenTransferDelegate is Ownable {
+contract ERC20TransferDelegate is Ownable {
     using Math for uint;
 
     ////////////////////////////////////////////////////////////////////////////
     /// Variables                                                            ///
     ////////////////////////////////////////////////////////////////////////////
 
-    uint public lastVersion = 0;
-    address[] public versions;
-    mapping (address => uint) public versioned;
+    mapping (address => bool) public authorizedAddresses;
 
 
     ////////////////////////////////////////////////////////////////////////////
     /// Modifiers                                                            ///
     ////////////////////////////////////////////////////////////////////////////
 
-    modifier isVersioned(address addr) {
-        if (versioned[addr] == 0) {
-            revert();
-        }
-        _;
-    }
-
-    modifier notVersioned(address addr) {
-        if (versioned[addr] > 0) {
+    modifier onlyAuthorized() {
+        if (authorizedAddresses[msg.sender] == false) {
             revert();
         }
         _;
@@ -61,9 +52,9 @@ contract TokenTransferDelegate is Ownable {
     /// Events                                                               ///
     ////////////////////////////////////////////////////////////////////////////
 
-    event VersionAdded(address indexed addr, uint version);
+    event AddressAuthorized(address indexed addr);
 
-    event VersionRemoved(address indexed addr, uint version);
+    event AddressUnauthorized(address indexed addr);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -72,35 +63,22 @@ contract TokenTransferDelegate is Ownable {
 
     /// @dev Add a Loopring protocol address.
     /// @param addr A loopring protocol address.
-    function addVersion(address addr)
+    function authorizeAddress(address addr)
         onlyOwner
-        notVersioned(addr)
         public
     {
-        versioned[addr] = ++lastVersion;
-        versions.push(addr);
-        VersionAdded(addr, lastVersion);
+        authorizedAddresses[addr] = true;
+        AddressAuthorized(addr);
     }
 
     /// @dev Remove a Loopring protocol address.
     /// @param addr A loopring protocol address.
-    function removeVersion(address addr)
+    function unauthorizeAddress(address addr)
         onlyOwner
-        isVersioned(addr)
         public
     {
-        uint version = versioned[addr];
-        delete versioned[addr];
-
-        uint length = versions.length;
-        for (uint i = 0; i < length; i++) {
-            if (versions[i] == addr) {
-                versions[i] = versions[length - 1];
-                versions.length -= 1;
-                break;
-            }
-        }
-        VersionRemoved(addr, version);
+        delete authorizedAddresses[addr];
+        AddressUnauthorized(addr);
     }
 
     /// @dev Invoke ERC20 transferFrom method.
@@ -113,7 +91,7 @@ contract TokenTransferDelegate is Ownable {
         address from,
         address to,
         uint value)
-        isVersioned(msg.sender)
+        onlyAuthorized
         public
     {
         if (from != to) {
@@ -124,7 +102,7 @@ contract TokenTransferDelegate is Ownable {
     }
 
     function transferTokenBatch(bytes32[] batch)
-        isVersioned(msg.sender)
+        onlyAuthorized
         public
     {
         uint len = batch.length;
@@ -140,15 +118,5 @@ contract TokenTransferDelegate is Ownable {
                 );
             }
         }
-    }
-
-    /// @dev Gets all versioned addresses.
-    /// @return Array of versioned addresses.
-    function getVersions()
-        public
-        constant
-        returns (address[])
-    {
-        return versions;
     }
 }
