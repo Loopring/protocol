@@ -282,7 +282,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-        handleOrdersAndRing(addressList,
+        handleOrdersAsRing(
+            addressList,
             uintArgsList,
             uint8ArgsList,
             buyNoMoreThanAmountBList,
@@ -293,12 +294,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecepient,
             throwIfLRCIsInsuffcient,
             ringhashRegistry,
-            ringhash);
+            ringhash
+        );
 
-            ringIndex = ringIndex ^ ENTERED_MASK + 1;
-        }
+        ringIndex = ringIndex ^ ENTERED_MASK + 1;
+    }
 
-    function handleOrdersAndRing(
+    function handleOrdersAsRing(
         address[2][]        addressList,
         uint[7][]           uintArgsList,
         uint8[2][]          uint8ArgsList,
@@ -311,8 +313,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool                throwIfLRCIsInsuffcient,
         RinghashRegistry    ringhashRegistry,
         bytes32             ringhash
-    )
-    public
+        )
+        public
     {
         var delegate = TokenTransferDelegate(delegateAddress);
         //Assemble input data into a struct so we can pass it to functions.
