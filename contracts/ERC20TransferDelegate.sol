@@ -170,14 +170,15 @@ contract ERC20TransferDelegate is Ownable {
     {
         uint len = batch.length;
         for (uint i = 0; i < len; i += 4) {
-            address token = address(batch[i]);
             address from = address(batch[i + 1]);
             address to = address(batch[i + 2]);
             uint value = uint(batch[i + 3]);
 
-            if (from != to) {
+            if (from != to && value > 0) {
                 require(
-                    ERC20(token).transferFrom(from, to, value)
+                    ERC20(address(batch[i])).transferFrom(
+                        from, to, value
+                    )
                 );
             }
         }
