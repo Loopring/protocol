@@ -81,8 +81,8 @@ library MathUint {
         }
 
         uint cvs = 0;
+        uint sub = 0;
         for (i = 0; i < len; i++) {
-            uint sub = 0;
             if (arr[i] > avg) {
                 sub = arr[i] - avg;
             } else {
