@@ -124,7 +124,7 @@ contract ERC20TransferDelegate is Ownable {
         return addressInfos[addr].authorized;
     }
 
-    function getLatestAddresses(uint max)
+    function getLatestAuthorizedAddresses(uint max)
         public
         view
         returns (address[] memory addresses)
