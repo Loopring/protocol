@@ -15,7 +15,7 @@
   limitations under the License.
 
 */
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 
 /// @title Token Register Contract
@@ -27,7 +27,7 @@ library Uint8Lib {
         uint    len
         )
         internal
-        constant
+        pure
         returns (uint8 res)
     {
         res = arr[0];

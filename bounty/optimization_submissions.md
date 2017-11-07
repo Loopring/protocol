@@ -340,3 +340,93 @@ In addition to the above :
 https://github.com/Loopring/protocol/pull/52
 
 This further reduces some gas.
+
+
+## #11 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: 02:52 06/11/2017 Beijing Time
+- PR:  https://github.com/Loopring/protocol/pull/55 and https://github.com/Loopring/protocol/pull/77
+- Result: reduced gas usage from 405588 to 400286 405588 (=5302), a 1.04% reduction of 511465.
+
+I also made a pull request for this one: https://github.com/Loopring/protocol/pull/55
+
+
+## #12 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: 02:52 06/11/2017 Beijing Time
+- PR: https://github.com/Loopring/protocol/pull/56 and https://github.com/Loopring/protocol/pull/75
+- Result: reduced gas usage from 416380 to 405588 (=10792), a 2.11% reduction of 511465.
+
+
+
+## #13 [TBD]
+
+- From: 裴林波 <398202646@qq.com>
+- Time: 00:00 07/11/2017 Beijing Time
+- PR: 
+
+Hi Team
+
+I have noticed that, in below code there is one nested loop, which should be avoided always.
+The cost for nested loop will be O(n*n).
+The performance will be bad, along with the growing up of ringSize.
+
+    function verifyRingHasNoSubRing(Ring ring)
+        internal
+        constant
+    {
+        uint ringSize = ring.orders.length;
+        // Check the ring has no sub-ring.
+        for (uint i = 0; i < ringSize - 1; i++) {
+            address tokenS = ring.orders[i].order.tokenS;
+            for (uint j = i + 1; j < ringSize; j++) {
+                ErrorLib.check(
+                    tokenS != ring.orders[j].order.tokenS,
+                    "found sub-ring"
+                );
+            }
+        }
+    }
+
+
+By below idea, we can reduce the cost to O(n).
+1. Add one mapping member to Ring stuct.
+    struct Ring {
+        bytes32      ringhash;
+        OrderState[] orders;
+        address      miner;
+        address      feeRecepient;
+        bool         throwIfLRCIsInsuffcient;
+	mapping 	(address => bool) tokenSExist;
+    }
+2. Change the verifyRingHasNoSubRing as below.
+    function verifyRingHasNoSubRing(Ring ring)
+        internal
+        constant
+    {
+        uint ringSize = ring.orders.length;
+        // Check the ring has no sub-ring.
+        for (uint i = 0; i < ringSize; i++) {
+			address tokenS = ring.orders[i].order.tokenS;
+			ErrorLib.check(ring.tokenSExist[tokenS], "found sub-ring");			
+			ring.tokenSExist[tokenS] = true;
+        }
+    }
+
+Hope this can help. Thanks.
+
+My Ether Wallet address:
+0x4CEB79e11BdFBBFFB5ac902d7b50D00B3339875B
+
+ShangHai China
+5 November 2017
+
+
+## #14 [Merged]
+
+- From: Benjamin John Price <ben@benprice.ca>
+- Time: 00:00 07/11/2017 Beijing Time
+- PR: https://github.com/Loopring/protocol/pull/57 and https://github.com/Loopring/protocol/pull/78
+- Result: reduced gas usage from 400512 to 400278 (=234), a 0.04% reduction of 511465.
