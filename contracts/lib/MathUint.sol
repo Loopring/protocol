@@ -81,14 +81,14 @@ library MathUint {
         }
 
         uint cvs = 0;
-        uint sub = 0;
+        uint s = 0;
         for (i = 0; i < len; i++) {
             if (arr[i] > avg) {
-                sub = arr[i] - avg;
+                s = arr[i] - avg;
             } else {
-                sub = avg - arr[i];
+                s = avg - arr[i];
             }
-            cvs += mul(sub, sub);
+            cvs += mul(s, s);
         }
 
         return (mul(mul(cvs, scale) / avg, scale) / avg) / (len - 1);
