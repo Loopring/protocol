@@ -42,14 +42,14 @@ contract('ERC20TransferDelegate', (accounts: string[])=>{
   describe('ERC20TransferDelegate', () => {
     it('should be able to add loopring protocol version', async () => {
       await erc20TransferDelegate.authorizeAddress(loopringProtocolV1, {from: owner});
-      const authorized = await erc20TransferDelegate.authorizedAddresses(loopringProtocolV1);
+      const authorized = await erc20TransferDelegate.isAddressAuthorized(loopringProtocolV1);
       assert(authorized, "loopring protocol is not authorized.")
     });
 
     it('should be able to remove loopring protocol version', async () => {
       await erc20TransferDelegate.authorizeAddress(loopringProtocolV1, {from: owner});
-      await erc20TransferDelegate.unauthorizeAddress(loopringProtocolV1, {from: owner});
-      const authorized = await erc20TransferDelegate.authorizedAddresses(loopringProtocolV1);
+      await erc20TransferDelegate.deauthorizeAddress(loopringProtocolV1, {from: owner});
+      const authorized = await erc20TransferDelegate.isAddressAuthorized(loopringProtocolV1);
       assert(authorized == false, "loopring protocol is authorized.")
     });
 

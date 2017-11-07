@@ -33,7 +33,20 @@ contract ERC20TransferDelegate is Ownable {
     /// Variables                                                            ///
     ////////////////////////////////////////////////////////////////////////////
 
-    mapping (address => bool) public authorizedAddresses;
+    mapping(address => AddressInfo) private addressInfos;
+
+    address public latestAddress;
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    /// Structs                                                              ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    struct AddressInfo {
+        address previous;
+        uint32  index;
+        bool    authorized;
+    }
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -41,7 +54,7 @@ contract ERC20TransferDelegate is Ownable {
     ////////////////////////////////////////////////////////////////////////////
 
     modifier onlyAuthorized() {
-        if (authorizedAddresses[msg.sender] == false) {
+        if (isAddressAuthorized(msg.sender) == false) {
             revert();
         }
         _;
@@ -52,9 +65,9 @@ contract ERC20TransferDelegate is Ownable {
     /// Events                                                               ///
     ////////////////////////////////////////////////////////////////////////////
 
-    event AddressAuthorized(address indexed addr);
+    event AddressAuthorized(address indexed addr, uint32 number);
 
-    event AddressUnauthorized(address indexed addr);
+    event AddressDeauthorized(address indexed addr, uint32 number);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -67,18 +80,68 @@ contract ERC20TransferDelegate is Ownable {
         onlyOwner
         public
     {
-        authorizedAddresses[addr] = true;
-        AddressAuthorized(addr);
+        AddressInfo storage addrInfo = addressInfos[addr];
+
+        if (addrInfo.index != 0) { // existing
+            if (addrInfo.authorized == false) { // re-authorize
+                addrInfo.authorized = true;
+                AddressAuthorized(addr, addrInfo.index);
+            }
+        } else {
+            address prev = latestAddress;
+            if (prev == address(0)) {
+                addrInfo.index = 1;
+                addrInfo.authorized = true;
+            } else {
+                addrInfo.previous = prev;
+                addrInfo.index = addressInfos[prev].index + 1;
+
+            }
+            addrInfo.authorized = true;
+            latestAddress = addr;
+            AddressAuthorized(addr, addrInfo.index);
+        }
     }
 
     /// @dev Remove a Loopring protocol address.
     /// @param addr A loopring protocol address.
-    function unauthorizeAddress(address addr)
+    function deauthorizeAddress(address addr)
         onlyOwner
         public
     {
-        delete authorizedAddresses[addr];
-        AddressUnauthorized(addr);
+        AddressInfo storage addrInfo = addressInfos[addr];
+        if (addrInfo.index != 0) {
+            addrInfo.authorized = false;
+            AddressDeauthorized(addr, addrInfo.index);
+        }
+    }
+
+    function isAddressAuthorized(address addr)
+        public
+        view
+        returns (bool)
+    {
+        return addressInfos[addr].authorized;
+    }
+
+    function getLatestAddresses(uint max)
+        public
+        view
+        returns (address[] memory addresses)
+    {
+        addresses = new address[](max);
+        address addr = latestAddress;
+        AddressInfo memory addrInfo;
+        uint count = 0;
+
+        while (addr != address(0) && max < count) {
+            addrInfo = addressInfos[addr];
+            if (addrInfo.index == 0) {
+                break;
+            }
+            addresses[count++] = addr;
+            addr = addrInfo.previous;
+        }
     }
 
     /// @dev Invoke ERC20 transferFrom method.

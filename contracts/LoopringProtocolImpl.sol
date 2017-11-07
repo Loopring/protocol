@@ -578,7 +578,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     state.order.tokenS,
                     state.order.owner,
                     ring.feeRecepient,
-                    splitSum
+                    prev.splitB + state.splitS
                 );
                 position += 4;
             }
