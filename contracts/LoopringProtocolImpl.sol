@@ -214,7 +214,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///                     the previous lists, with the last element being the
     ///                     s value of the ring signature.
     /// @param ringminer    The address that signed this tx.
-    /// @param feeRecepient The recepient address for fee collection. If this is
+    /// @param feeRecepient The Recepient address for fee collection. If this is
     ///                     '0x0', all fees will be paid to the address who had
     ///                     signed this transaction, not `msg.sender`. Noted if
     ///                     LRC need to be paid back to order owner as the result
@@ -278,9 +278,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
 
-       
+        TokenTransferDelegate _delegate = TokenTransferDelegate(delegateAddress);
         //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
+            _delegate,
             addressList,
             uintArgsList,
             uint8ArgsList,
@@ -295,6 +296,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         handleRing(
+            _delegate,
             ringSize,
             ringhash,
             orders,
@@ -439,6 +441,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
+        TokenTransferDelegate _delegate,
         uint            ringSize,
         bytes32         ringhash,
         OrderState[]    orders,
@@ -467,7 +470,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ringSize, orders);
 
-        address _delegateAddress = delegateAddress;
         address _lrcTokenAddress = lrcTokenAddress;
         
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
@@ -477,7 +479,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             orders,
             feeRecepient,
-            _delegateAddress,
+            _delegate,
             _lrcTokenAddress
         );
 
@@ -487,7 +489,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orders,
             ringhash,
             feeRecepient,
-            _delegateAddress,
+            _delegate,
             _lrcTokenAddress
         );
 
@@ -621,7 +623,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderState[]  orders,
         bytes32       ringhash,
         address       feeRecepient,
-        address       _delegateAddress,
+        TokenTransferDelegate       _delegate,
         address       _lrcTokenAddress
         )
         private
@@ -653,7 +655,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
       
-        TokenTransferDelegate(_delegateAddress).batchTransferToken(
+        _delegate.batchTransferToken(
             createTransferBatch(
                 _lrcTokenAddress,
                 ringSize,
@@ -692,24 +694,25 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders,
         address         feeRecepient,
-        address         _delegateAddress,
+        TokenTransferDelegate         _delegate,
         address         _lrcTokenAddress
         )
         internal
         view
     {
         uint minerLrcSpendable = getSpendable(
-            _delegateAddress,
+            _delegate,
             _lrcTokenAddress,
             feeRecepient
         );
+        uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var next = orders[(i + 1) % ringSize];
 
             uint lrcSpendable = getSpendable(
-                _delegateAddress,
+                _delegate,
                 _lrcTokenAddress,
                 state.order.owner
             );
@@ -717,14 +720,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
             // If order doesn't have enough LRC, set margin split to 100%.
             if (lrcSpendable < state.lrcFee) {
                 state.lrcFee = lrcSpendable;
-                state.order.marginSplitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
+                state.order.marginSplitPercentage = _marginSplitPercentageBase;
             }
 
             // When an order's LRC fee is 0 or smaller than the specified fee,
             // we help miner automatically select margin-split.
             if (state.lrcFee == 0) {
                 state.feeSelection == FEE_SELECT_MARGIN_SPLIT;
-                state.order.marginSplitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
+                state.order.marginSplitPercentage = _marginSplitPercentageBase;
             }
 
             if (state.feeSelection == FEE_SELECT_MARGIN_SPLIT) {
@@ -747,11 +750,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         );
                     }
 
-                    if (state.order.marginSplitPercentage != MARGIN_SPLIT_PERCENTAGE_BASE) {
+                    if (state.order.marginSplitPercentage != _marginSplitPercentageBase) {
                         split = split.mul(
                             state.order.marginSplitPercentage
                         ).div(
-                            MARGIN_SPLIT_PERCENTAGE_BASE
+                            _marginSplitPercentageBase
                         );
                     }
 
@@ -903,7 +906,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @return Amount of ERC20 token that can be spent by this contract.
     function getSpendable(
-        address _delegateAddress,
+        TokenTransferDelegate _delegate,
         address tokenAddress,
         address tokenOwner
         )
@@ -914,7 +917,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         var token = ERC20(tokenAddress);
         return token.allowance(
             tokenOwner,
-            _delegateAddress
+            address(_delegate)
         ).min256(
             token.balanceOf(tokenOwner)
         );
@@ -952,6 +955,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
+        TokenTransferDelegate _delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
@@ -962,11 +966,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         internal
         view
-        returns (OrderState[])
+        returns (OrderState[] orders)
     {
         var ringSize = addressList.length;
-        var orders = new OrderState[](ringSize);
-        // address _delegateAddress = delegateAddress;
+        orders = new OrderState[](ringSize);
 
         for (uint i = 0; i < ringSize; i++) {
             var order = Order(
@@ -1002,13 +1005,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uintArgsList[i][4]  // salt
             );
 
-            // TODO(daniel): optimize by using  `_delegateAddress`.
             orders[i] = OrderState(
                 order,
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                getSpendable(delegateAddress, order.tokenS, order.owner), 
+                getSpendable(_delegate, order.tokenS, order.owner), 
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
@@ -1018,8 +1020,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             require(orders[i].availableAmountS > 0); // "order spendable amountS is zero");
         }
-
-        return orders;
     }
 
     /// @dev validate order's parameters are OK.
