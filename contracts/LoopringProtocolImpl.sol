@@ -445,7 +445,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address miner,
         address feeRecepient,
         bool throwIfLRCIsInsuffcient,
-        bool ringHashFound
+        bool isRinghashReserved
         )
         internal
     {
@@ -493,7 +493,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ring.ringhash,
             ring.miner,
             ring.feeRecepient,
-            ringHashFound
+            isRinghashReserved
         );
     }
 
