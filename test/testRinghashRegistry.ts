@@ -66,22 +66,22 @@ contract('RinghashRegistry', (accounts: string[])=>{
                                                        p.sList);
 
       const ringHash = ring.getRingHashHex();
-      const isRinghashReserved = await ringhashRegistry.isRinghashReserved(ringHash, ringOwner);
-      assert.equal(isRinghashReserved, true, "ring hash not found after summitted.");
+      const isReserved = await ringhashRegistry.isReserved(ringHash, ringOwner);
+      assert.equal(isReserved, true, "ring hash not found after summitted.");
     });
 
     it('should be able to submit the same ring hash again by same ringminer.', async () => {
       const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
       const ringHash = ring.getRingHashHex();
-      const isRinghashSubmittable1 = await ringhashRegistry.isRinghashSubmittable(ringHash, ringOwner, {from: owner});
-      assert.equal(isRinghashSubmittable1, true, "can not submit again after summitted by same address.");
+      const isSubmittable1 = await ringhashRegistry.isSubmittable(ringHash, ringOwner, {from: owner});
+      assert.equal(isSubmittable1, true, "can not submit again after summitted by same address.");
     });
 
     it('should not be able to submit the same ring hash again by another address.', async () => {
       const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
       const ringHash = ring.getRingHashHex();
-      const isRinghashSubmittable2 = await ringhashRegistry.isRinghashSubmittable(ringHash, order1Owner, {from: owner});
-      assert.equal(isRinghashSubmittable2, false, "can submit again after summitted by another address.");
+      const isSubmittable2 = await ringhashRegistry.isSubmittable(ringHash, order1Owner, {from: owner});
+      assert.equal(isSubmittable2, false, "can submit again after summitted by another address.");
     });
 
 

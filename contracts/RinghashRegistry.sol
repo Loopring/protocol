@@ -72,7 +72,7 @@ contract RinghashRegistry {
             sList
         );
 
-        require(isRinghashSubmittable(ringhash, ringminer)); //, "Ringhash submitted");
+        require(isSubmittable(ringhash, ringminer)); //, "Ringhash submitted");
 
         submissions[ringhash] = Submission(ringminer, block.number);
         RinghashSubmitted(ringminer, ringhash);
@@ -103,7 +103,7 @@ contract RinghashRegistry {
     }
 
      /// return value attributes[2] contains the following values in this order:
-     /// isRinghashRerserved, isRinghashSubmittable
+     /// isRinghashRerserved, isSubmittable
     function computeAndGetRinghashInfo(
         uint        ringSize,
         address     ringminer,
@@ -122,13 +122,13 @@ contract RinghashRegistry {
             sList
         );
 
-        attributes[0] = isRinghashSubmittable(ringhash, ringminer);
-        attributes[1] = isRinghashReserved(ringhash, ringminer);
+        attributes[0] = isSubmittable(ringhash, ringminer);
+        attributes[1] = isReserved(ringhash, ringminer);
     }
 
     /// @return true if a ring's hash can be submitted;
     /// false otherwise.
-    function isRinghashSubmittable(
+    function isSubmittable(
         bytes32 ringhash,
         address ringminer)
         public
@@ -145,7 +145,7 @@ contract RinghashRegistry {
 
     /// @return true if a ring's hash was submitted and still valid;
     /// false otherwise.
-    function isRinghashReserved(
+    function isReserved(
         bytes32 ringhash,
         address ringminer)
         public
