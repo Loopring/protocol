@@ -23,10 +23,6 @@ pragma solidity 0.4.18;
 /// @dev uint utility functions
 library MathUint {
 
-    function min(uint a, uint b) internal pure returns (uint) {
-        return a < b ? a : b;
-    }
-
     function mul(uint a, uint b) internal pure returns (uint) {
         uint c = a * b;
         require(a == 0 || c / a == b);

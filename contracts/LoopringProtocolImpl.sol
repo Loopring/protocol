@@ -866,7 +866,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0); // "amountS is zero");
             require(order.amountB > 0); // "amountB is zero");
 
-            state.fillAmountS = order.amountS.min(state.availableAmountS);
+            state.fillAmountS = (order.amountS < state.availableAmountS ? order.amountS : state.availableAmountS);
         }
     }
 
@@ -881,12 +881,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (uint)
     {
         var token = ERC20(tokenAddress);
-        return token.allowance(
+        var allowance = token.allowance(
             tokenOwner,
             _delegateAddress
-        ).min(
-            token.balanceOf(tokenOwner)
         );
+        var balance = token.balanceOf(tokenOwner);
+        return (allowance < balance ? allowance : balance);
     }
 
     /// @dev verify input data's basic integrity.
