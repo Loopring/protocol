@@ -351,7 +351,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
 
-        bytes32 orderHash = calculateOrderHash(order, orderValues[2], orderValues[3], orderValues[4]);
+        bytes32 orderHash = calculateOrderHash(
+            order,
+            orderValues[2], // timestamp
+            orderValues[3], // ttl
+            orderValues[4]  // salt
+        );
+
 
         verifySignature(
             order.owner,
@@ -590,7 +596,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         view
     {
-        uint minerLrcSpendable = delegate.getSpendable(lrcTokenAddress, ring.feeRecepient);
+        uint minerLrcSpendable = delegate.getSpendable(
+            lrcTokenAddress,
+            ring.feeRecepient
+        );
+
         uint ringSize = ring.orders.length;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -599,7 +609,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             if (state.feeSelection == FEE_SELECT_LRC) {
 
-                uint lrcSpendable = delegate.getSpendable(lrcTokenAddress, state.order.owner);
+                uint lrcSpendable = delegate.getSpendable(
+                    lrcTokenAddress,
+                    state.order.owner
+                );
 
                 if (lrcSpendable < state.lrcFee) {
                     require(!ring.throwIfLRCIsInsuffcient); // "order LRC balance insuffcient");
@@ -828,7 +841,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uint8ArgsList[i][0]
             );
 
-            bytes32 orderHash = calculateOrderHash(order, uintArgsList[i][2], uintArgsList[i][3], uintArgsList[i][4]);
+            bytes32 orderHash = calculateOrderHash(
+                order,
+                uintArgsList[i][2], // timestamp
+                uintArgsList[i][3], // ttl
+                uintArgsList[i][4]  // salt
+            );
 
             verifySignature(
                 order.owner,
@@ -838,7 +856,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 sList[i]
             );
 
-            validateOrder(order, uintArgsList[i][2], uintArgsList[i][3], uintArgsList[i][4]);
+            validateOrder(
+                order,
+                uintArgsList[i][2], // timestamp
+                uintArgsList[i][3], // ttl
+                uintArgsList[i][4]  // salt
+            );
 
             orders[i] = OrderState(
                 order,
@@ -860,7 +883,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     /// @dev validate order's parameters are OK.
-    function validateOrder(Order order, uint timestamp, uint ttl, uint salt)
+    function validateOrder(
+        Order order,
+        uint timestamp,
+        uint ttl,
+        uint salt
+    )
         internal
         view 
     {
@@ -878,7 +906,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
-    function calculateOrderHash(Order order, uint timestamp, uint ttl, uint salt)
+    function calculateOrderHash(
+        Order order,
+        uint timestamp,
+        uint ttl,
+        uint salt
+    )
         internal
         view
         returns (bytes32)
