@@ -881,11 +881,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (uint)
     {
         var token = ERC20(tokenAddress);
-        var allowance = token.allowance(
+        uint allowance = token.allowance(
             tokenOwner,
             _delegateAddress
         );
-        var balance = token.balanceOf(tokenOwner);
+        uint balance = token.balanceOf(tokenOwner);
         return (allowance < balance ? allowance : balance);
     }
 
