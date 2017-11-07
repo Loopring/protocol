@@ -83,11 +83,7 @@ library MathUint {
         uint cvs = 0;
         uint s = 0;
         for (i = 0; i < len; i++) {
-            if (arr[i] > avg) {
-                s = arr[i] - avg;
-            } else {
-                s = avg - arr[i];
-            }
+            s = arr[i] > avg ? arr[i] - avg : avg - arr[i];
             cvs += mul(s, s);
         }
 

@@ -866,7 +866,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0); // "amountS is zero");
             require(order.amountB > 0); // "amountB is zero");
 
-            state.fillAmountS = (order.amountS < state.availableAmountS ? order.amountS : state.availableAmountS);
+            state.fillAmountS = (
+                order.amountS < state.availableAmountS ? 
+                order.amountS : state.availableAmountS
+            );
         }
     }
 
