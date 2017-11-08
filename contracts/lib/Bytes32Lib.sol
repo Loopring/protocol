@@ -15,7 +15,7 @@
   limitations under the License.
 
 */
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 
 /// @title Token Register Contract
@@ -28,7 +28,7 @@ library Bytes32Lib {
         uint        len
         )
         internal
-        constant
+        pure
         returns (bytes32 res)
     {
         res = arr[0];
