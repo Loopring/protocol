@@ -123,34 +123,16 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
     it('should be able to fill ring with 2 orders', async () => {
       const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
 
-      await lrc.setBalance(order1Owner, web3.toWei(1),   {from: owner});
+      await lrc.setBalance(order1Owner, web3.toWei(100),   {from: owner});
       await eos.setBalance(order1Owner, web3.toWei(10000), {from: owner});
       await lrc.setBalance(order2Owner, web3.toWei(100),   {from: owner});
       await neo.setBalance(order2Owner, web3.toWei(1000),  {from: owner});
       await lrc.setBalance(feeRecepient, 0, {from: owner});
 
-      const p = ringFactory.ringToSubmitableParams(ring, [0, 0], feeRecepient, true);
-      try {
-        const tx1 =  await loopringProtocolImpl.submitRing(p.addressList,
-                                                           p.uintArgsList,
-                                                           p.uint8ArgsList,
-                                                           p.buyNoMoreThanAmountBList,
-                                                           p.vList,
-                                                           p.rList,
-                                                           p.sList,
-                                                           p.ringOwner,
-                                                           p.feeRecepient,
-                                                           p.throwIfLRCIsInsuffcient,
-                                                           {from: owner});
-      } catch (err) {
-        const errMsg = `${err}`;
-        //console.log("errMsg:", errMsg);
-        assert(_.includes(errMsg, 'Error: VM Exception while processing transaction: revert'), `Expected contract to throw, got: ${err}`);
-      }
+      const p = ringFactory.ringToSubmitableParams(ring, [0, 0], feeRecepient);
 
-      await lrc.setBalance(order1Owner, web3.toWei(100),   {from: owner});
       const ethOfOwnerBefore = await getEthBalanceAsync(owner);
-      const tx2 = await loopringProtocolImpl.submitRing(p.addressList,
+      const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                         p.uintArgsList,
                                                         p.uint8ArgsList,
                                                         p.buyNoMoreThanAmountBList,
@@ -159,10 +141,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                         p.sList,
                                                         p.ringOwner,
                                                         p.feeRecepient,
-                                                        p.throwIfLRCIsInsuffcient,
                                                         {from: owner});
-      //console.log("tx:", tx2);
-      //console.log(tx2.receipt.logs);
 
       const ethOfOwnerAfter = await getEthBalanceAsync(owner);
       const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
@@ -198,9 +177,8 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
       await eos.setBalance(order1Owner, web3.toWei(1000), {from: owner});
       await neo.setBalance(order2Owner, web3.toWei(50),  {from: owner});
 
-      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient, true);
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const ethOfOwnerBefore = await getEthBalanceAsync(owner);
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
@@ -210,12 +188,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                        p.sList,
                                                        p.ringOwner,
                                                        p.feeRecepient,
-                                                       p.throwIfLRCIsInsuffcient,
                                                        {from: owner});
-
-      const ethOfOwnerAfter = await getEthBalanceAsync(owner);
-      const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
-      //console.log("all gas cost for 2 orders 02(ether):", allGas);
 
       const eosBalance21 = await getTokenBalanceAsync(eos, order1Owner);
       const neoBalance21 = await getTokenBalanceAsync(neo, order1Owner);
@@ -229,6 +202,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
       const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
 
+      // console.log("feeAndBalanceExpected:", feeAndBalanceExpected);
       // console.log("eosBalance21:", eosBalance21, "neoBalance21:", neoBalance21);
       // console.log("eosBalance22:", eosBalance22, "neoBalance22:", neoBalance22);
       // console.log("eosBalance23:", eosBalance23, "neoBalance23:", neoBalance23);
@@ -253,9 +227,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
       await neo.setBalance(order2Owner, web3.toWei(50),  {from: owner});
       await lrc.setBalance(order2Owner, web3.toWei(20),  {from: owner});
 
-      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient, true);
-
-      const ethOfOwnerBefore = await getEthBalanceAsync(owner);
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
@@ -266,13 +238,9 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                        p.sList,
                                                        p.ringOwner,
                                                        p.feeRecepient,
-                                                       p.throwIfLRCIsInsuffcient,
                                                        {from: owner});
-      //console.log(tx.receipt.logs);
 
-      const ethOfOwnerAfter = await getEthBalanceAsync(owner);
-      const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
-      //console.log("all gas cost(ether):", allGas);
+      console.log("cumulativeGasUsed for a ring of 2 orders: " + tx.receipt.gasUsed);
 
       const eosBalance21 = await getTokenBalanceAsync(eos, order1Owner);
       const neoBalance21 = await getTokenBalanceAsync(neo, order1Owner);
@@ -312,9 +280,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
       await lrc.setBalance(order2Owner, web3.toWei(5),  {from: owner}); // insuffcient lrc balance.
       await qtum.setBalance(order3Owner, web3.toWei(6780),  {from: owner});
 
-      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient, false);
-
-      const ethOfOwnerBefore = await getEthBalanceAsync(owner);
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
@@ -325,15 +291,9 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                        p.sList,
                                                        p.ringOwner,
                                                        p.feeRecepient,
-                                                       p.throwIfLRCIsInsuffcient,
                                                        {from: owner});
 
-      //console.log(tx.receipt.logs);
       console.log("cumulativeGasUsed for a ring of 3 orders: " + tx.receipt.gasUsed);
-
-      const ethOfOwnerAfter = await getEthBalanceAsync(owner);
-      const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
-      //console.log("all gas cost for 3 orders(ether):", allGas);
 
       const eosBalance21 = await getTokenBalanceAsync(eos, order1Owner);
       const neoBalance21 = await getTokenBalanceAsync(neo, order1Owner);
@@ -395,8 +355,6 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                             ring.orders[1].params.amountS.toNumber(),
                             ring.orders[2].params.amountS.toNumber()];
 
-      //console.log("balanceSList: ", balanceSList);
-
       await eos.setBalance(order1Owner, balanceSList[0], {from: owner});
       await neo.setBalance(order2Owner, balanceSList[1],  {from: owner});
       await lrc.setBalance(order2Owner, web3.toWei(15),  {from: owner});
@@ -404,9 +362,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
 
       await approve([eos, neo, qtum], [order1Owner, order2Owner, order3Owner], availableAmountSList);
 
-      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient, false);
-
-      const ethOfOwnerBefore = await getEthBalanceAsync(owner);
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
@@ -417,12 +373,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
                                                        p.sList,
                                                        p.ringOwner,
                                                        p.feeRecepient,
-                                                       p.throwIfLRCIsInsuffcient,
                                                        {from: owner});
-
-      const ethOfOwnerAfter = await getEthBalanceAsync(owner);
-      const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber())/1e18;
-      //console.log("all gas cost(ether):", allGas);
 
       const eosBalance21 = await getTokenBalanceAsync(eos, order1Owner);
       const neoBalance21 = await getTokenBalanceAsync(neo, order1Owner);

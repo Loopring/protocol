@@ -441,3 +441,31 @@ ShangHai China
 - PR: https://github.com/Loopring/protocol/pull/59 and  https://github.com/Loopring/protocol/pull/79
 - Result: reduced gas usage from 400411 to 400376 (=35), a 0.00% reduction of 511465.
 
+## #16 [Merged]
+
+- From: Benjamin John Price <ben@benprice.ca>
+- Time: as of PR 65
+- PR: https://github.com/Loopring/protocol/pull/65
+- Result: reduced gas usage from 400427 to 400084 (=343), a 0.07% reduction of 511465.
+
+## #17 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: as of PR 84
+- PR:  https://github.com/Loopring/protocol/pull/87 and https://github.com/Loopring/protocol/pull/84
+- Result: reduced gas usage from 400427 to 400084 (=343), a 0.07% reduction of 511465.
+
+## #18 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: as of PR 85
+- PR: https://github.com/Loopring/protocol/pull/85
+- Result: reduced gas usage from 414469 to 413379 (=1090), a 0.21% reduction of 511465.
+
+
+## #19 [Merged]
+
+- From: Benjamin John Price <ben@benprice.ca>
+- Time: as of PR 91
+- PR: https://github.com/Loopring/protocol/pull/65
+- Result: reduced gas usage from 412961 to 412188 (=773), a 0.15% reduction of 511465.
