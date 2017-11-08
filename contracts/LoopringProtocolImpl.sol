@@ -527,12 +527,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function fillTransferBatchItem(
-        bytes32[] memory batch,
-        uint position,
-        address token,
-        address from,
-        address to,
-        uint value)
+        bytes32[]   memory batch,
+        uint        position,
+        address     token,
+        address     from,
+        address     to,
+        uint        value)
         private
         pure
     {

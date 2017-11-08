@@ -26,7 +26,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
   const feeRecepient = accounts[6];
   let loopringProtocolImpl: any;
   let tokenRegistry: any;
-  let erc20TransferDelegate: any;
+  let tokenTransferDelegate: any;
   let order1: Order;
   let order2: Order;
   let ring: Ring;
@@ -78,7 +78,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
   }
 
   before( async () => {
-    [loopringProtocolImpl, tokenRegistry, erc20TransferDelegate] = await Promise.all([
+    [loopringProtocolImpl, tokenRegistry, tokenTransferDelegate] = await Promise.all([
       LoopringProtocolImpl.deployed(),
       TokenRegistry.deployed(),
       TokenTransferDelegate.deployed(),
@@ -90,7 +90,7 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
     qtumAddress = await tokenRegistry.getAddressBySymbol("QTUM");
     delegateAddr = TokenTransferDelegate.address;
 
-    erc20TransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
+    tokenTransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
 
     [lrc, eos, neo, qtum] = await Promise.all([
       DummyToken.at(lrcAddress),
