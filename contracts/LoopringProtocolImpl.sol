@@ -686,7 +686,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 revert(); // "unsupported fee selection value");
             }
         }
-
     }
 
     /// @dev Calculate each order's fill amount.
