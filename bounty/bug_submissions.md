@@ -62,3 +62,8 @@ In calculateRingFees there’s (minerLrcSpendable += lrcSpendable). Again, proba
  
  
 Brecht Devos
+
+## #05 [TBD]
+
+- From: jonasshen
+- Resolution: https://github.com/Loopring/protocol/issues/70
