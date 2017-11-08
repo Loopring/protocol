@@ -168,19 +168,17 @@ contract TokenTransferDelegate is Ownable {
         onlyAuthorized
         public
     {
-        for (uint i = 0; i < batch.length; i += 4) {
-            bytes32 from = batch[i + 1];
-            bytes32 to = batch[i + 2];
-            uint value = uint(batch[i + 3]);
-
-            if (value > 0 && from != to) {
-                require(
-                    ERC20(address(batch[i])).transferFrom(
-                        address(from),
-                        address(to),
-                        value
-                    )
-                );
+        uint len = batch.length;
+        for (uint i = 0; i < len; i += 4) {
+            address from = address(batch[i + 1]);
+            address to = address(batch[i + 2]);
+            if (from != to) {
+                uint value = uint(batch[i + 3]);
+                if (value != 0) {
+                    require(
+                        ERC20(address(batch[i])).transferFrom(from, to, value)
+                    );
+                }
             }
         }
     }

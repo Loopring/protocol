@@ -272,8 +272,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-
-       
         //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
             addressList,
@@ -402,7 +400,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders
         )
-        internal
+        private
         pure
     {
         // Check the ring has no sub-ring.
@@ -418,7 +416,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         address[2][]    addressList
         )
-        internal
+        private
         view
     {
         // Extract the token addresses
@@ -441,7 +439,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address         feeRecipient,
         bool            isRinghashReserved
         )
-        internal
+        private
     {
         // Do the hard work.
         verifyRingHasNoSubRing(ringSize, orders);
@@ -464,7 +462,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         address _delegateAddress = delegateAddress;
         address _lrcTokenAddress = lrcTokenAddress;
-        
+
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
@@ -509,34 +507,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
-
-            if (prev.splitB + state.splitS > 0) {
-                batchSize++;
-            }
-            if (state.lrcReward > 0) {
-                batchSize++;
-            }
-            if (state.lrcFee > 0) {
-                batchSize++;
-            }
+            // solium prevents me from splitting this line :-(
+            batchSize += (prev.splitB + state.splitS != 0 ? 1 : 0) + (state.lrcReward != 0 ? 1 : 0) + (state.lrcFee != 0 ? 1 : 0);
         }
-    }
-
-    function fillTransferBatchItem(
-        bytes32[]   memory batch,
-        uint        position,
-        address     token,
-        address     from,
-        address     to,
-        uint        value
-        )
-        private
-        pure
-    {
-        batch[position] = bytes32(token);
-        batch[position + 1] = bytes32(from);
-        batch[position + 2] = bytes32(to);
-        batch[position + 3] = bytes32(value);
     }
 
     function createTransferBatch(
@@ -547,11 +520,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
         pure
-        returns (bytes32[])
+        returns (bytes32[] memory batch)
     {
         uint batchSize = calculateTransferBatchSize(ringSize, orders);
-        bytes32[] memory batch = new bytes32[](batchSize * 4); // ringSize * (token + from + to + value)
-        uint position = 0;
+        batch = new bytes32[](batchSize * 4); // ringSize * (token + from + to + value)
+        uint p = 0;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
@@ -559,52 +532,37 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
-            fillTransferBatchItem(
-                batch,
-                position,
-                state.order.tokenS,
-                state.order.owner,
-                prev.order.owner,
-                state.fillAmountS - prev.splitB
-            );
-            position += 4;
+            batch[p] = bytes32(state.order.tokenS);
+            batch[p + 1] = bytes32(state.order.owner);
+            batch[p + 2] = bytes32(prev.order.owner);
+            batch[p + 3] = bytes32(state.fillAmountS - prev.splitB);
+            p += 4;
 
             uint splitSum = prev.splitB + state.splitS;
-            if (splitSum > 0) {
-                fillTransferBatchItem(
-                    batch,
-                    position,
-                    state.order.tokenS,
-                    state.order.owner,
-                    feeRecipient,
-                    splitSum
-                );
-                position += 4;
+
+            if (splitSum != 0) {
+                batch[p] = bytes32(state.order.tokenS);
+                batch[p + 1] = bytes32(state.order.owner);
+                batch[p + 2] = bytes32(feeRecipient);
+                batch[p + 3] = bytes32(splitSum);
+                p += 4;
             }
 
             // Pay LRC
-            if (state.lrcReward > 0) {
-                fillTransferBatchItem(
-                    batch,
-                    position,
-                    _lrcTokenAddress,
-                    feeRecipient,
-                    state.order.owner,
-                    state.lrcReward
-                );
-                position += 4;
+            if (state.lrcReward != 0) {
+                batch[p] = bytes32(_lrcTokenAddress);
+                batch[p + 1] = bytes32(feeRecipient);
+                batch[p + 2] = bytes32(state.order.owner);
+                batch[p + 3] = bytes32(state.lrcReward);
+                p += 4;
             }
 
-            if (state.lrcFee > 0) {
-                fillTransferBatchItem(
-                    batch,
-                    position,
-                    _lrcTokenAddress,
-                    state.order.owner,
-                    feeRecipient,
-                    state.lrcFee
-                );
-                position += 4;
+            if (state.lrcFee != 0) {
+                batch[p] = bytes32(_lrcTokenAddress);
+                batch[p + 1] = bytes32(state.order.owner);
+                batch[p + 2] = bytes32(feeRecipient);
+                batch[p + 3] = bytes32(state.lrcFee);
+                p += 4;
             }
         }
 
@@ -647,7 +605,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.lrcFee
             );
         }
-      
+
         TokenTransferDelegate(_delegateAddress).batchTransferToken(
             createTransferBatch(
                 _lrcTokenAddress,
@@ -663,7 +621,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders
         )
-        internal
+        private
         view
     {
         uint[] memory rateRatios = new uint[](ringSize);
@@ -690,7 +648,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address         _delegateAddress,
         address         _lrcTokenAddress
         )
-        internal
+        private
         view
     {
         uint minerLrcSpendable = getSpendable(
@@ -778,7 +736,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders
         )
-        internal
+        private
         view
     {
         uint smallestIdx = 0;
@@ -815,7 +773,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint        j,
         uint        smallestIdx
         )
-        internal
+        private
         view
         returns (uint newSmallestIdx)
     {
@@ -861,7 +819,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders
         )
-        internal
+        private
         view
     {
         for (uint i = 0; i < ringSize; i++) {
@@ -902,7 +860,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address tokenAddress,
         address tokenOwner
         )
-        internal
+        private
         view
         returns (uint)
     {
@@ -926,7 +884,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]       rList,
         bytes32[]       sList
         )
-        internal
+        private
         pure
     {
         require(ringSize == addressList.length); // "ring data is inconsistent - addressList");
@@ -955,7 +913,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]       rList,
         bytes32[]       sList
         )
-        internal
+        private
         view
         returns (OrderState[])
     {
@@ -1003,7 +961,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                getSpendable(delegateAddress, order.tokenS, order.owner), 
+                getSpendable(delegateAddress, order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
@@ -1024,7 +982,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    ttl,
         uint    salt
         )
-        internal
+        private
         view
     {
         require(order.owner != address(0)); // "invalid order owner");
@@ -1047,7 +1005,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    ttl,
         uint    salt
         )
-        internal
+        private
         view
         returns (bytes32)
     {
@@ -1075,7 +1033,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32 r,
         bytes32 s
         )
-        internal
+        private
         pure
     {
         require(
