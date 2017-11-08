@@ -679,24 +679,23 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         for (i = 0; i < ring.size; i++) {
             j = (i + 1) % ring.size;
-
-            uint res = calculateOrderFillAmount(
+            smallestIdx = calculateOrderFillAmount(
                 ring.orders[i],
-                ring.orders[j]
+                ring.orders[j],
+                i,
+                j,
+                smallestIdx
             );
-
-            if (res == 1) {
-                smallestIdx = i;
-            } else if (res == 2) {
-                smallestIdx = j;
-            }
         }
 
         for (i = 0; i < smallestIdx; i++) {
             j = (i + 1) % ring.size;
             calculateOrderFillAmount(
                 ring.orders[i],
-                ring.orders[j]
+                ring.orders[j],
+                0,               // Not needed
+                0,               // Not needed
+                0                // Not needed
             );
         }
     }
@@ -706,12 +705,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///         2 if 'next' is the smallest order.
     function calculateOrderFillAmount(
         OrderState state,
-        OrderState next
+        OrderState next,
+        uint i,
+        uint j,
+        uint smallestIdx
         )
         internal
         view
-        returns (uint whichIsSmaller)
+        returns (uint newSmallestIdx)
     {
+        // Default to the same smallest index
+        newSmallestIdx = smallestIdx;
+
         uint fillAmountB = state.fillAmountS.mul(
             state.rate.amountB
         ).div(
@@ -728,7 +733,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     state.rate.amountB
                 );
 
-                whichIsSmaller = 1;
+                newSmallestIdx = i;
             }
         }
 
@@ -741,7 +746,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         if (fillAmountB <= next.fillAmountS) {
             next.fillAmountS = fillAmountB;
         } else {
-            whichIsSmaller = 2;
+            newSmallestIdx = j;
         }
     }
 
