@@ -520,7 +520,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
         pure
-        returns (bytes32[] memory batch)
+        returns (bytes32[] batch)
     {
         uint batchSize = calculateTransferBatchSize(ringSize, orders);
         batch = new bytes32[](batchSize * 4); // ringSize * (token + from + to + value)
