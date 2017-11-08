@@ -535,7 +535,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address     token,
         address     from,
         address     to,
-        uint        value)
+        uint        value
+        )
         private
         pure
     {
@@ -623,7 +624,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderState[]  orders,
         bytes32       ringhash,
         address       feeRecepient,
-        address       _lrcTokenAddress)
+        address       _lrcTokenAddress
+        )
         private
     {
         for (uint i = 0; i < ringSize; i++) {
