@@ -164,7 +164,7 @@ contract TokenTransferDelegate is Ownable {
         }
     }
 
-    function transferTokenBatch(bytes32[] batch)
+    function batchTransferToken(bytes32[] batch)
         onlyAuthorized
         public
     {
@@ -174,7 +174,7 @@ contract TokenTransferDelegate is Ownable {
             address to = address(batch[i + 2]);
             uint value = uint(batch[i + 3]);
 
-            if (from != to) {
+            if (from != to && value > 0) {
                 require(
                     ERC20(address(batch[i])).transferFrom(from, to, value)
                 );

@@ -118,7 +118,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32     indexed _ringhash,
         address     indexed _miner,
         address     indexed _feeRecepient,
-        bool                _isRinghashReserved);
+        bool                _isRinghashReserved
+    );
 
     event OrderFilled(
         uint                _ringIndex,
@@ -131,19 +132,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint                _amountS,
         uint                _amountB,
         uint                _lrcReward,
-        uint                _lrcFee);
+        uint                _lrcFee
+    );
 
     event OrderCancelled(
         uint                _time,
         uint                _blocknumber,
         bytes32     indexed _orderHash,
-        uint                _amountCancelled);
+        uint                _amountCancelled
+    );
 
     event CutoffTimestampChanged(
         uint                _time,
         uint                _blocknumber,
         address     indexed _address,
-        uint                _cutoff);
+        uint                _cutoff
+    );
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -509,7 +513,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (uint batchSize)
     {
         batchSize = ringSize;
-
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
@@ -621,15 +624,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32       ringhash,
         address       feeRecepient,
         address       _lrcTokenAddress)
-        internal
+        private
     {
-        bytes32[] memory batch = createTransferBatch(
-            _lrcTokenAddress,
-            ringSize,
-            orders,
-            feeRecepient
-        );
-
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
@@ -657,7 +653,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
       
-        delegate.transferTokenBatch(batch);
+        delegate.batchTransferToken(
+            createTransferBatch(
+                _lrcTokenAddress,
+                ringSize,
+                orders,
+                feeRecepient
+            )
+        );
     }
 
     /// @dev Verify miner has calculte the rates correctly.
@@ -902,7 +905,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address tokenOwner
         )
         internal
-        constant
+        view
         returns (uint)
     {
         var token = ERC20(tokenAddress);
