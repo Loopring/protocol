@@ -828,13 +828,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
         returns (OrderState[])
     {
-        var orders = new OrderState[](addressList.length);
+        var ringSize = addressList.length;
+        var orders = new OrderState[](ringSize);
 
-        for (uint i = 0; i < addressList.length; i++) {
+        for (uint i = 0; i < ringSize; i++) {
             var order = Order(
                 addressList[i][0],
                 addressList[i][1],
-                addressList[(i + 1) % addressList.length][1],
+                addressList[(i + 1) % ringSize][1],
                 uintArgsList[i][0],
                 uintArgsList[i][1],
                 uintArgsList[i][5],
