@@ -11,7 +11,7 @@ import promisify = require('es6-promisify');
 const {
   LoopringProtocolImpl,
   TokenRegistry,
-  ERC20TransferDelegate,
+  TokenTransferDelegate,
   DummyToken,
 } = new Artifacts(artifacts);
 
@@ -81,14 +81,14 @@ contract('LoopringProtocolImpl', (accounts: string[])=>{
     [loopringProtocolImpl, tokenRegistry, erc20TransferDelegate] = await Promise.all([
       LoopringProtocolImpl.deployed(),
       TokenRegistry.deployed(),
-      ERC20TransferDelegate.deployed(),
+      TokenTransferDelegate.deployed(),
     ]);
 
     lrcAddress = await tokenRegistry.getAddressBySymbol("LRC");
     eosAddress = await tokenRegistry.getAddressBySymbol("EOS");
     neoAddress = await tokenRegistry.getAddressBySymbol("NEO");
     qtumAddress = await tokenRegistry.getAddressBySymbol("QTUM");
-    delegateAddr = ERC20TransferDelegate.address;
+    delegateAddr = TokenTransferDelegate.address;
 
     erc20TransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
 

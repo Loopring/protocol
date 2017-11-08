@@ -25,7 +25,7 @@ import "./lib/UintLib.sol";
 import "./LoopringProtocol.sol";
 import "./RinghashRegistry.sol";
 import "./TokenRegistry.sol";
-import "./ERC20TransferDelegate.sol";
+import "./TokenTransferDelegate.sol";
 
 
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
@@ -273,7 +273,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-        var delegate = ERC20TransferDelegate(delegateAddress);
+        var delegate = TokenTransferDelegate(delegateAddress);
 
         //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
@@ -437,7 +437,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
-        ERC20TransferDelegate delegate,
+        TokenTransferDelegate delegate,
         uint            ringSize,
         bytes32         ringhash,
         OrderState[]    orders,
@@ -615,7 +615,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function settleRing(
-        ERC20TransferDelegate delegate,
+        TokenTransferDelegate delegate,
         uint          ringSize,
         OrderState[]  orders,
         bytes32       ringhash,
@@ -686,7 +686,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev Calculate each order's fee or LRC reward.
     function calculateRingFees(
-        ERC20TransferDelegate delegate,
+        TokenTransferDelegate delegate,
         uint            ringSize,
         OrderState[]    orders,
         address         feeRecepient,
@@ -946,7 +946,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
-        ERC20TransferDelegate delegate,
+        TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,

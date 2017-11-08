@@ -3,12 +3,12 @@ import { BigNumber } from 'bignumber.js';
 import { Artifacts } from '../util/artifacts';
 
 const {
-  ERC20TransferDelegate,
+  TokenTransferDelegate,
   TokenRegistry,
   DummyToken,
 } = new Artifacts(artifacts);
 
-contract('ERC20TransferDelegate', (accounts: string[])=>{
+contract('TokenTransferDelegate', (accounts: string[])=>{
   const owner = accounts[0];
   const loopringProtocolV1 = accounts[1];  // mock loopring protocol v1
   const loopringProtocolV2 = accounts[2];  // mock loopring protocol v2
@@ -31,15 +31,15 @@ contract('ERC20TransferDelegate', (accounts: string[])=>{
   before(async () => {
     [tokenRegistry, erc20TransferDelegate] = await Promise.all([
       TokenRegistry.deployed(),
-      ERC20TransferDelegate.deployed(),
+      TokenTransferDelegate.deployed(),
     ]);
 
-    delegateAddr = ERC20TransferDelegate.address;
+    delegateAddr = TokenTransferDelegate.address;
     lrcAddress = await tokenRegistry.getAddressBySymbol("LRC");
     lrc = await DummyToken.at(lrcAddress);
   });
 
-  describe('ERC20TransferDelegate', () => {
+  describe('TokenTransferDelegate', () => {
     it('should be able to add loopring protocol version', async () => {
       await erc20TransferDelegate.authorizeAddress(loopringProtocolV1, {from: owner});
       const authorized = await erc20TransferDelegate.isAddressAuthorized(loopringProtocolV1);

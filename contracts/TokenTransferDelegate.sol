@@ -22,11 +22,11 @@ import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
-/// @title ERC20TransferDelegate - Acts as a middle man to transfer ERC20 tokens
+/// @title TokenTransferDelegate - Acts as a middle man to transfer ERC20 tokens
 /// on behalf of different versions of Loopring protocol to avoid ERC20
 /// re-authorization.
 /// @author Daniel Wang - <daniel@loopring.org>.
-contract ERC20TransferDelegate is Ownable {
+contract TokenTransferDelegate is Ownable {
     using Math for uint;
 
     ////////////////////////////////////////////////////////////////////////////
