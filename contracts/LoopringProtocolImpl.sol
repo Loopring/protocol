@@ -701,6 +701,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         uint minerLrcSpendable = getSpendable(
+            delegate,
             _lrcTokenAddress,
             feeRecepient
         );
@@ -710,6 +711,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var next = orders[(i + 1) % ringSize];
 
             uint lrcSpendable = getSpendable(
+                delegate,
                 _lrcTokenAddress,
                 state.order.owner
             );
@@ -903,6 +905,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @return Amount of ERC20 token that can be spent by this contract.
     function getSpendable(
+        TokenTransferDelegate delegate,
         address tokenAddress,
         address tokenOwner
         )
@@ -913,7 +916,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         var token = ERC20(tokenAddress);
         return token.allowance(
             tokenOwner,
-            delegateAddress
+            address(delegate)
         ).min256(
             token.balanceOf(tokenOwner)
         );
@@ -962,10 +965,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         internal
         view
-        returns (OrderState[])
+        returns (OrderState[] orders)
     {
         var ringSize = addressList.length;
-        var orders = new OrderState[](ringSize);
+        orders = new OrderState[](ringSize);
 
         for (uint i = 0; i < ringSize; i++) {
             var order = Order(
@@ -1006,7 +1009,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                getSpendable(order.tokenS, order.owner),
+                getSpendable(delegate, order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
@@ -1016,8 +1019,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             require(orders[i].availableAmountS > 0); // "order spendable amountS is zero");
         }
-
-        return orders;
     }
 
     /// @dev validate order's parameters are OK.
