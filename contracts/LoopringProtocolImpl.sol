@@ -117,7 +117,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint                _blocknumber,
         bytes32     indexed _ringhash,
         address     indexed _miner,
-        address     indexed _feeRecepient,
+        address     indexed _feeRecipient,
         bool                _isRinghashReserved
     );
 
@@ -214,7 +214,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///                     the previous lists, with the last element being the
     ///                     s value of the ring signature.
     /// @param ringminer    The address that signed this tx.
-    /// @param feeRecepient The Recepient address for fee collection. If this is
+    /// @param feeRecipient The Recipient address for fee collection. If this is
     ///                     '0x0', all fees will be paid to the address who had
     ///                     signed this transaction, not `msg.sender`. Noted if
     ///                     LRC need to be paid back to order owner as the result
@@ -229,7 +229,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]       rList,
         bytes32[]       sList,
         address         ringminer,
-        address         feeRecepient
+        address         feeRecipient
         )
         public
     {
@@ -291,8 +291,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList
         );
 
-        if (feeRecepient == address(0)) {
-            feeRecepient = ringminer;
+        if (feeRecipient == address(0)) {
+            feeRecipient = ringminer;
         }
 
         handleRing(
@@ -301,7 +301,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringhash,
             orders,
             ringminer,
-            feeRecepient,
+            feeRecipient,
             ringhashAttributes[1]
         );
 
@@ -446,7 +446,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32         ringhash,
         OrderState[]    orders,
         address         miner,
-        address         feeRecepient,
+        address         feeRecipient,
         bool            isRinghashReserved
         )
         internal
@@ -478,7 +478,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         calculateRingFees(
             ringSize,
             orders,
-            feeRecepient,
+            feeRecipient,
             _delegate,
             _lrcTokenAddress
         );
@@ -488,7 +488,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             orders,
             ringhash,
-            feeRecepient,
+            feeRecipient,
             _delegate,
             _lrcTokenAddress
         );
@@ -499,7 +499,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             block.number,
             ringhash,
             miner,
-            feeRecepient,
+            feeRecipient,
             isRinghashReserved
         );
     }
@@ -550,7 +550,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address         _lrcTokenAddress,
         uint            ringSize,
         OrderState[]    orders,
-        address         feeRecepient
+        address         feeRecipient
         )
         private
         pure
@@ -583,7 +583,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     position,
                     state.order.tokenS,
                     state.order.owner,
-                    feeRecepient,
+                    feeRecipient,
                     splitSum
                 );
                 position += 4;
@@ -595,7 +595,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     batch,
                     position,
                     _lrcTokenAddress,
-                    feeRecepient,
+                    feeRecipient,
                     state.order.owner,
                     state.lrcReward
                 );
@@ -608,7 +608,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     position,
                     _lrcTokenAddress,
                     state.order.owner,
-                    feeRecepient,
+                    feeRecipient,
                     state.lrcFee
                 );
                 position += 4;
@@ -622,7 +622,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize,
         OrderState[]  orders,
         bytes32       ringhash,
-        address       feeRecepient,
+        address       feeRecipient,
         TokenTransferDelegate       _delegate,
         address       _lrcTokenAddress
         )
@@ -660,7 +660,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 _lrcTokenAddress,
                 ringSize,
                 orders,
-                feeRecepient
+                feeRecipient
             )
         );
     }
@@ -693,7 +693,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function calculateRingFees(
         uint            ringSize,
         OrderState[]    orders,
-        address         feeRecepient,
+        address         feeRecipient,
         TokenTransferDelegate         _delegate,
         address         _lrcTokenAddress
         )
@@ -703,7 +703,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint minerLrcSpendable = getSpendable(
             _delegate,
             _lrcTokenAddress,
-            feeRecepient
+            feeRecipient
         );
         uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
 
