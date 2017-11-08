@@ -78,7 +78,7 @@ contract TokenTransferDelegate is Ownable {
     /// @param addr A loopring protocol address.
     function authorizeAddress(address addr)
         onlyOwner
-        public
+        external
     {
         AddressInfo storage addrInfo = addressInfos[addr];
 
@@ -107,7 +107,7 @@ contract TokenTransferDelegate is Ownable {
     /// @param addr A loopring protocol address.
     function deauthorizeAddress(address addr)
         onlyOwner
-        public
+        external
     {
         AddressInfo storage addrInfo = addressInfos[addr];
         if (addrInfo.index != 0) {
@@ -125,7 +125,7 @@ contract TokenTransferDelegate is Ownable {
     }
 
     function getLatestAuthorizedAddresses(uint max)
-        public
+        external
         view
         returns (address[] memory addresses)
     {
@@ -155,7 +155,7 @@ contract TokenTransferDelegate is Ownable {
         address to,
         uint    value)
         onlyAuthorized
-        public
+        external
     {
         if (value > 0 && from != to) {
             require(
@@ -166,7 +166,7 @@ contract TokenTransferDelegate is Ownable {
 
     function batchTransferToken(bytes32[] batch)
         onlyAuthorized
-        public
+        external
     {
         uint len = batch.length;
         for (uint i = 0; i < len; i += 4) {
