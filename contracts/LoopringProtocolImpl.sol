@@ -266,18 +266,50 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(addressList, ringSize);
 
-        var (ringhash, ringhashAttributes) = RinghashRegistry(
-            ringhashRegistryAddress
-        ).computeAndGetRinghashInfo(
-            ringSize,
+        
+
+        handleOrdersAsRing(
+            addressList,
+            uintArgsList,
+            uint8ArgsList,
+            buyNoMoreThanAmountBList,
+            vList,
+            rList,
+            sList,
             ringminer,
+            feeRecepient,
+            throwIfLRCIsInsuffcient
+        );
+
+        ringIndex = ringIndex ^ ENTERED_MASK + 1;
+    }
+
+    function handleOrdersAsRing(
+        address[2][]        addressList,
+        uint[7][]           uintArgsList,
+        uint8[2][]          uint8ArgsList,
+        bool[]              buyNoMoreThanAmountBList,
+        uint8[]             vList,
+        bytes32[]           rList,
+        bytes32[]           sList,
+        address             ringminer,
+        address             feeRecepient,
+        bool                throwIfLRCIsInsuffcient
+        )
+        public
+    {
+        uint ringSize = addressList.length;
+        
+        var ringhashRegistry = RinghashRegistry(ringhashRegistryAddress);
+        var ringhash = ringhashRegistry.calculateRinghash(
+            addressList.length,
             vList,
             rList,
             sList
         );
 
         //Check if we can submit this ringhash.
-        require(ringhashAttributes[0]); // "Ring claimed by others");
+        require(ringhashRegistry.canSubmit(ringhash, ringminer)); // "Ring claimed by others");
 
         verifySignature(
             ringminer,
@@ -287,28 +319,30 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-        //Assemble input data into a struct so we can pass it to functions.
-        var orders = assembleOrders(
-            addressList,
-            uintArgsList,
-            uint8ArgsList,
-            buyNoMoreThanAmountBList,
-            vList,
-            rList,
-            sList
-        );
+
+        var delegate = TokenTransferDelegate(delegateAddress);
 
         if (feeRecepient == address(0)) {
             feeRecepient = ringminer;
         }
 
         handleRing(
+            delegate,
             ringhash,
-            orders,
+            assembleOrders(
+                delegate,
+                addressList,
+                uintArgsList,
+                uint8ArgsList,
+                buyNoMoreThanAmountBList,
+                vList,
+                rList,
+                sList
+            ),
             ringminer,
             feeRecepient,
             throwIfLRCIsInsuffcient,
-            ringhashAttributes[1]
+            ringhashRegistry.isReserved(ringhash, ringminer)
         );
 
         ringIndex = ringIndex ^ ENTERED_MASK + 1;
@@ -361,7 +395,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[3], // ttl
             orderValues[4]  // salt
         );
-
 
         verifySignature(
             order.owner,
@@ -444,6 +477,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
+        TokenTransferDelegate delegate,
         bytes32 ringhash,
         OrderState[] orders,
         address miner,
@@ -481,7 +515,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ring);
 
-        var delegate = TokenTransferDelegate(delegateAddress);
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
@@ -821,6 +854,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
+        TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
@@ -834,7 +868,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (OrderState[])
     {
         var orders = new OrderState[](addressList.length);
-        var delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < addressList.length; i++) {
             var order = Order(
