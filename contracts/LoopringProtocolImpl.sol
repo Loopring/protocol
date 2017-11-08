@@ -464,16 +464,32 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ringSize, orders);
 
+        address _lrcTokenAddress = lrcTokenAddress;
         var delegate = TokenTransferDelegate(delegateAddress);
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
 
-        address _lrcTokenAddress = lrcTokenAddress;
-        calculateRingFees(delegate, ringSize, orders, feeRecepient, throwIfLRCIsInsuffcient, _lrcTokenAddress);
+        
+
+        calculateRingFees(
+            delegate,
+            ringSize,
+            orders,
+            feeRecepient,
+            throwIfLRCIsInsuffcient,
+            _lrcTokenAddress
+        );
 
         /// Make payments.
-        settleRing(delegate, ringSize, orders, ringhash, feeRecepient, _lrcTokenAddress);
+        settleRing(
+            delegate,
+            ringSize,
+            orders,
+            ringhash,
+            feeRecepient,
+            _lrcTokenAddress
+        );
 
         RingMined(
             ringIndex ^ ENTERED_MASK,
