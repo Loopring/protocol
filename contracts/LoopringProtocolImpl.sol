@@ -215,10 +215,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///                     LRC need to be paid back to order owner as the result
     ///                     of fee selection model, LRC will also be sent from
     ///                     this address.
-    /// @param throwIfLRCIsInsuffcient -
-    ///                     If true, throw exception if any order's spendable
-    ///                     LRC amount is smaller than requried; if false, ring-
-    ///                     minor will give up collection the LRC fee.
     function submitRing(
         address[2][]    addressList,
         uint[7][]       uintArgsList,
@@ -228,8 +224,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]       rList,
         bytes32[]       sList,
         address         ringminer,
-        address         feeRecepient,
-        bool            throwIfLRCIsInsuffcient
+        address         feeRecepient
         )
         public
     {
@@ -277,8 +272,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-        //Assemble input data into a struct so we can pass it to functions.
+        var delegate = TokenTransferDelegate(delegateAddress);
+
+        //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
+            delegate,
             addressList,
             uintArgsList,
             uint8ArgsList,
@@ -293,11 +291,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         handleRing(
+            delegate,
             ringhash,
             orders,
             ringminer,
             feeRecepient,
-            throwIfLRCIsInsuffcient,
             ringhashAttributes[1],
             ringSize
         );
@@ -435,11 +433,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
+        TokenTransferDelegate delegate,
         bytes32 ringhash,
         OrderState[] orders,
         address miner,
         address feeRecepient,
-        bool throwIfLRCIsInsuffcient,
         bool isRinghashReserved,
         uint ringSize
         )
@@ -465,19 +463,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         calculateRingFillAmount(ringSize, orders);
 
         address _lrcTokenAddress = lrcTokenAddress;
-        var delegate = TokenTransferDelegate(delegateAddress);
+        // var delegate = TokenTransferDelegate(delegateAddress);
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
-
-        
-
         calculateRingFees(
             delegate,
             ringSize,
             orders,
             feeRecepient,
-            throwIfLRCIsInsuffcient,
             _lrcTokenAddress
         );
 
@@ -603,7 +597,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint ringSize,
         OrderState[] orders,
         address feeRecepient,
-        bool throwIfLRCIsInsuffcient,
         address _lrcTokenAddress
         )
         internal
@@ -626,8 +619,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 );
 
                 if (lrcSpendable < state.lrcFee) {
-                    require(!throwIfLRCIsInsuffcient); // "order LRC balance insuffcient");
-
                     state.lrcFee = lrcSpendable;
                     minerLrcSpendable += lrcSpendable;
                 }
@@ -824,6 +815,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
+        TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
@@ -837,7 +829,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (OrderState[])
     {
         var orders = new OrderState[](addressList.length);
-        var delegate = TokenTransferDelegate(delegateAddress);
 
         for (uint i = 0; i < addressList.length; i++) {
             var order = Order(
