@@ -250,7 +250,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList
         );
 
-        verifyTokensRegistered(addressList, ringSize);
+        verifyTokensRegistered(ringSize, addressList);
 
         var (ringhash, ringhashAttributes) = RinghashRegistry(
             ringhashRegistryAddress
@@ -418,8 +418,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function verifyTokensRegistered(
-        address[2][] addressList,
-        uint ringSize
+        uint            ringSize,
+        address[2][]    addressList
         )
         internal
         view
@@ -501,7 +501,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function calculateTransferBatchLength(
-        OrderState[] orders.
+        OrderState[] orders,
         uint         ringSize
         )
         private
@@ -546,7 +546,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address         _lrcTokenAddress,
         uint            ringSize,
         OrderState[]    orders,
-        address         feeReceipient
+        address         feeRecepient
         )
         private
         pure
@@ -616,17 +616,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     function settleRing(
         ERC20TransferDelegate delegate,
-        address       _lrcTokenAddress,
         uint          ringSize,
         OrderState[]  orders,
-        address       feeReceipient)
+        bytes32       ringhash,
+        address       feeRecepient,
+        address       _lrcTokenAddress)
         internal
     {
         bytes32[] memory batch = createTransferBatch(
             _lrcTokenAddress,
             ringSize,
             orders,
-            feeReceipient
+            feeRecepient
         );
 
         for (uint i = 0; i < ringSize; i++) {
@@ -669,7 +670,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint[] memory rateRatios = new uint[](ringSize);
 
-        for (uint i = 0; i < ring.size; i++) {
+        for (uint i = 0; i < ringSize; i++) {
             uint s1b0 = orders[i].rate.amountS.mul(orders[i].order.amountB);
             uint s0b1 = orders[i].order.amountS.mul(orders[i].rate.amountB);
 
@@ -694,7 +695,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         internal
         view
     {
-        uint minerLrcSpendable = delegate.getSpendable(
+        uint minerLrcSpendable = getSpendable(
             _lrcTokenAddress,
             feeRecepient
         );
@@ -703,7 +704,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var state = orders[i];
             var next = orders[(i + 1) % ringSize];
 
-            uint lrcSpendable = delegate.getSpendable(
+            uint lrcSpendable = getSpendable(
                 _lrcTokenAddress,
                 state.order.owner
             );
