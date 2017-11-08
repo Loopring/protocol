@@ -30,9 +30,9 @@ npm run compile
 * run `npm run test` from project's root directory in another terminal window.  
 
 
-## Docker
+## Run Unit Tests inside Docker
 
-If you prefer to use docker you can run the following:
+If you prefer to use docker, you can insteall docker first, then run the following:
 
 ```
 npm run docker
