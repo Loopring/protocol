@@ -675,24 +675,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint smallestIdx = 0;
         uint i;
-        uint j;
 
         for (i = 0; i < ring.size; i++) {
-            j = (i + 1) % ring.size;
             smallestIdx = calculateOrderFillAmount(
                 ring.orders[i],
                 ring.orders[j],
                 i,
-                j,
+                (i + 1) % ring.size,
                 smallestIdx
             );
         }
 
         for (i = 0; i < smallestIdx; i++) {
-            j = (i + 1) % ring.size;
             calculateOrderFillAmount(
                 ring.orders[i],
-                ring.orders[j],
+                ring.orders[(i + 1) % ring.size],
                 0,               // Not needed
                 0,               // Not needed
                 0                // Not needed
