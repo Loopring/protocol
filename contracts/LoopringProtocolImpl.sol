@@ -500,28 +500,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function calculateTransferBatchLength(
-        OrderState[] orders,
-        uint         ringSize
+    function calculateTransferBatchSize(
+        uint         ringSize,
+        OrderState[] orders
         )
         private
         pure
-        returns (uint batchLength)
+        returns (uint batchSize)
     {
-        batchLength = ringSize;
+        batchSize = ringSize;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
 
             if (prev.splitB + state.splitS > 0) {
-                batchLength++;
+                batchSize++;
             }
             if (state.lrcReward > 0) {
-                batchLength++;
+                batchSize++;
             }
             if (state.lrcFee > 0) {
-                batchLength++;
+                batchSize++;
             }
         }
     }
@@ -552,8 +552,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
         returns (bytes32[])
     {
-        uint batchLength = calculateTransferBatchLength(orders, ringSize);
-        bytes32[] memory batch = new bytes32[](batchLength * 4); // ringSize * (token + from + to + value)
+        uint batchSize = calculateTransferBatchSize(ringSize, orders);
+        bytes32[] memory batch = new bytes32[](batchSize * 4); // ringSize * (token + from + to + value)
         uint position = 0;
 
         for (uint i = 0; i < ringSize; i++) {
