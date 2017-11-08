@@ -60,7 +60,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public constant RATE_RATIO_SCALE    = 10000;
 
-    uint64  public constant ENTERED_MASK = 1 << 63;
+    uint64  public constant ENTERED_MASK        = 1 << 63;
 
     // The following map is used to keep trace of order fill and cancellation
     // history.
@@ -161,6 +161,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         require(address(0) != _lrcTokenAddress);
         require(address(0) != _tokenRegistryAddress);
+        require(address(0) != _ringhashRegistryAddress);
         require(address(0) != _delegateAddress);
 
         require(_maxRingSize > 1);
@@ -468,10 +469,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
 
-        calculateRingFees(delegate, ringSize, orders, feeRecepient, throwIfLRCIsInsuffcient);
+        address _lrcTokenAddress = lrcTokenAddress;
+        calculateRingFees(delegate, ringSize, orders, feeRecepient, throwIfLRCIsInsuffcient, _lrcTokenAddress);
 
         /// Make payments.
-        settleRing(delegate, ringSize, orders, ringhash, feeRecepient);
+        settleRing(delegate, ringSize, orders, ringhash, feeRecepient, _lrcTokenAddress);
 
         RingMined(
             ringIndex ^ ENTERED_MASK,
@@ -489,7 +491,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint ringSize,
         OrderState[] orders,
         bytes32 ringhash,
-        address feeRecepient
+        address feeRecepient,
+        address _lrcTokenAddress
         )
         internal
     {
@@ -520,7 +523,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             // Pay LRC
             if (state.lrcReward > 0) {
                 delegate.transferToken(
-                    lrcTokenAddress,
+                    _lrcTokenAddress,
                     feeRecepient,
                     state.order.owner,
                     state.lrcReward
@@ -529,7 +532,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             if (state.lrcFee > 0) {
                 delegate.transferToken(
-                    lrcTokenAddress,
+                    _lrcTokenAddress,
                     state.order.owner,
                     feeRecepient,
                     state.lrcFee
@@ -557,7 +560,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.lrcFee
             );
         }
-
     }
 
     function verifyMinerSuppliedFillRates(uint ringSize, OrderState[] orders)
@@ -580,13 +582,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(cvs <= rateRatioCVSThreshold); // "miner supplied exchange rate is not evenly discounted");
     }
 
-    
-    function calculateRingFees(TokenTransferDelegate delegate, uint ringSize, OrderState[] orders, address feeRecepient, bool throwIfLRCIsInsuffcient)
+    function calculateRingFees(
+        TokenTransferDelegate delegate,
+        uint ringSize,
+        OrderState[] orders,
+        address feeRecepient,
+        bool throwIfLRCIsInsuffcient,
+        address _lrcTokenAddress
+        )
         internal
         view
     {
         uint minerLrcSpendable = delegate.getSpendable(
-            lrcTokenAddress,
+            _lrcTokenAddress,
             feeRecepient
         );
 
@@ -597,7 +605,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             if (state.feeSelection == FEE_SELECT_LRC) {
 
                 uint lrcSpendable = delegate.getSpendable(
-                    lrcTokenAddress,
+                    _lrcTokenAddress,
                     state.order.owner
                 );
 
