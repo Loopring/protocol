@@ -19,12 +19,13 @@ pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/math/Math.sol";
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "zeppelin-solidity/contracts/token/ERC20.sol";
 
 import "./lib/UintLib.sol";
 import "./LoopringProtocol.sol";
 import "./RinghashRegistry.sol";
 import "./TokenRegistry.sol";
-import "./TokenTransferDelegate.sol";
+import "./ERC20TransferDelegate.sol";
 
 
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
@@ -272,7 +273,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-        var delegate = TokenTransferDelegate(delegateAddress);
+        var delegate = ERC20TransferDelegate(delegateAddress);
 
         //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
@@ -436,7 +437,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
-        TokenTransferDelegate delegate,
+        ERC20TransferDelegate delegate,
         uint            ringSize,
         bytes32         ringhash,
         OrderState[]    orders,
@@ -466,7 +467,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         calculateRingFillAmount(ringSize, orders);
 
         address _lrcTokenAddress = lrcTokenAddress;
-        // var delegate = TokenTransferDelegate(delegateAddress);
+        
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
@@ -499,58 +500,139 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function settleRing(
-        TokenTransferDelegate delegate,
-        uint            ringSize,
-        OrderState[]    orders,
-        bytes32         ringhash,
-        address         feeRecepient,
-        address         _lrcTokenAddress
+    function calculateTransferBatchLength(
+        OrderState[] orders.
+        uint         ringSize
         )
-        internal
+        private
+        pure
+        returns (uint batchLength)
     {
+        batchLength = ringSize;
+
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
-            var next = orders[(i + 1) % ringSize];
+
+            if (prev.splitB + state.splitS > 0) {
+                batchLength++;
+            }
+            if (state.lrcReward > 0) {
+                batchLength++;
+            }
+            if (state.lrcFee > 0) {
+                batchLength++;
+            }
+        }
+    }
+
+    function fillTransferBatchItem(
+        bytes32[] memory batch,
+        uint position,
+        address token,
+        address from,
+        address to,
+        uint value)
+        private
+        pure
+    {
+        batch[position] = bytes32(token);
+        batch[position + 1] = bytes32(from);
+        batch[position + 2] = bytes32(to);
+        batch[position + 3] = bytes32(value);
+    }
+
+    function createTransferBatch(
+        address         _lrcTokenAddress,
+        uint            ringSize,
+        OrderState[]    orders,
+        address         feeReceipient
+        )
+        private
+        pure
+        returns (bytes32[])
+    {
+        uint batchLength = calculateTransferBatchLength(orders, ringSize);
+        bytes32[] memory batch = new bytes32[](batchLength * 4); // ringSize * (token + from + to + value)
+        uint position = 0;
+
+        for (uint i = 0; i < ringSize; i++) {
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
 
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
-            delegate.transferToken(
+            fillTransferBatchItem(
+                batch,
+                position,
                 state.order.tokenS,
                 state.order.owner,
                 prev.order.owner,
                 state.fillAmountS - prev.splitB
             );
+            position += 4;
 
             uint splitSum = prev.splitB + state.splitS;
             if (splitSum > 0) {
-                delegate.transferToken(
+                fillTransferBatchItem(
+                    batch,
+                    position,
                     state.order.tokenS,
                     state.order.owner,
                     feeRecepient,
                     splitSum
                 );
+                position += 4;
             }
 
             // Pay LRC
             if (state.lrcReward > 0) {
-                delegate.transferToken(
+                fillTransferBatchItem(
+                    batch,
+                    position,
                     _lrcTokenAddress,
                     feeRecepient,
                     state.order.owner,
                     state.lrcReward
                 );
+                position += 4;
             }
 
             if (state.lrcFee > 0) {
-                delegate.transferToken(
+                fillTransferBatchItem(
+                    batch,
+                    position,
                     _lrcTokenAddress,
                     state.order.owner,
                     feeRecepient,
                     state.lrcFee
                 );
+                position += 4;
             }
+        }
+
+        return batch;
+    }
+
+    function settleRing(
+        ERC20TransferDelegate delegate,
+        address       _lrcTokenAddress,
+        uint          ringSize,
+        OrderState[]  orders,
+        address       feeReceipient)
+        internal
+    {
+        bytes32[] memory batch = createTransferBatch(
+            _lrcTokenAddress,
+            ringSize,
+            orders,
+            feeReceipient
+        );
+
+        for (uint i = 0; i < ringSize; i++) {
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
+            var next = orders[(i + 1) % ringSize];
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
@@ -573,6 +655,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.lrcFee
             );
         }
+      
+        delegate.transferTokenBatch(batch);
     }
 
     /// @dev Verify miner has calculte the rates correctly.
@@ -585,7 +669,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint[] memory rateRatios = new uint[](ringSize);
 
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ring.size; i++) {
             uint s1b0 = orders[i].rate.amountS.mul(orders[i].order.amountB);
             uint s0b1 = orders[i].order.amountS.mul(orders[i].rate.amountB);
 
@@ -601,7 +685,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev Calculate each order's fee or LRC reward.
     function calculateRingFees(
-        TokenTransferDelegate delegate,
+        ERC20TransferDelegate delegate,
         uint            ringSize,
         OrderState[]    orders,
         address         feeRecepient,
@@ -811,6 +895,24 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
     }
 
+    /// @return Amount of ERC20 token that can be spent by this contract.
+    function getSpendable(
+        address tokenAddress,
+        address tokenOwner
+        )
+        internal
+        constant
+        returns (uint)
+    {
+        var token = ERC20(tokenAddress);
+        return token.allowance(
+            tokenOwner,
+            delegateAddress
+        ).min256(
+            token.balanceOf(tokenOwner)
+        );
+    }
+
     /// @dev verify input data's basic integrity.
     function verifyInputDataIntegrity(
         uint            ringSize,
@@ -843,7 +945,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
-        TokenTransferDelegate delegate,
+        ERC20TransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
@@ -898,7 +1000,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                delegate.getSpendable(order.tokenS, order.owner),
+                getSpendable(order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
