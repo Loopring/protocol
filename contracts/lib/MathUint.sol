@@ -27,14 +27,9 @@ library MathUint {
         return a < b ? a : b;
     }
 
-    function mul(uint a, uint b) internal pure returns (uint) {
-        uint c = a * b;
+    function mul(uint a, uint b) internal pure returns (uint c) {
+        c = a * b;
         require(a == 0 || c / a == b);
-        return c;
-    }
-
-    function div(uint a, uint b) internal pure returns (uint) {
-        return  a / b;
     }
 
     function sub(uint a, uint b) internal pure returns (uint) {
@@ -42,10 +37,9 @@ library MathUint {
         return a - b;
     }
 
-    function add(uint a, uint b) internal pure returns (uint) {
-        uint c = a + b;
+    function add(uint a, uint b) internal pure returns (uint c) {
+        c = a + b;
         require(c >= a);
-        return c;
     }
 
     function tolerantSub(
