@@ -109,7 +109,7 @@ contract TokenTransferDelegate is Ownable {
         onlyOwner
         public
     {
-        var index = addressInfos[addr].index;
+        uint index = addressInfos[addr].index;
         if (index != 0) {
             addressInfos[addr].authorized = false;
             AddressDeauthorized(addr, index);
