@@ -17,14 +17,30 @@
 */
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
-
 
 /// @title UintUtil
 /// @author Daniel Wang - <daniel@loopring.org>
 /// @dev uint utility functions
-library UintLib {
-    using SafeMath  for uint;
+library MathUint {
+
+    function min(uint a, uint b) internal pure returns (uint) {
+        return a < b ? a : b;
+    }
+
+    function mul(uint a, uint b) internal pure returns (uint c) {
+        c = a * b;
+        require(a == 0 || c / a == b);
+    }
+
+    function sub(uint a, uint b) internal pure returns (uint) {
+        require(b <= a);
+        return a - b;
+    }
+
+    function add(uint a, uint b) internal pure returns (uint c) {
+        c = a + b;
+        require(c >= a);
+    }
 
     function tolerantSub(
         uint x,
@@ -60,7 +76,7 @@ library UintLib {
             avg += arr[i];
         }
 
-        avg = avg.div(len);
+        avg = avg / len;
 
         if (avg == 0) {
             return 0;
@@ -74,9 +90,9 @@ library UintLib {
             } else {
                 sub = avg - arr[i];
             }
-            cvs += sub.mul(sub);
+            cvs += mul(sub, sub);
         }
 
-        return cvs.mul(scale).div(avg).mul(scale).div(avg).div(len - 1);
+        return (mul(mul(cvs, scale) / avg, scale) / avg) / (len - 1);
     }
 }

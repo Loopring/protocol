@@ -17,11 +17,8 @@
 */
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/math/Math.sol";
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
-import "zeppelin-solidity/contracts/token/ERC20.sol";
-
-import "./lib/UintLib.sol";
+import "./lib/ERC20.sol";
+import "./lib/MathUint.sol";
 import "./LoopringProtocol.sol";
 import "./RinghashRegistry.sol";
 import "./TokenRegistry.sol";
@@ -32,9 +29,7 @@ import "./TokenTransferDelegate.sol";
 /// @author Daniel Wang - <daniel@loopring.org>,
 /// @author Kongliang Zhong - <kongliang@loopring.org>
 contract LoopringProtocolImpl is LoopringProtocol {
-    using Math      for uint;
-    using SafeMath  for uint;
-    using UintLib   for uint;
+    using MathUint for uint;
 
     ////////////////////////////////////////////////////////////////////////////
     /// Variables                                                            ///
@@ -681,10 +676,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             require(s1b0 <= s0b1); // "miner supplied exchange rate provides invalid discount");
 
-            rateRatios[i] = RATE_RATIO_SCALE.mul(s1b0).div(s0b1);
+            rateRatios[i] = RATE_RATIO_SCALE.mul(s1b0) / s0b1;
         }
 
-        uint cvs = UintLib.cvsquare(rateRatios, RATE_RATIO_SCALE);
+        uint cvs = MathUint.cvsquare(rateRatios, RATE_RATIO_SCALE);
 
         require(cvs <= rateRatioCVSThreshold); // "miner supplied exchange rate is not evenly discounted");
     }
@@ -736,26 +731,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 if (minerLrcSpendable >= state.lrcFee) {
                     uint split;
                     if (state.order.buyNoMoreThanAmountB) {
-                        split = next.fillAmountS.mul(
-                            state.order.amountS
-                        ).div(
-                            state.order.amountB
-                        ).sub(
-                            state.fillAmountS
-                        );
+                        split = (next.fillAmountS.mul(state.order.amountS) / state.order.amountB).sub(state.fillAmountS);
                     } else {
-                        split = next.fillAmountS.sub(state.fillAmountS
-                            .mul(state.order.amountB)
-                            .div(state.order.amountS)
-                        );
+                        split = next.fillAmountS.sub(state.fillAmountS.mul(state.order.amountB) / state.order.amountS);
                     }
 
                     if (state.order.marginSplitPercentage != _marginSplitPercentageBase) {
                         split = split.mul(
                             state.order.marginSplitPercentage
-                        ).div(
-                            _marginSplitPercentageBase
-                        );
+                        ) / _marginSplitPercentageBase;
                     }
 
                     if (state.order.buyNoMoreThanAmountB) {
@@ -830,31 +814,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Default to the same smallest index
         newSmallestIdx = smallestIdx;
 
-        uint fillAmountB = state.fillAmountS.mul(
-            state.rate.amountB
-        ).div(
-            state.rate.amountS
-        );
+        uint fillAmountB = state.fillAmountS.mul(state.rate.amountB) / state.rate.amountS;
 
         if (state.order.buyNoMoreThanAmountB) {
             if (fillAmountB > state.order.amountB) {
                 fillAmountB = state.order.amountB;
 
-                state.fillAmountS = fillAmountB.mul(
-                    state.rate.amountS
-                ).div(
-                    state.rate.amountB
-                );
-
+                state.fillAmountS = fillAmountB.mul(state.rate.amountS) / state.rate.amountB;
                 newSmallestIdx = i;
             }
         }
 
-        state.lrcFee = state.order.lrcFee.mul(
-            state.fillAmountS
-        ).div(
-            state.order.amountS
-        );
+        state.lrcFee = state.order.lrcFee.mul(state.fillAmountS) / state.order.amountS;
 
         if (fillAmountB <= next.fillAmountS) {
             next.fillAmountS = fillAmountB;
@@ -882,8 +853,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     cancelledOrFilled[state.orderHash]
                 );
 
-                order.amountS = amount.mul(order.amountS).div(order.amountB);
-                order.lrcFee = amount.mul(order.lrcFee).div(order.amountB);
+                order.amountS = amount.mul(order.amountS) / order.amountB;
+                order.lrcFee = amount.mul(order.lrcFee) / order.amountB;
 
                 order.amountB = amount;
             } else {
@@ -891,8 +862,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     cancelledOrFilled[state.orderHash]
                 );
 
-                order.amountB = amount.mul(order.amountB).div(order.amountS);
-                order.lrcFee = amount.mul(order.lrcFee).div(order.amountS);
+                order.amountB = amount.mul(order.amountB) / order.amountS;
+                order.lrcFee = amount.mul(order.lrcFee) / order.amountS;
 
                 order.amountS = amount;
             }
@@ -900,7 +871,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0); // "amountS is zero");
             require(order.amountB > 0); // "amountB is zero");
 
-            state.fillAmountS = order.amountS.min256(state.availableAmountS);
+            state.fillAmountS = order.amountS.min(state.availableAmountS);
         }
     }
 
@@ -918,7 +889,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         return token.allowance(
             tokenOwner,
             address(_delegate)
-        ).min256(
+        ).min(
             token.balanceOf(tokenOwner)
         );
     }
@@ -970,9 +941,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         var ringSize = addressList.length;
         orders = new OrderState[](ringSize);
+        Order memory order;
+        bytes32 orderHash;
 
         for (uint i = 0; i < ringSize; i++) {
-            var order = Order(
+            order = Order(
                 addressList[i][0],
                 addressList[i][1],
                 addressList[(i + 1) % ringSize][1],
@@ -983,7 +956,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uint8ArgsList[i][0]
             );
 
-            bytes32 orderHash = calculateOrderHash(
+            orderHash = calculateOrderHash(
                 order,
                 uintArgsList[i][2], // timestamp
                 uintArgsList[i][3], // ttl
