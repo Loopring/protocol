@@ -417,8 +417,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function verifyTokensRegistered(
-        uint          ringSize,
-        address[2][]  addressList
+        uint                 ringSize,
+        address[2][] memory  addressList
         )
         private
         view
@@ -878,14 +878,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev verify input data's basic integrity.
     function verifyInputDataIntegrity(
-        uint          ringSize,
-        address[2][]  addressList,
-        uint[7][]     uintArgsList,
-        uint8[2][]    uint8ArgsList,
-        bool[]        buyNoMoreThanAmountBList,
-        uint8[]       vList,
-        bytes32[]     rList,
-        bytes32[]     sList
+        uint                 ringSize,
+        address[2][] memory  addressList,
+        uint[7][]    memory  uintArgsList,
+        uint8[2][]   memory  uint8ArgsList,
+        bool[]       memory  buyNoMoreThanAmountBList,
+        uint8[]      memory  vList,
+        bytes32[]    memory  rList,
+        bytes32[]    memory  sList
         )
         private
         pure
@@ -909,13 +909,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @return     A list of orders.
     function assembleOrders(
         TokenTransferDelegate delegate,
-        address[2][]    addressList,
-        uint[7][]       uintArgsList,
-        uint8[2][]      uint8ArgsList,
-        bool[]          buyNoMoreThanAmountBList,
-        uint8[]         vList,
-        bytes32[]       rList,
-        bytes32[]       sList
+        address[2][] memory   addressList,
+        uint[7][]    memory   uintArgsList,
+        uint8[2][]   memory   uint8ArgsList,
+        bool[]       memory   buyNoMoreThanAmountBList,
+        uint8[]      memory   vList,
+        bytes32[]    memory   rList,
+        bytes32[]    memory   sList
         )
         private
         view
