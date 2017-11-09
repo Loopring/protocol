@@ -38,7 +38,7 @@ library MathUint {
         require(c >= a);
     }
 
-    function tolerantSub(uint a, uint b ) internal pure returns (uint c) {
+    function tolerantSub(uint a, uint b) internal pure returns (uint c) {
         return (a >= b) ? a - b : 0;
     }
 
