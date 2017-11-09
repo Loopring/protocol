@@ -28,11 +28,11 @@ contract RinghashRegistry {
     using MathBytes32   for bytes32[];
     using MathUint8     for uint8[];
 
-    uint32 public blocksToLive;
+    uint64 public blocksToLive;
 
     struct Submission {
         address ringminer;
-        uint32 block;
+        uint64 block;
     }
 
     mapping (bytes32 => Submission) submissions;
@@ -74,7 +74,7 @@ contract RinghashRegistry {
 
         require(canSubmit(ringhash, ringminer)); //, "Ringhash submitted");
 
-        submissions[ringhash] = Submission(ringminer, uint32(block.number));
+        submissions[ringhash] = Submission(ringminer, uint64(block.number));
         RinghashSubmitted(ringminer, ringhash);
     }
 
@@ -138,7 +138,7 @@ contract RinghashRegistry {
         var submission = submissions[ringhash];
         return (
             submission.ringminer == address(0) || (
-            submission.block + blocksToLive < uint32(block.number)) || (
+            submission.block + blocksToLive < uint64(block.number)) || (
             submission.ringminer == ringminer)
         );
     }
@@ -154,7 +154,7 @@ contract RinghashRegistry {
     {
         var submission = submissions[ringhash];
         return (
-            submission.block + blocksToLive >= uint32(block.number) && (
+            submission.block + blocksToLive >= uint64(block.number) && (
             submission.ringminer == ringminer)
         );
     }
