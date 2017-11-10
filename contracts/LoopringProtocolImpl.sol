@@ -511,8 +511,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         
         uint p = ringSize * 2;
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            OrderState memory prev = orders[(i + ringSize - 1) % ringSize];
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
 			
             // Store tokenS and owner of every order
             batch[i] = bytes32(state.order.tokenS);
@@ -873,11 +873,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint ringSize = addressList.length;
         orders = new OrderState[](ringSize);
-        Order memory order;
-        bytes32 orderHash;
 
         for (uint i = 0; i < ringSize; i++) {
-            order = Order(
+            var order = Order(
                 addressList[i][0],
                 addressList[i][1],
                 addressList[(i + 1) % ringSize][1],
@@ -888,7 +886,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uint8ArgsList[i][0]
             );
 
-            orderHash = calculateOrderHash(
+            bytes32 orderHash = calculateOrderHash(
                 order,
                 uintArgsList[i][2], // timestamp
                 uintArgsList[i][3], // ttl
