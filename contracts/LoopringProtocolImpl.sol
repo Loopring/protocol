@@ -275,7 +275,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
         //Assemble input data into structs so we can pass them to other functions.
-        OrderState[] memory orders = assembleOrders(
+        var orders = assembleOrders(
             delegate,
             addressList,
             uintArgsList,
@@ -331,7 +331,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(cancelAmount > 0); // "amount to cancel is zero");
 
-        Order memory order = Order(
+        var order = Order(
             addresses[0],
             addresses[1],
             addresses[2],
@@ -424,7 +424,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         // Extract the token addresses
-        address[] memory tokens = new address[](ringSize);
+        var tokens = new address[](ringSize);
         for (uint i = 0; i < ringSize; i++) {
             tokens[i] = addressList[i][1];
         }
@@ -509,8 +509,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         batchSize = ringSize;
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            OrderState memory prev = orders[(i + ringSize - 1) % ringSize];
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
 
             batchSize += (
                 prev.splitB + state.splitS != 0 ? 1 : 0 + (
@@ -528,15 +528,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
         pure
-        returns (bytes32[] memory batch)
+        returns (bytes32[] batch)
     {
         uint batchSize = calculateTransferBatchSize(ringSize, orders);
         batch = new bytes32[](batchSize * 4); // ringSize * (token + from + to + value)
         uint p = 0;
 
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            OrderState memory prev = orders[(i + ringSize - 1) % ringSize];
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
 
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
@@ -588,9 +588,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
     {
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            OrderState memory prev = orders[(i + ringSize - 1) % ringSize];
-            OrderState memory next = orders[(i + 1) % ringSize];
+            var state = orders[i];
+            var prev = orders[(i + ringSize - 1) % ringSize];
+            var next = orders[(i + 1) % ringSize];
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
@@ -632,7 +632,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
-        uint[] memory rateRatios = new uint[](ringSize);
+        var rateRatios = new uint[](ringSize);
         uint _rateRatioScale = RATE_RATIO_SCALE;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -668,8 +668,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
 
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            OrderState memory next = orders[(i + 1) % ringSize];
+            var state = orders[i];
+            var next = orders[(i + 1) % ringSize];
 
             uint lrcSpendable = getSpendable(
                 delegate,
@@ -821,8 +821,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            Order memory order = state.order;
+            var state = orders[i];
+            var order = state.order;
             uint amount;
 
             if (order.buyNoMoreThanAmountB) {
@@ -917,7 +917,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
         view
-        returns (OrderState[] memory orders)
+        returns (OrderState[] orders)
     {
         uint ringSize = addressList.length;
         orders = new OrderState[](ringSize);

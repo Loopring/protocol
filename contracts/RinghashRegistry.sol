@@ -119,7 +119,7 @@ contract RinghashRegistry {
         )
         external
         view
-        returns (bytes32 ringhash, bool[2] memory attributes)
+        returns (bytes32 ringhash, bool[2] attributes)
     {
         ringhash = calculateRinghash(
             ringSize,
@@ -141,7 +141,7 @@ contract RinghashRegistry {
         view
         returns (bool)
     {
-        Submission submission = submissions[ringhash];
+        var submission = submissions[ringhash];
         return (
             submission.ringminer == address(0) || (
             submission.block + blocksToLive < block.number) || (
@@ -158,7 +158,7 @@ contract RinghashRegistry {
         view
         returns (bool)
     {
-        Submission submission = submissions[ringhash];
+        var submission = submissions[ringhash];
         return (
             submission.block + blocksToLive >= block.number && (
             submission.ringminer == ringminer)
