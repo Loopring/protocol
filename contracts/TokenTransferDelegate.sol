@@ -164,29 +164,62 @@ contract TokenTransferDelegate is Ownable {
         }
     }
 
-    function batchTransferToken(bytes32[] batch)
+    function batchTransferToken(
+        uint ringSize, 
+        address lrcTokenAddress,
+        address feeRecipient,
+        bytes32[] batch)
         onlyAuthorized
         external
     {
-        bytes32 from;
-        bytes32 to;
-        uint value;
+        require(batch.length == ringSize * 6);
 
-        for (uint i = 0; i < batch.length; i += 4) {
-            from = batch[i + 1];
-            to = batch[i + 2];
-            if (from != to) {
-                value = uint(batch[i + 3]);
-                if (value != 0) {
+        uint p = ringSize * 2;
+        var lrc = ERC20(lrcTokenAddress);
+
+        for (uint i = 0; i < ringSize; i++) {
+            uint prev = ((i + ringSize - 1) % ringSize);
+            address tokenS = address(batch[i]);
+            address owner = address(batch[ringSize + i]);
+            address prevOwner = address(batch[ringSize + prev]);
+            
+            // Pay tokenS to previous order, or to miner as previous order's
+            // margin split or/and this order's margin split.
+
+            ERC20 _tokenS;
+            // Try to create ERC20 instances only once per token.
+            if (owner != prevOwner || owner != feeRecipient && batch[p+1] != 0) {
+                _tokenS = ERC20(tokenS);
+            }
+
+            // Here batch[p] has been checked not to be 0.
+            if (owner != prevOwner) {
+                require(
+                    _tokenS.transferFrom(owner, prevOwner, uint(batch[p]))
+                );
+            }
+
+            if (owner != feeRecipient) {
+                if (batch[p+1] != 0) {
                     require(
-                        ERC20(address(batch[i])).transferFrom(
-                            address(from),
-                            address(to),
-                            value
-                        )
+                        _tokenS.transferFrom(owner, feeRecipient, uint(batch[p+1]))
+                    );
+                } 
+
+                if (batch[p+2] != 0) {
+                    require(
+                        lrc.transferFrom(feeRecipient, owner, uint(batch[p+2]))
+                    );
+                }
+
+                if (batch[p+3] != 0) {
+                    require(
+                        lrc.transferFrom(owner, feeRecipient, uint(batch[p+3]))
                     );
                 }
             }
+
+            p += 4;
         }
     }
 }
