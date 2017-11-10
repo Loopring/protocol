@@ -138,7 +138,7 @@ contract RinghashRegistry {
         var submission = submissions[ringhash];
         return (
             submission.ringminer == address(0) || (
-            submission.block + blocksToLive < uint64(block.number)) || (
+            uint(submission.block) + uint(blocksToLive) < block.number) || (
             submission.ringminer == ringminer)
         );
     }
@@ -154,7 +154,7 @@ contract RinghashRegistry {
     {
         var submission = submissions[ringhash];
         return (
-            submission.block + blocksToLive >= uint64(block.number) && (
+            uint(submission.block) + uint(blocksToLive) >= block.number && (
             submission.ringminer == ringminer)
         );
     }
