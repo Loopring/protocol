@@ -499,36 +499,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    function createTransferBatch(
-        uint          ringSize,
-        OrderState[]  orders
-        )
-        private
-        pure
-        returns (bytes32[] batch)
-    {
-        batch = new bytes32[](ringSize * 6); // ringSize * (tokenS + owner) + ringSize * 4 amounts
-        
-        uint p = ringSize * 2;
-        for (uint i = 0; i < ringSize; i++) {
-            var state = orders[i];
-            var prev = orders[(i + ringSize - 1) % ringSize];
-			
-            // Store tokenS and owner of every order
-            batch[i] = bytes32(state.order.tokenS);
-            batch[ringSize + i] = bytes32(state.order.owner);
-		    
-            // Store all amounts
-            batch[p] = bytes32(state.fillAmountS - prev.splitB);
-            batch[p+1] = bytes32(prev.splitB + state.splitS);
-            batch[p+2] = bytes32(state.lrcReward);
-            batch[p+3] = bytes32(state.lrcFee);
-
-            p += 4;
-        }
-        return batch;
-    }
-
     function settleRing(
         TokenTransferDelegate delegate,
         uint          ringSize,
@@ -539,10 +509,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
     {
+        bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (tokenS + owner) + ringSize * 4 amounts
+        uint p = ringSize * 2;
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
             var next = orders[(i + 1) % ringSize];
+
+            // Store tokenS and owner of every order
+            batch[i] = bytes32(state.order.tokenS);
+            batch[ringSize + i] = bytes32(state.order.owner);    
+            // Store all amounts
+            batch[p] = bytes32(state.fillAmountS - prev.splitB);
+            batch[p+1] = bytes32(prev.splitB + state.splitS);
+            batch[p+2] = bytes32(state.lrcReward);
+            batch[p+3] = bytes32(state.lrcFee);
+            p += 4;
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
@@ -566,11 +548,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
 
-        delegate.batchTransferToken(ringSize, _lrcTokenAddress, feeRecipient,
-            createTransferBatch(
-                ringSize,
-                orders
-            )
+        // Do all transactions
+        delegate.batchTransferToken(
+            ringSize,
+            _lrcTokenAddress, 
+            feeRecipient,
+            batch
         );
     }
 
