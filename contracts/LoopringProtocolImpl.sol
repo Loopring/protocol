@@ -81,8 +81,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///                     or margin split is choosen by the miner (value = 1).
     ///                     We may support more fee model in the future.
     /// @param rate         Exchange rate provided by miner.
-    /// @param availableAmountS -
-    ///                     The actual spendable amountS.
     /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
@@ -94,7 +92,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32 orderHash;
         uint8   feeSelection;
         Rate    rate;
-        uint    availableAmountS;
         uint    fillAmountS;
         uint    lrcReward;
         uint    lrcFee;
@@ -276,7 +273,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
-            delegate,
+            ringSize,
             addressList,
             uintArgsList,
             uint8ArgsList,
@@ -334,7 +331,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         var order = Order(
             addresses[0],
             addresses[1],
-            addresses[2],
             orderValues[0],
             orderValues[1],
             orderValues[5],
@@ -344,13 +340,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
 
-        bytes32 orderHash = calculateOrderHash(
-            order,
+        OrderParameters memory orderParameters = OrderParameters(
+            addresses[2],   // tokenB
             orderValues[2], // timestamp
             orderValues[3], // ttl
             orderValues[4]  // salt
         );
 
+        bytes32 orderHash = calculateOrderHash(order, orderParameters);
 
         verifySignature(
             order.owner,
@@ -457,7 +454,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Scale down each order independently by substracting amount-filled and
         // amount-cancelled. Order owner's current balance and allowance are
         // not taken into consideration in these operations.
-        scaleRingBasedOnHistoricalRecords(ringSize, orders);
+        scaleRingBasedOnHistoricalRecords(delegate, ringSize, orders);
 
         // Based on the already verified exchange rate provided by ring-miners,
         // we can furthur scale down orders based on token balance and allowance,
@@ -766,6 +763,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev Scale down all orders based on historical fill or cancellation
     ///      stats but key the order's original exchange rate.
     function scaleRingBasedOnHistoricalRecords(
+        TokenTransferDelegate delegate,
         uint          ringSize,
         OrderState[]  orders
         )
@@ -800,9 +798,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0); // "amountS is zero");
             require(order.amountB > 0); // "amountB is zero");
 
+            uint availableAmountS = getSpendable(delegate, order.tokenS, order.owner);
+            require(availableAmountS > 0); // "order spendable amountS is zero");
+
             state.fillAmountS = (
-                order.amountS < state.availableAmountS ?
-                order.amountS : state.availableAmountS
+                order.amountS < availableAmountS ?
+                order.amountS : availableAmountS
             );
         }
     }
@@ -858,7 +859,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
-        TokenTransferDelegate delegate,
+        uint            ringSize,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
@@ -871,14 +872,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
         returns (OrderState[] orders)
     {
-        uint ringSize = addressList.length;
         orders = new OrderState[](ringSize);
+        OrderParameters memory orderParameters;
 
         for (uint i = 0; i < ringSize; i++) {
             var order = Order(
                 addressList[i][0],
                 addressList[i][1],
-                addressList[(i + 1) % ringSize][1],
                 uintArgsList[i][0],
                 uintArgsList[i][1],
                 uintArgsList[i][5],
@@ -886,12 +886,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uint8ArgsList[i][0]
             );
 
-            bytes32 orderHash = calculateOrderHash(
-                order,
-                uintArgsList[i][2], // timestamp
-                uintArgsList[i][3], // ttl
-                uintArgsList[i][4]  // salt
+            orderParameters = OrderParameters(
+                addressList[(i + 1) % ringSize][1], // tokenB
+                uintArgsList[i][2],                 // timestamp
+                uintArgsList[i][3],                 // ttl
+                uintArgsList[i][4]                  // salt
             );
+
+            bytes32 orderHash = calculateOrderHash(order, orderParameters);
 
             verifySignature(
                 order.owner,
@@ -901,59 +903,47 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 sList[i]
             );
 
-            validateOrder(
-                order,
-                uintArgsList[i][2], // timestamp
-                uintArgsList[i][3], // ttl
-                uintArgsList[i][4]  // salt
-            );
+            validateOrder(order, orderParameters);
 
             orders[i] = OrderState(
                 order,
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
-                getSpendable(delegate, order.tokenS, order.owner),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
                 0,   // splitS
                 0    // splitB
             );
-
-            require(orders[i].availableAmountS > 0); // "order spendable amountS is zero");
         }
     }
 
     /// @dev validate order's parameters are OK.
     function validateOrder(
-        Order        order,
-        uint         timestamp,
-        uint         ttl,
-        uint         salt
+        Order           order,
+        OrderParameters params
         )
         private
         view
     {
         require(order.owner != address(0)); // "invalid order owner");
         require(order.tokenS != address(0)); // "invalid order tokenS");
-        require(order.tokenB != address(0)); // "invalid order tokenB");
+        require(params.tokenB != address(0)); // "invalid order tokenB");
         require(order.amountS != 0); // "invalid order amountS");
         require(order.amountB != 0); // "invalid order amountB");
-        require(timestamp <= block.timestamp); // "order is too early to match");
-        require(timestamp > cutoffs[order.owner]); // "order is cut off");
-        require(ttl != 0); // "order ttl is 0");
-        require(timestamp + ttl > block.timestamp); // "order is expired");
-        require(salt != 0); // "invalid order salt");
+        require(params.timestamp <= block.timestamp); // "order is too early to match");
+        require(params.timestamp > cutoffs[order.owner]); // "order is cut off");
+        require(params.ttl != 0); // "order ttl is 0");
+        require(params.timestamp + params.ttl > block.timestamp); // "order is expired");
+        require(params.salt != 0); // "invalid order salt");
         require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE); // "invalid order marginSplitPercentage");
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
     function calculateOrderHash(
-        Order        order,
-        uint         timestamp,
-        uint         ttl,
-        uint         salt
+        Order           order,
+        OrderParameters params
         )
         private
         view
@@ -963,12 +953,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
             address(this),
             order.owner,
             order.tokenS,
-            order.tokenB,
+            params.tokenB,
             order.amountS,
             order.amountB,
-            timestamp,
-            ttl,
-            salt,
+            params.timestamp,
+            params.ttl,
+            params.salt,
             order.lrcFee,
             order.buyNoMoreThanAmountB,
             order.marginSplitPercentage
