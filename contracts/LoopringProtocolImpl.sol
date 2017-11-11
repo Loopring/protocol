@@ -509,6 +509,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
     {
+        uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
+
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (tokenS + owner) + ringSize * 4 amounts
         uint p = ringSize * 2;
         for (uint i = 0; i < ringSize; i++) {
@@ -534,7 +536,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
 
             OrderFilled(
-                ringIndex ^ ENTERED_MASK,
+                _ringIndex,
                 block.timestamp,
                 block.number,
                 ringhash,
