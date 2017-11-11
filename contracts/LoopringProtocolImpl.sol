@@ -478,6 +478,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             _lrcTokenAddress
         );
 
+        uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
+
         /// Make payments.
         settleRing(
             delegate,
@@ -485,11 +487,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orders,
             ringhash,
             feeRecipient,
-            _lrcTokenAddress
+            _lrcTokenAddress,
+            _ringIndex
         );
 
         RingMined(
-            ringIndex ^ ENTERED_MASK,
+            _ringIndex,
             block.timestamp,
             block.number,
             ringhash,
@@ -505,12 +508,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderState[]  orders,
         bytes32       ringhash,
         address       feeRecipient,
-        address       _lrcTokenAddress
+        address       _lrcTokenAddress,
+        uint64        _ringIndex
         )
         private
     {
-        uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
-
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (tokenS + owner) + ringSize * 4 amounts
         uint p = ringSize * 2;
         for (uint i = 0; i < ringSize; i++) {
