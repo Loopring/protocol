@@ -68,7 +68,7 @@ export class ProtocolSimulator {
       let availableAmountS = amountS;
       let availableAmountB = amountB;
 
-      if (order.params.buyNoMoreThanAmountB) {
+      if (order.params.buyNoMoreThanAmountB !== 0) {
         if (this.orderFilled && this.orderFilled[i]) {
           availableAmountB -= this.orderFilled[i];
         }
@@ -152,7 +152,7 @@ export class ProtocolSimulator {
     const currentFillAmountB = currentFillAmountS * currentOrder.params.scaledAmountB / currentRateAmountS;
 
     let nextFillAmountS = nextRateAmountS;
-    if (!nextOrder.params.buyNoMoreThanAmountB) {
+    if (nextOrder.params.buyNoMoreThanAmountB === 0) {
       nextFillAmountS = nextOrder.params.scaledAmountS;
     }
 
@@ -212,7 +212,7 @@ export class ProtocolSimulator {
       if (0 === this.feeSelectionList[i]) {
         feeItem.feeLrc = order.params.lrcFee.toNumber() * fillAmountSList[i] / order.params.amountS.toNumber();
       } else if (1 === this.feeSelectionList[i]) {
-        if (order.params.buyNoMoreThanAmountB) {
+        if (order.params.buyNoMoreThanAmountB !== 0) {
           feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
             fillAmountSList[i];
           feeItem.feeS = feeItem.feeS * order.params.marginSplitPercentage / 100;

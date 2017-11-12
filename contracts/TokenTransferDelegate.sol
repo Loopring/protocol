@@ -29,6 +29,13 @@ import "./lib/Ownable.sol";
 contract TokenTransferDelegate is Ownable {
     using MathUint for uint;
 
+    uint private constant TOKEN = 0;
+    uint private constant OWNER = 1;
+    uint private constant FILL_NO_SPLIT = 2;
+    uint private constant SPLIT_SUM = 3;
+    uint private constant LRC_REWARD = 4;
+    uint private constant LRC_FEE = 5;
+
     ////////////////////////////////////////////////////////////////////////////
     /// Variables                                                            ///
     ////////////////////////////////////////////////////////////////////////////
@@ -77,8 +84,8 @@ contract TokenTransferDelegate is Ownable {
     /// @dev Add a Loopring protocol address.
     /// @param addr A loopring protocol address.
     function authorizeAddress(address addr)
-        onlyOwner
         external
+        onlyOwner
     {
         AddressInfo storage addrInfo = addressInfos[addr];
 
@@ -106,8 +113,8 @@ contract TokenTransferDelegate is Ownable {
     /// @dev Remove a Loopring protocol address.
     /// @param addr A loopring protocol address.
     function deauthorizeAddress(address addr)
-        onlyOwner
         external
+        onlyOwner
     {
         uint32 index = addressInfos[addr].index;
         if (index != 0) {
@@ -153,9 +160,10 @@ contract TokenTransferDelegate is Ownable {
         address token,
         address from,
         address to,
-        uint    value)
-        onlyAuthorized
+        uint    value
+        )
         external
+        onlyAuthorized
     {
         if (value > 0 && from != to) {
             require(
@@ -165,61 +173,61 @@ contract TokenTransferDelegate is Ownable {
     }
 
     function batchTransferToken(
-        uint ringSize, 
         address lrcTokenAddress,
         address feeRecipient,
-        bytes32[] batch)
-        onlyAuthorized
+        uint[6][] batch
+        )
         external
+        onlyAuthorized
     {
-        require(batch.length == ringSize * 6);
+        uint size = batch.length;
+        for (uint i = 0; i < size; i++) {
+            uint[6] memory item = batch[i];
+            uint[6] memory prev = batch[(i + size - 1) % size];
 
-        uint p = ringSize * 2;
-        var lrc = ERC20(lrcTokenAddress);
-
-        for (uint i = 0; i < ringSize; i++) {
-            uint prev = ((i + ringSize - 1) % ringSize);
-            address tokenS = address(batch[i]);
-            address owner = address(batch[ringSize + i]);
-            address prevOwner = address(batch[ringSize + prev]);
-            
             // Pay tokenS to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
 
-            ERC20 _tokenS;
-            // Try to create ERC20 instances only once per token.
-            if (owner != prevOwner || owner != feeRecipient && batch[p+1] != 0) {
-                _tokenS = ERC20(tokenS);
+            if (address(item[OWNER]) == address(prev[OWNER])) {
+                continue;
             }
 
-            // Here batch[p] has been checked not to be 0.
-            if (owner != prevOwner) {
+            if (item[FILL_NO_SPLIT] != 0) {
                 require(
-                    _tokenS.transferFrom(owner, prevOwner, uint(batch[p]))
+                    ERC20(item[TOKEN]).transferFrom(
+                        address(item[OWNER]),
+                        address(prev[OWNER]),
+                        item[FILL_NO_SPLIT]
+                    )
                 );
             }
-
-            if (owner != feeRecipient) {
-                if (batch[p+1] != 0) {
-                    require(
-                        _tokenS.transferFrom(owner, feeRecipient, uint(batch[p+1]))
-                    );
-                } 
-
-                if (batch[p+2] != 0) {
-                    require(
-                        lrc.transferFrom(feeRecipient, owner, uint(batch[p+2]))
-                    );
-                }
-
-                if (batch[p+3] != 0) {
-                    require(
-                        lrc.transferFrom(owner, feeRecipient, uint(batch[p+3]))
-                    );
-                }
+            if (item[SPLIT_SUM] != 0) {
+                require(
+                    ERC20(item[TOKEN]).transferFrom(
+                        address(item[OWNER]),
+                        feeRecipient,
+                        item[SPLIT_SUM]
+                    )
+                );
             }
-
-            p += 4;
+            if (item[LRC_REWARD] != 0) {
+                require(
+                    ERC20(item[TOKEN]).transferFrom(
+                        feeRecipient,
+                        address(item[OWNER]),
+                        item[LRC_REWARD]
+                    )
+                );
+            }
+            if (item[LRC_FEE] != 0) {
+                require(
+                    ERC20(lrcTokenAddress).transferFrom(
+                        address(item[OWNER]),
+                        feeRecipient,
+                        item[LRC_FEE]
+                    )
+                );
+            }
         }
     }
 }

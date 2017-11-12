@@ -129,16 +129,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const p = ringFactory.ringToSubmitableParams(ring, [0, 0], feeRecepient);
 
       const ethOfOwnerBefore = await getEthBalanceAsync(owner);
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                        p.uintArgsList,
-                                                        p.uint8ArgsList,
-                                                        p.buyNoMoreThanAmountBList,
-                                                        p.vList,
-                                                        p.rList,
-                                                        p.sList,
-                                                        p.ringOwner,
-                                                        p.feeRecepient,
-                                                        {from: owner});
+      const tx = await loopringProtocolImpl.submitRing(
+        p.ring, p.orders, {from: owner},
+      );
 
       const ethOfOwnerAfter = await getEthBalanceAsync(owner);
       const allGas = (ethOfOwnerBefore.toNumber() - ethOfOwnerAfter.toNumber()) / 1e18;
@@ -175,17 +168,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await neo.setBalance(order2Owner, web3.toWei(50),  {from: owner});
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
-
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
-                                                       p.vList,
-                                                       p.rList,
-                                                       p.sList,
-                                                       p.ringOwner,
-                                                       p.feeRecepient,
-                                                       {from: owner});
+      const tx = await loopringProtocolImpl.submitRing(
+        p.ring, p.orders, {from: owner},
+      );
 
       const eosBalance21 = await getTokenBalanceAsync(eos, order1Owner);
       const neoBalance21 = await getTokenBalanceAsync(neo, order1Owner);
@@ -225,17 +210,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await lrc.setBalance(order2Owner, web3.toWei(20),  {from: owner});
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
-
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
-                                                       p.vList,
-                                                       p.rList,
-                                                       p.sList,
-                                                       p.ringOwner,
-                                                       p.feeRecepient,
-                                                       {from: owner});
+      const tx = await loopringProtocolImpl.submitRing(
+        p.ring, p.orders, {from: owner},
+      );
 
       console.log("cumulativeGasUsed for a ring of 2 orders: " + tx.receipt.gasUsed);
 
@@ -278,18 +255,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await qtum.setBalance(order3Owner, web3.toWei(6780),  {from: owner});
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
-
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
-                                                       p.vList,
-                                                       p.rList,
-                                                       p.sList,
-                                                       p.ringOwner,
-                                                       p.feeRecepient,
-                                                       {from: owner});
-
+      const tx = await loopringProtocolImpl.submitRing(
+        p.ring, p.orders, {from: owner},
+      );
       console.log("cumulativeGasUsed for a ring of 3 orders: " + tx.receipt.gasUsed);
 
       const eosBalance21 = await getTokenBalanceAsync(eos, order1Owner);
@@ -360,17 +328,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await approve([eos, neo, qtum], [order1Owner, order2Owner, order3Owner], availableAmountSList);
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
-
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
-                                                       p.vList,
-                                                       p.rList,
-                                                       p.sList,
-                                                       p.ringOwner,
-                                                       p.feeRecepient,
-                                                       {from: owner});
+      const tx = await loopringProtocolImpl.submitRing(
+        p.ring, p.orders, {from: owner},
+      );
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
 
@@ -445,17 +405,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await approve([lrc, lrc], [order2Owner, feeRecepient], [15e18, 15e18]);
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
-
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
-                                                       p.vList,
-                                                       p.rList,
-                                                       p.sList,
-                                                       p.ringOwner,
-                                                       p.feeRecepient,
-                                                       {from: owner});
+      const tx = await loopringProtocolImpl.submitRing(
+        p.ring, p.orders, {from: owner},
+      );
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
 

@@ -10,7 +10,7 @@ export interface OrderParams {
   ttl: BigNumber;
   salt: BigNumber;
   lrcFee: BigNumber;
-  buyNoMoreThanAmountB: boolean;
+  buyNoMoreThanAmountB: number;
   marginSplitPercentage: number;
   scaledAmountS?: number;
   scaledAmountB?: number;

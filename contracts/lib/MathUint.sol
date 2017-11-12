@@ -45,35 +45,26 @@ library MathUint {
     /// @dev calculate the square of Coefficient of Variation (CV)
     /// https://en.wikipedia.org/wiki/Coefficient_of_variation
     function cvsquare(
-        uint[] arr,
-        uint scale
+        uint avg,
+        uint scale,
+        uint size,
+        uint[] arr
         )
         internal
         pure
         returns (uint)
     {
-        uint len = arr.length;
-        require(len > 1);
-        require(scale > 0);
-
-        uint avg = 0;
-        for (uint i = 0; i < len; i++) {
-            avg += arr[i];
-        }
-
-        avg = avg / len;
-
         if (avg == 0) {
             return 0;
         }
 
         uint cvs = 0;
         uint s = 0;
-        for (i = 0; i < len; i++) {
+        for (uint i = 0; i < size; i++) {
             s = arr[i] > avg ? arr[i] - avg : avg - arr[i];
             cvs += mul(s, s);
         }
 
-        return (mul(mul(cvs, scale) / avg, scale) / avg) / (len - 1);
+        return (mul(mul(cvs, scale) / avg, scale) / avg) / (size - 1);
     }
 }

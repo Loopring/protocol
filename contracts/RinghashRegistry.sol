@@ -89,52 +89,18 @@ contract RinghashRegistry {
         }
     }
 
-    /// @dev Calculate the hash of a ring.
-    function calculateRinghash(
-        uint        ringSize,
-        uint8[]     vList,
-        bytes32[]   rList,
-        bytes32[]   sList
-        )
-        public
-        pure
-        returns (bytes32)
-    {
-        require(
-            ringSize == vList.length - 1 && (
-            ringSize == rList.length - 1 && (
-            ringSize == sList.length - 1))
-        ); //, "invalid ring data");
-
-        return keccak256(
-            vList.xorReduce(ringSize),
-            rList.xorReduce(ringSize),
-            sList.xorReduce(ringSize)
-        );
-    }
-
      /// return value attributes[2] contains the following values in this order:
      /// canSubmit, isReserved.
-    function computeAndGetRinghashInfo(
-        uint        ringSize,
-        address     ringminer,
-        uint8[]     vList,
-        bytes32[]   rList,
-        bytes32[]   sList
+    function getRinghashInfo(
+        address ringminer,
+        bytes32 ringhash
         )
         external
         view
-        returns (bytes32 ringhash, bool[2] attributes)
+        returns (bool ringSubmitted, bool ringReserved)
     {
-        ringhash = calculateRinghash(
-            ringSize,
-            vList,
-            rList,
-            sList
-        );
-
-        attributes[0] = canSubmit(ringhash, ringminer);
-        attributes[1] = isReserved(ringhash, ringminer);
+        ringSubmitted = canSubmit(ringhash, ringminer) == false;
+        ringReserved = isReserved(ringhash, ringminer);
     }
 
     /// @return true if a ring's hash can be submitted;

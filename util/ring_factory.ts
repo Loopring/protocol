@@ -38,7 +38,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(1234),
       lrcFee: new BigNumber(10e18),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 0,
     };
 
@@ -52,7 +52,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(5e18),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 0,
     };
 
@@ -80,7 +80,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(1234),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 100,
     };
 
@@ -94,7 +94,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 45,
     };
 
@@ -122,7 +122,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(1234),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: true,
+      buyNoMoreThanAmountB: 1,
       marginSplitPercentage: 65,
     };
 
@@ -136,7 +136,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(5e17),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 45,
     };
 
@@ -165,7 +165,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(1234),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: true,
+      buyNoMoreThanAmountB: 1,
       marginSplitPercentage: 55,
     };
 
@@ -179,7 +179,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(6e18),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 0,
     };
 
@@ -193,7 +193,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(4321),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 60,
     };
 
@@ -225,7 +225,7 @@ export class RingFactory {
       ttl: new BigNumber(36000),
       salt: new BigNumber(salt + 1),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: true,
+      buyNoMoreThanAmountB: 1,
       marginSplitPercentage: 55,
     };
 
@@ -239,7 +239,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(salt + 2),
       lrcFee: new BigNumber(6e18),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 0,
     };
 
@@ -253,7 +253,7 @@ export class RingFactory {
       ttl: new BigNumber(360000),
       salt: new BigNumber(salt + 3),
       lrcFee: new BigNumber(0),
-      buyNoMoreThanAmountB: false,
+      buyNoMoreThanAmountB: 0,
       marginSplitPercentage: 60,
     };
 
@@ -293,64 +293,38 @@ export class RingFactory {
 
   public ringToSubmitableParams(ring: Ring,
                                 feeSelectionList: number[],
-                                feeRecepient: string) {
-    const ringSize = ring.orders.length;
-    const addressList: string[][] = [];
-    const uintArgsList: BigNumber[][] = [];
-    const uint8ArgsList: number[][] = [];
-    const buyNoMoreThanAmountBList: boolean[] = [];
-    const vList: number[] = [];
-    const rList: string[] = [];
-    const sList: string[] = [];
+                                feeRecipient: string) {
+
+    const submitRingParams = {
+      ring: [ring.owner, ring.v, ring.r, ring.s, feeRecipient],
+      orders: [],
+    } as any;
 
     const rateAmountSList = this.caculateRateAmountS(ring);
     // console.log("rateAmountSList", rateAmountSList);
 
-    for (let i = 0; i < ringSize; i++) {
+    for (let i = 0; i < ring.orders.length; i++) {
       const order = ring.orders[i];
-      const addressListItem = [order.owner, order.params.tokenS];
-      addressList.push(addressListItem);
-
-      const uintArgsListItem = [
+      submitRingParams.orders.push([
+        order.owner,
+        order.params.tokenS,
+        order.params.tokenB,
         order.params.amountS,
         order.params.amountB,
+        order.params.lrcFee,
+        order.params.buyNoMoreThanAmountB,
+        order.params.marginSplitPercentage,
         order.params.timestamp,
         order.params.ttl,
         order.params.salt,
-        order.params.lrcFee,
+        order.params.v,
+        order.params.r,
+        order.params.s,
+        feeSelectionList[i] || 0,
         rateAmountSList[i],
-      ];
-      uintArgsList.push(uintArgsListItem);
-
-      const uint8ArgsListItem = [order.params.marginSplitPercentage, feeSelectionList[i]];
-      // console.log("uint8ArgsListItem", uint8ArgsListItem);
-
-      uint8ArgsList.push(uint8ArgsListItem);
-
-      buyNoMoreThanAmountBList.push(order.params.buyNoMoreThanAmountB);
-
-      vList.push(order.params.v);
-      rList.push(order.params.r);
-      sList.push(order.params.s);
+      ]);
     }
 
-    vList.push(ring.v);
-    rList.push(ring.r);
-    sList.push(ring.s);
-
-    const submitParams = {
-      addressList,
-      uintArgsList,
-      uint8ArgsList,
-      buyNoMoreThanAmountBList,
-      vList,
-      rList,
-      sList,
-      ringOwner: ring.owner,
-      feeRecepient,
-    };
-
-    return submitParams;
+    return submitRingParams;
   }
-
 }
