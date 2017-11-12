@@ -593,11 +593,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
-        uint minerLrcSpendable = getSpendable(
-            delegate,
-            _lrcTokenAddress,
-            feeRecipient
-        );
+        bool checkedMinerLrcSpendable = false;
+        uint minerLrcSpendable = 0;
         uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -625,6 +622,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
 
             if (state.feeSelection == FEE_SELECT_MARGIN_SPLIT || state.lrcFee == 0) {
+
+                // Only check the available miner balance when absolutely needed
+                if (!checkedMinerLrcSpendable && minerLrcSpendable < state.lrcFee) {
+                    minerLrcSpendable += getSpendable(delegate, _lrcTokenAddress, feeRecipient);
+                    checkedMinerLrcSpendable = true;
+                }
+
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
                 if (minerLrcSpendable >= state.lrcFee) {
