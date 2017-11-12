@@ -269,8 +269,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList[ringSize]
         );
 
-        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
-
         //Assemble input data into structs so we can pass them to other functions.
         var orders = assembleOrders(
             ringSize,
@@ -288,7 +286,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         handleRing(
-            delegate,
             ringSize,
             ringhash,
             orders,
@@ -433,7 +430,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
-        TokenTransferDelegate delegate,
         uint          ringSize,
         bytes32       ringhash,
         OrderState[]  orders,
@@ -443,6 +439,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
     {
+        uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        address _lrcTokenAddress = lrcTokenAddress;
+
         // Do the hard work.
         verifyRingHasNoSubRing(ringSize, orders);
 
@@ -462,8 +462,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // `fillAmountS`.
         calculateRingFillAmount(ringSize, orders);
 
-        address _lrcTokenAddress = lrcTokenAddress;
-
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
@@ -474,8 +472,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecipient,
             _lrcTokenAddress
         );
-
-        uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
 
         /// Make payments.
         settleRing(
