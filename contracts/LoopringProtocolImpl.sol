@@ -604,16 +604,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var state = orders[i];
             var next = orders[(i + 1) % ringSize];
 
-            uint lrcSpendable = getSpendable(
-                delegate,
-                _lrcTokenAddress,
-                state.order.owner
-            );
+            if (state.lrcFee > 0) {
+                uint lrcSpendable = getSpendable(
+                    delegate,
+                    _lrcTokenAddress,
+                    state.order.owner
+                );
 
-            // If order doesn't have enough LRC, set margin split to 100%.
-            if (lrcSpendable < state.lrcFee) {
-                state.lrcFee = lrcSpendable;
-                state.order.marginSplitPercentage = _marginSplitPercentageBase;
+                // If order doesn't have enough LRC, set margin split to 100%.
+                if (lrcSpendable < state.lrcFee) {
+                    state.lrcFee = lrcSpendable;
+                    state.order.marginSplitPercentage = _marginSplitPercentageBase;
+                }
             }
 
             // When an order's LRC fee is 0 or smaller than the specified fee,
