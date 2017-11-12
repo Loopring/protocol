@@ -663,7 +663,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     // be paid LRC reward first, so the orders in the ring does
                     // mater.
                     if (split > 0) {
-                        minerLrcSpendable = minerLrcSpendable.sub(state.lrcFee);
+                        // minerLrcSpendable >= state.lrcFee
+                        minerLrcSpendable -= state.lrcFee;
                         state.lrcReward = state.lrcFee;
                     }
                     state.lrcFee = 0;
