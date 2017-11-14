@@ -550,15 +550,25 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var next = orders[(i + 1) % ringSize];
 
             // Store owner and tokenS of every order
-            batch[p] = bytes32(state.order.owner);  
+            batch[p] = bytes32(state.order.owner);
             batch[p+1] = bytes32(state.order.tokenS);
-              
+
             // Store all amounts
             batch[p+2] = bytes32(state.fillAmountS - prev.splitB);
             batch[p+3] = bytes32(prev.splitB + state.splitS);
             batch[p+4] = bytes32(state.lrcReward);
             batch[p+5] = bytes32(state.lrcFee);
             p += 6;
+
+            // If trader receive LRC, lrcFee will be paid from the LRC it received by next trader.
+            if (lrcTokenAddress == state.order.tokenB && state.lrcFee > 0) {
+                batch[p+5] = bytes32(0);
+            }
+
+            if (lrcTokenAddress == state.order.tokenS && prev.lrcFee > 0) {
+                batch[p+2] = bytes32(state.fillAmountS - prev.lrcFee);
+                batch[p+5] = bytes32(state.lrcFee + prev.lrcFee);
+            }
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
@@ -631,11 +641,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var next = orders[(i + 1) % ringSize];
 
             if (state.lrcFee > 0) {
-                uint lrcSpendable = getSpendable(
-                    delegate,
-                    _lrcTokenAddress,
-                    state.order.owner
-                );
+                uint lrcSpendable = 0;
+                if (lrcTokenAddress == state.order.tokenB) {
+                    // trader's lrcFee should not be larger than lrc filled amount.
+                    lrcSpendable = next.fillAmountS;
+                } else {
+                    lrcSpendable = getSpendable(
+                        delegate,
+                        _lrcTokenAddress,
+                        state.order.owner
+                    );
+                }
 
                 // If order doesn't have enough LRC, set margin split to 100%.
                 if (lrcSpendable < state.lrcFee) {
@@ -649,7 +665,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
 
             if (state.feeSelection == FEE_SELECT_MARGIN_SPLIT || state.lrcFee == 0) {
-
                 // Only check the available miner balance when absolutely needed
                 if (!checkedMinerLrcSpendable && minerLrcSpendable < state.lrcFee) {
                     checkedMinerLrcSpendable = true;
@@ -709,7 +724,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderState[]  orders
         )
         private
-        pure 
+        pure
     {
         uint smallestIdx = 0;
         uint i;
