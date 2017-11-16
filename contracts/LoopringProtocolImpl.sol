@@ -349,8 +349,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         cancelledOrFilled[orderHash] = cancelledOrFilled[orderHash].add(cancelAmount);
 
         OrderCancelled(
-            block.timestamp,
-            block.number,
             orderHash,
             cancelAmount
         );
@@ -374,8 +372,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         cutoffs[msg.sender] = t;
 
         CutoffTimestampChanged(
-            block.timestamp,
-            block.number,
             msg.sender,
             t
         );
@@ -479,8 +475,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         RingMined(
             _ringIndex,
-            block.timestamp,
-            block.number,
             ringhash,
             miner,
             feeRecipient,
@@ -526,8 +520,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             OrderFilled(
                 _ringIndex,
-                block.timestamp,
-                block.number,
                 ringhash,
                 prev.orderHash,
                 state.orderHash,

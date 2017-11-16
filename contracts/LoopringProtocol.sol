@@ -37,8 +37,6 @@ contract LoopringProtocol {
 
     event RingMined(
         uint                _ringIndex,
-        uint                _time,
-        uint                _blocknumber,
         bytes32     indexed _ringhash,
         address     indexed _miner,
         address     indexed _feeRecipient,
@@ -47,8 +45,6 @@ contract LoopringProtocol {
 
     event OrderFilled(
         uint                _ringIndex,
-        uint                _time,
-        uint                _blocknumber,
         bytes32     indexed _ringhash,
         bytes32             _prevOrderHash,
         bytes32     indexed _orderHash,
@@ -60,15 +56,11 @@ contract LoopringProtocol {
     );
 
     event OrderCancelled(
-        uint                _time,
-        uint                _blocknumber,
         bytes32     indexed _orderHash,
         uint                _amountCancelled
     );
 
     event CutoffTimestampChanged(
-        uint                _time,
-        uint                _blocknumber,
         address     indexed _address,
         uint                _cutoff
     );
