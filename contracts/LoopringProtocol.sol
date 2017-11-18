@@ -78,9 +78,7 @@ contract LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
 
     /// @dev Submit a order-ring for validation and settlement.
-    /// @param addressList  List of each order's owner and tokenS. Note that next
-    ///                     order's `tokenS` equals this order's `tokenB`.
-    /// @param uintArgsList List of uint-type arguments in this order:
+    /// @param orders List of uint-type arguments in this order:
     ///                     amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                     rateAmountS.
     /// @param uint8ArgsList -
@@ -106,8 +104,7 @@ contract LoopringProtocol {
     ///                     of fee selection model, LRC will also be sent from
     ///                     this address.
     function submitRing(
-        address[2][]    addressList,
-        uint[7][]       uintArgsList,
+        uint[9][]       orders,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
