@@ -129,8 +129,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const p = ringFactory.ringToSubmitableParams(ring, [0, 0], feeRecepient);
 
       const ethOfOwnerBefore = await getEthBalanceAsync(owner);
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                        p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                         p.uint8ArgsList,
                                                         p.buyNoMoreThanAmountBList,
                                                         p.vList,
@@ -177,8 +176,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const spendableLrcFeeList = [0, 0, 0];
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -224,8 +222,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const spendableLrcFeeList = [0, 5e17, 0];
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -280,8 +277,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -347,8 +343,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       // await approve([eos, neo, qtum], [order1Owner, order2Owner, order3Owner], availableAmountSList);
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -418,8 +413,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -482,8 +476,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -554,8 +547,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,
@@ -614,8 +606,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
 
-      const tx = await loopringProtocolImpl.submitRing(p.addressList,
-                                                       p.uintArgsList,
+      const tx = await loopringProtocolImpl.submitRing(p.uintArgsList,
                                                        p.uint8ArgsList,
                                                        p.buyNoMoreThanAmountBList,
                                                        p.vList,

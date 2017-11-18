@@ -355,7 +355,6 @@ export class RingFactory {
                                 feeSelectionList: number[],
                                 feeRecepient: string) {
     const ringSize = ring.orders.length;
-    const addressList: string[][] = [];
     const uintArgsList: BigNumber[][] = [];
     const uint8ArgsList: number[][] = [];
     const buyNoMoreThanAmountBList: boolean[] = [];
@@ -368,10 +367,9 @@ export class RingFactory {
 
     for (let i = 0; i < ringSize; i++) {
       const order = ring.orders[i];
-      const addressListItem = [order.owner, order.params.tokenS];
-      addressList.push(addressListItem);
-
       const uintArgsListItem = [
+        new BigNumber(order.owner),
+        new BigNumber(order.params.tokenS),
         order.params.amountS,
         order.params.amountB,
         order.params.timestamp,
@@ -399,7 +397,6 @@ export class RingFactory {
     sList.push(ring.s);
 
     const submitParams = {
-      addressList,
       uintArgsList,
       uint8ArgsList,
       buyNoMoreThanAmountBList,
