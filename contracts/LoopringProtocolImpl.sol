@@ -29,7 +29,9 @@ import "./TokenTransferDelegate.sol";
 /// @author Daniel Wang - <daniel@loopring.org>,
 /// @author Kongliang Zhong - <kongliang@loopring.org>
 contract LoopringProtocolImpl is LoopringProtocol {
-    using MathUint for uint;
+    using MathUint      for uint;
+    using MathBytes32   for bytes32[];
+    using MathUint8     for uint8[];
     
     uint8 private constant IDX_OWNER = 0;
     uint8 private constant IDX_TOKEN_S = 1;
@@ -184,7 +186,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         revert();
     }
     
-
     /// @dev Submit a order-ring for validation and settlement.
     /// @param orders List of uint-type arguments in this order:
     ///                     amountS, amountB, timestamp, ttl, salt, lrcFee,
@@ -245,14 +246,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(ringSize, orders);
 
-        var (ringhash, ringhashAttributes) = RinghashRegistry(
-            ringhashRegistryAddress
-        ).computeAndGetRinghashInfo(
+        var ringhash = calculateRinghash(
             ringSize,
-            ringminer,
             vList,
             rList,
             sList
+        );
+        
+        var ringhashAttributes = RinghashRegistry(
+            ringhashRegistryAddress
+        ).getRinghashInfo(
+            ringhash,
+            ringminer
         );
 
         //Check if we can submit this ringhash.
@@ -391,6 +396,30 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
     /// Internal & Private Functions                                         ///
     ////////////////////////////////////////////////////////////////////////////
+    
+     /// @dev Calculate the hash of a ring.
+    function calculateRinghash(
+        uint        ringSize,
+        uint8[]     vList,
+        bytes32[]   rList,
+        bytes32[]   sList
+        )
+        public
+        pure
+        returns (bytes32)
+    {
+        require(
+            ringSize == vList.length - 1 && (
+            ringSize == rList.length - 1 && (
+            ringSize == sList.length - 1))
+        ); //, "invalid ring data");
+
+        return keccak256(
+            vList.xorReduce(ringSize),
+            rList.xorReduce(ringSize),
+            sList.xorReduce(ringSize)
+        );
+    }
 
     /// @dev Validate a ring.
     function verifyRingHasNoSubRing(
