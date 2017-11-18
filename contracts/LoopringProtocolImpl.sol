@@ -129,7 +129,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param splitS      TokenS paid to miner.
     /// @param splitB      TokenB paid to miner.
     struct OrderState {
-        uint[9] order;
         uint8   marginSplitPercentage;
         uint8   feeSelection;
         bool    buyNoMoreThanAmountB;
@@ -285,6 +284,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         handleRing(
             ringSize,
             ringhash,
+            orders,
             orderStates,
             ringminer,
             feeRecipient,
@@ -395,16 +395,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev Validate a ring.
     function verifyRingHasNoSubRing(
         uint          ringSize,
-        OrderState[]  orders
+        uint[9][]     orders
         )
         private
         pure
     {
         // Check the ring has no sub-ring.
         for (uint i = 0; i < ringSize - 1; i++) {
-            uint tokenS = orders[i].order[IDX_TOKEN_S];
+            uint tokenS = orders[i][IDX_TOKEN_S];
             for (uint j = i + 1; j < ringSize; j++) {
-                require(tokenS != orders[j].order[IDX_TOKEN_S]); // "found sub-ring");
+                require(tokenS != orders[j][IDX_TOKEN_S]); // "found sub-ring");
             }
         }
     }
@@ -431,7 +431,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function handleRing(
         uint          ringSize,
         bytes32       ringhash,
-        OrderState[]  orders,
+        uint[9][]     orders,
+        OrderState[]  orderStates,
         address       miner,
         address       feeRecipient,
         bool          isRinghashReserved
@@ -448,18 +449,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Exchange rates calculation are performed by ring-miners as solidity
         // cannot get power-of-1/n operation, therefore we have to verify
         // these rates are correct.
-        verifyMinerSuppliedFillRates(ringSize, orders);
+        verifyMinerSuppliedFillRates(ringSize, orders, orderStates);
 
         // Scale down each order independently by substracting amount-filled and
         // amount-cancelled. Order owner's current balance and allowance are
         // not taken into consideration in these operations.
-        scaleRingBasedOnHistoricalRecords(delegate, ringSize, orders);
+        scaleRingBasedOnHistoricalRecords(delegate, ringSize, orders, orderStates);
 
         // Based on the already verified exchange rate provided by ring-miners,
         // we can furthur scale down orders based on token balance and allowance,
         // then find the smallest order of the ring, then calculate each order's
         // `fillAmountS`.
-        calculateRingFillAmount(ringSize, orders);
+        calculateRingFillAmount(ringSize, orders, orderStates);
 
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
@@ -468,6 +469,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             delegate,
             ringSize,
             orders,
+            orderStates,
             feeRecipient,
             _lrcTokenAddress
         );
@@ -477,6 +479,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             delegate,
             ringSize,
             orders,
+            orderStates,
             ringhash,
             feeRecipient,
             _lrcTokenAddress,
@@ -497,7 +500,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function settleRing(
         TokenTransferDelegate delegate,
         uint          ringSize,
-        OrderState[]  orders,
+        uint[9][]     orders,
+        OrderState[]  orderStates,
         bytes32       ringhash,
         address       feeRecipient,
         address       _lrcTokenAddress,
@@ -508,26 +512,26 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (owner + tokenS + 4 amounts)
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
-            var state = orders[i];
-            var prev = orders[(i + ringSize - 1) % ringSize];
-            var next = orders[(i + 1) % ringSize];
+            var orderState = orderStates[i];
+            var prev = orderStates[(i + ringSize - 1) % ringSize];
+            var next = orderStates[(i + 1) % ringSize];
 
             // Store owner and tokenS of every order
-            batch[p] = bytes32(state.order[IDX_OWNER]);
-            batch[p+1] = bytes32(state.order[IDX_TOKEN_S]);
+            batch[p] = bytes32(orders[i][IDX_OWNER]);
+            batch[p+1] = bytes32(orders[i][IDX_TOKEN_S]);
 
             // Store all amounts
-            batch[p+2] = bytes32(state.fillAmountS - prev.splitB);
-            batch[p+3] = bytes32(prev.splitB + state.splitS);
-            batch[p+4] = bytes32(state.lrcReward);
-            batch[p+5] = bytes32(state.lrcFee);
+            batch[p+2] = bytes32(orderState.fillAmountS - prev.splitB);
+            batch[p+3] = bytes32(prev.splitB + orderState.splitS);
+            batch[p+4] = bytes32(orderState.lrcReward);
+            batch[p+5] = bytes32(orderState.lrcFee);
             p += 6;
 
             // Update fill records
-            if (state.buyNoMoreThanAmountB) {
-                cancelledOrFilled[state.orderHash] += next.fillAmountS;
+            if (orderState.buyNoMoreThanAmountB) {
+                cancelledOrFilled[orderState.orderHash] += next.fillAmountS;
             } else {
-                cancelledOrFilled[state.orderHash] += state.fillAmountS;
+                cancelledOrFilled[orderState.orderHash] += orderState.fillAmountS;
             }
 
             OrderFilled(
@@ -536,12 +540,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 block.number,
                 ringhash,
                 prev.orderHash,
-                state.orderHash,
+                orderState.orderHash,
                 next.orderHash,
-                state.fillAmountS + state.splitS,
-                next.fillAmountS - state.splitB,
-                state.lrcReward,
-                state.lrcFee
+                orderState.fillAmountS + orderState.splitS,
+                next.fillAmountS - orderState.splitB,
+                orderState.lrcReward,
+                orderState.lrcFee
             );
         }
 
@@ -552,7 +556,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev Verify miner has calculte the rates correctly.
     function verifyMinerSuppliedFillRates(
         uint          ringSize,
-        OrderState[]  orders
+        uint[9][]     orders,
+        OrderState[]  orderStates
         )
         private
         view
@@ -561,8 +566,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint _rateRatioScale = RATE_RATIO_SCALE;
 
         for (uint i = 0; i < ringSize; i++) {
-            uint s1b0 = orders[i].rate.amountS.mul(orders[i].order[IDX_AMOUNT_B]);
-            uint s0b1 = orders[i].order[IDX_AMOUNT_S].mul(orders[i].rate.amountB);
+            uint s1b0 = orderStates[i].rate.amountS.mul(orders[i][IDX_AMOUNT_B]);
+            uint s0b1 = orders[i][IDX_AMOUNT_S].mul(orderStates[i].rate.amountB);
 
             require(s1b0 <= s0b1); // "miner supplied exchange rate provides invalid discount");
 
@@ -578,7 +583,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function calculateRingFees(
         TokenTransferDelegate delegate,
         uint            ringSize,
-        OrderState[]    orders,
+        uint[9][]       orders,
+        OrderState[]    orderStates,
         address         feeRecipient,
         address         _lrcTokenAddress
         )
@@ -587,107 +593,110 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
-        uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
+        //uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
+        
+        //uint minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
 
         for (uint i = 0; i < ringSize; i++) {
-            var state = orders[i];
-            var next = orders[(i + 1) % ringSize];
+        
+            var orderState = orderStates[i];
+            var next = (i + 1) % ringSize;
             uint lrcReceiable = 0;
 
-            if (state.lrcFee == 0) {
+            if (orderState.lrcFee == 0) {
                 // When an order's LRC fee is 0 or smaller than the specified fee,
                 // we help miner automatically select margin-split.
-                state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
-                state.marginSplitPercentage = _marginSplitPercentageBase;
+                orderState.feeSelection = FEE_SELECT_MARGIN_SPLIT;
+                orderState.marginSplitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
             } else {
                 uint lrcSpendable = getSpendable(
                     delegate,
                     _lrcTokenAddress,
-                    address(state.order[IDX_OWNER])
+                    address(orders[i][IDX_OWNER])
                 );
 
                 // If the order is selling LRC, we need to calculate how much LRC
                 // is left that can be used as fee.
-                if (address(state.order[IDX_TOKEN_S]) == _lrcTokenAddress) {
-                    lrcSpendable -= state.fillAmountS;
+                if (address(orders[i][IDX_TOKEN_S]) == _lrcTokenAddress) {
+                    lrcSpendable -= orderState.fillAmountS;
                 }
 
                 // If the order is buyign LRC, it will has more to pay as fee.
-                if (address(next.order[IDX_TOKEN_S]) == _lrcTokenAddress) {
-                    lrcReceiable = next.fillAmountS;
+                if (address(orders[next][IDX_TOKEN_S]) == _lrcTokenAddress) {
+                    lrcReceiable = orderStates[next].fillAmountS;
                 }
 
                 uint lrcTotal = lrcSpendable + lrcReceiable;
 
                 // If order doesn't have enough LRC, set margin split to 100%.
-                if (lrcTotal < state.lrcFee) {
-                    state.lrcFee = lrcTotal;
-                    state.marginSplitPercentage = _marginSplitPercentageBase;
+                if (lrcTotal < orderState.lrcFee) {
+                    orderState.lrcFee = lrcTotal;
+                    orderState.marginSplitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
                 }
 
-                if (state.lrcFee == 0) {
-                    state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
+                if (orderState.lrcFee == 0) {
+                    orderState.feeSelection = FEE_SELECT_MARGIN_SPLIT;
                 }
             }
 
-            if (state.feeSelection == FEE_SELECT_LRC) {
+            if (orderState.feeSelection == FEE_SELECT_LRC) {
                 if (lrcReceiable > 0) {
-                    if (lrcReceiable >= state.lrcFee) {
-                        state.splitB = state.lrcFee;
-                        state.lrcFee = 0;
+                    if (lrcReceiable >= orderState.lrcFee) {
+                        orderState.splitB = orderState.lrcFee;
+                        orderState.lrcFee = 0;
                     } else {
-                        state.splitB = lrcReceiable;
-                        state.lrcFee -= lrcReceiable;
+                        orderState.splitB = lrcReceiable;
+                        orderState.lrcFee -= lrcReceiable;
                     }
                 }
-            } else if (state.feeSelection == FEE_SELECT_MARGIN_SPLIT) {
+            } else if (orderState.feeSelection == FEE_SELECT_MARGIN_SPLIT) {
 
                 // Only check the available miner balance when absolutely needed
-                if (!checkedMinerLrcSpendable && minerLrcSpendable < state.lrcFee) {
+                if (!checkedMinerLrcSpendable && minerLrcSpendable < orderState.lrcFee) {
                     checkedMinerLrcSpendable = true;
                     minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
                 }
 
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
-                if (minerLrcSpendable >= state.lrcFee) {
-                    uint split;
-                    if (state.buyNoMoreThanAmountB) {
-                        split = (next.fillAmountS.mul(
-                            state.order[IDX_AMOUNT_S]
-                        ) / state.order[IDX_AMOUNT_B]).sub(
-                            state.fillAmountS
+                if (minerLrcSpendable >= orderState.lrcFee) {
+                    // HACK: reuse 'next' here to save on a local variable to stay below stack limit
+                    if (orderState.buyNoMoreThanAmountB) {
+                        next = (orderStates[next].fillAmountS.mul(
+                            orders[i][IDX_AMOUNT_S]
+                        ) / orders[i][IDX_AMOUNT_B]).sub(
+                            orderState.fillAmountS
                         );
                     } else {
-                        split = next.fillAmountS.sub(
-                            state.fillAmountS.mul(
-                                state.order[IDX_AMOUNT_B]
-                            ) / state.order[IDX_AMOUNT_S]
+                        next = orderStates[next].fillAmountS.sub(
+                            orderState.fillAmountS.mul(
+                                orders[i][IDX_AMOUNT_B]
+                            ) / orders[i][IDX_AMOUNT_S]
                         );
                     }
 
-                    if (state.marginSplitPercentage != _marginSplitPercentageBase) {
-                        split = split.mul(
-                            state.marginSplitPercentage
-                        ) / _marginSplitPercentageBase;
+                    if (orderState.marginSplitPercentage != MARGIN_SPLIT_PERCENTAGE_BASE) {
+                        next = next.mul(
+                            orderState.marginSplitPercentage
+                        ) / MARGIN_SPLIT_PERCENTAGE_BASE;
                     }
 
-                    if (state.buyNoMoreThanAmountB) {
-                        state.splitS = split;
+                    if (orderState.buyNoMoreThanAmountB) {
+                        orderState.splitS = next;
                     } else {
-                        state.splitB = split;
+                        orderState.splitB = next;
                     }
 
                     // This implicits order with smaller index in the ring will
                     // be paid LRC reward first, so the orders in the ring does
                     // mater.
-                    if (split > 0) {
-                        minerLrcSpendable -= state.lrcFee;
-                        state.lrcReward = state.lrcFee;
+                    if (next > 0) {
+                        minerLrcSpendable -= orderState.lrcFee;
+                        orderState.lrcReward = orderState.lrcFee;
                     }
                 }
 
-                state.lrcFee = 0;
+                orderState.lrcFee = 0;
             } else {
                 revert(); // "unsupported fee selection value");
             }
@@ -697,7 +706,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev Calculate each order's fill amount.
     function calculateRingFillAmount(
         uint          ringSize,
-        OrderState[]  orders
+        uint[9][]     orders,
+        OrderState[]  orderStates
         )
         private
         pure
@@ -710,7 +720,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             j = (i + 1) % ringSize;
             smallestIdx = calculateOrderFillAmount(
                 orders[i],
-                orders[j],
+                orderStates[i],
+                orderStates[j],
                 i,
                 j,
                 smallestIdx
@@ -720,7 +731,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         for (i = 0; i < smallestIdx; i++) {
             calculateOrderFillAmount(
                 orders[i],
-                orders[(i + 1) % ringSize],
+                orderStates[i],
+                orderStates[(i + 1) % ringSize],
                 0,               // Not needed
                 0,               // Not needed
                 0                // Not needed
@@ -730,8 +742,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @return The smallest order's index.
     function calculateOrderFillAmount(
-        OrderState        state,
-        OrderState        next,
+        uint[9]           order,
+        OrderState        orderState,
+        OrderState        nextOrderState,
         uint              i,
         uint              j,
         uint              smallestIdx
@@ -743,28 +756,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Default to the same smallest index
         newSmallestIdx = smallestIdx;
 
-        uint fillAmountB = state.fillAmountS.mul(
-            state.rate.amountB
-        ) / state.rate.amountS;
+        uint fillAmountB = orderState.fillAmountS.mul(
+            orderState.rate.amountB
+        ) / orderState.rate.amountS;
 
-        if (state.buyNoMoreThanAmountB) {
-            if (fillAmountB > state.order[IDX_AMOUNT_B]) {
-                fillAmountB = state.order[IDX_AMOUNT_B];
+        if (orderState.buyNoMoreThanAmountB) {
+            if (fillAmountB > order[IDX_AMOUNT_B]) {
+                fillAmountB = order[IDX_AMOUNT_B];
 
-                state.fillAmountS = fillAmountB.mul(
-                    state.rate.amountS
-                ) / state.rate.amountB;
+                orderState.fillAmountS = fillAmountB.mul(
+                    orderState.rate.amountS
+                ) / orderState.rate.amountB;
 
                 newSmallestIdx = i;
             }
         }
 
-        state.lrcFee = state.order[IDX_LRCFEE].mul(
-            state.fillAmountS
-        ) / state.order[IDX_AMOUNT_S];
+        orderState.lrcFee = order[IDX_LRCFEE].mul(
+            orderState.fillAmountS
+        ) / order[IDX_AMOUNT_S];
 
-        if (fillAmountB <= next.fillAmountS) {
-            next.fillAmountS = fillAmountB;
+        if (fillAmountB <= nextOrderState.fillAmountS) {
+            nextOrderState.fillAmountS = fillAmountB;
         } else {
             newSmallestIdx = j;
         }
@@ -775,19 +788,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function scaleRingBasedOnHistoricalRecords(
         TokenTransferDelegate delegate,
         uint          ringSize,
-        OrderState[]  orders
+        uint[9][]     orders,
+        OrderState[]  orderStates
         )
         private
         view
     {
         for (uint i = 0; i < ringSize; i++) {
-            var state = orders[i];
-            var order = state.order;
             uint amount;
+            var order = orders[i];
+            var orderState = orderStates[i];
 
-            if (state.buyNoMoreThanAmountB) {
+            if (orderState.buyNoMoreThanAmountB) {
                 amount = order[IDX_AMOUNT_B].tolerantSub(
-                    cancelledOrFilled[state.orderHash]
+                    cancelledOrFilled[orderState.orderHash]
                 );
 
                 order[IDX_AMOUNT_S] = amount.mul(order[IDX_AMOUNT_S]) / order[IDX_AMOUNT_B];
@@ -796,7 +810,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order[IDX_AMOUNT_B] = amount;
             } else {
                 amount = order[IDX_AMOUNT_S].tolerantSub(
-                    cancelledOrFilled[state.orderHash]
+                    cancelledOrFilled[orderState.orderHash]
                 );
 
                 order[IDX_AMOUNT_B] = amount.mul(order[IDX_AMOUNT_B]) / order[IDX_AMOUNT_S];
@@ -811,7 +825,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             uint availableAmountS = getSpendable(delegate, address(order[IDX_TOKEN_S]), address(order[IDX_OWNER]));
             require(availableAmountS > 0); // "order spendable amountS is zero");
 
-            state.fillAmountS = (
+            orderState.fillAmountS = (
                 order[IDX_AMOUNT_S] < availableAmountS ?
                 order[IDX_AMOUNT_S] : availableAmountS
             );
@@ -882,17 +896,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
         orderStates = new OrderState[](ringSize);
         for (uint i = 0; i < ringSize; i++) {
         
+            var order = orders[i];
+            
             address tokenB = address(orders[(i + 1) % ringSize][IDX_TOKEN_S]);
     
             bytes32 orderHash = calculateOrderHash(
-                orders[i],
+                order,
                 tokenB,
                 uint8ArgsList[i][0],          // marginSplitPercentage
                 buyNoMoreThanAmountBList[i]   // buyNoMoreThanAmountB
             );
 
             verifySignature(
-                address(orders[i][IDX_OWNER]),
+                address(order[IDX_OWNER]),
                 orderHash,
                 vList[i],
                 rList[i],
@@ -900,19 +916,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
 
             validateOrder(
-                orders[i],
+                order,
                 tokenB,
                 uint8ArgsList[i][0]          // marginSplitPercentage
             );
 
             orderStates[i] = OrderState(
-                orders[i],
                 uint8ArgsList[i][0],         // marginSplitPercentage
                 uint8ArgsList[i][1],         // feeSelection
                 buyNoMoreThanAmountBList[i], // buyNoMoreThanAmountB
                 
                 orderHash,
-                Rate(orders[i][IDX_RATEAMOUNT_S], orders[i][IDX_AMOUNT_B]),
+                Rate(order[IDX_RATEAMOUNT_S], order[IDX_AMOUNT_B]),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
