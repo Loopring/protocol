@@ -31,7 +31,7 @@ library MathUint8 {
         returns (uint8 res)
     {
         res = arr[0];
-        for (uint i = 1; i < len; i++) {
+        for (uint i = 1; i < len; ++i) {
             res ^= arr[i];
         }
     }

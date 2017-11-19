@@ -84,7 +84,7 @@ contract RinghashRegistry {
         require(size > 0);
         require(size == ringhashList.length);
 
-        for (uint i = 0; i < size; i++) {
+        for (uint i = 0; i < size; ++i) {
             submitRinghash(ringminerList[i], ringhashList[i]);
         }
     }
