@@ -682,8 +682,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint smallestIdx = 0;
         uint i;
         uint j;
-
-        for (i = 0; i < ringSize - 1; i++) {
+        uint lastIndex = ringSize - 1;
+        for (i = 0; i < lastIndex; i++) {
             j = i + 1;
             smallestIdx = calculateOrderFillAmount(
                 orders[i],
@@ -694,7 +694,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
         calculateOrderFillAmount(
-            orders[ringSize - 1],
+            orders[lastIndex],
             orders[0]
         );
         for (i = 0; i < smallestIdx; i++) {
