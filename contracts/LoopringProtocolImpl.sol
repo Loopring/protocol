@@ -683,8 +683,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint i;
         uint j;
 
-        for (i = 0; i < ringSize; i++) {
-            j = (i + 1) % ringSize;
+        for (i = 0; i < ringSize - 1; i++) {
+            j = i + 1;
             smallestIdx = calculateOrderFillAmount(
                 orders[i],
                 orders[j],
@@ -693,14 +693,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 smallestIdx
             );
         }
-
+        calculateOrderFillAmount(
+            orders[ringSize - 1],
+            orders[0]
+        );
         for (i = 0; i < smallestIdx; i++) {
             calculateOrderFillAmount(
                 orders[i],
-                orders[(i + 1) % ringSize],
-                0,               // Not needed
-                0,               // Not needed
-                0                // Not needed
+                orders[i + 1]
             );
         }
     }
@@ -747,6 +747,36 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
     }
 
+    /// @return The smallest order's index.
+    function calculateOrderFillAmount(
+        OrderState        state,
+        OrderState        next
+        )
+        private
+        pure
+    {
+        uint fillAmountB = state.fillAmountS.mul(
+            state.rate.amountB
+        ) / state.rate.amountS;
+
+        if (state.order.buyNoMoreThanAmountB) {
+            if (fillAmountB > state.order.amountB) {
+                fillAmountB = state.order.amountB;
+
+                state.fillAmountS = fillAmountB.mul(
+                    state.rate.amountS
+                ) / state.rate.amountB;
+            }
+        }
+
+        state.lrcFee = state.order.lrcFee.mul(
+            state.fillAmountS
+        ) / state.order.amountS;
+
+        if (fillAmountB <= next.fillAmountS) {
+            next.fillAmountS = fillAmountB;
+        } 
+    }
     /// @dev Scale down all orders based on historical fill or cancellation
     ///      stats but key the order's original exchange rate.
     function scaleRingBasedOnHistoricalRecords(
