@@ -318,7 +318,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         //bool    buyNoMoreThanAmountB;
         //uint8   marginSplitPercentage;
-        uint8   margineSplitAndNoMoreThan;
+        uint8   margineSplitAndNoMoreThan,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -873,7 +873,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Validate ring-mining related arguments.
         for (uint i = 0; i < ringSize; i++) {
             require(uintArgsList[i][6] > 0); // "order rateAmountS is zero");
-            require(uint8ArgsList[i][1] <= FEE_SELECT_MAX_VALUE); // "invalid order fee selection");
+            require(uint8ArgsListAndNoMoreThanList[i][1] <= FEE_SELECT_MAX_VALUE); // "invalid order fee selection");
         }
     }
 
@@ -883,8 +883,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
-        uint8[2][]      uint8ArgsList,
-        bool[]          buyNoMoreThanAmountBList,
+        //uint8[2][]      uint8ArgsList,
+        //bool[]          buyNoMoreThanAmountBList,
+        uint8[2][]      uint8ArgsListAndNoMoreThanList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList
@@ -904,8 +905,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uintArgsList[i][0],
                 uintArgsList[i][1],
                 uintArgsList[i][5],
-                buyNoMoreThanAmountBList[i],
-                uint8ArgsList[i][0]
+                //buyNoMoreThanAmountBList[i],
+                //uint8ArgsList[i][0]
+                uint8ArgsListAndNoMoreThanList[i][0]
             );
 
             bytes32 orderHash = calculateOrderHash(
@@ -933,7 +935,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orders[i] = OrderState(
                 order,
                 orderHash,
-                uint8ArgsList[i][1],  // feeSelection
+                //uint8ArgsList[i][1],  // feeSelection
+                uint8ArgsListAndNoMoreThanList[i][1],
                 Rate(uintArgsList[i][6], order.amountB),
                 getSpendable(delegate, order.tokenS, order.owner),
                 0,   // fillAmountS
