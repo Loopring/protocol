@@ -22,9 +22,9 @@ import "./lib/MathUint.sol";
 import "./lib/Ownable.sol";
 
 
-/// @title TokenTransferDelegate - Acts as a middle man to transfer ERC20 tokens
-/// on behalf of different versions of Loopring protocol to avoid ERC20
-/// re-authorization.
+/// @title TokenTransferDelegate
+/// @dev Acts as a middle man to transfer ERC20 tokens on behalf of different
+/// versions of Loopring protocol to avoid ERC20 re-authorization.
 /// @author Daniel Wang - <daniel@loopring.org>.
 contract TokenTransferDelegate is Ownable {
     using MathUint for uint;
@@ -54,7 +54,7 @@ contract TokenTransferDelegate is Ownable {
     ////////////////////////////////////////////////////////////////////////////
 
     modifier onlyAuthorized() {
-        if (isAddressAuthorized(msg.sender) == false) {
+        if (!isAddressAuthorized(msg.sender)) {
             revert();
         }
         _;
@@ -80,7 +80,7 @@ contract TokenTransferDelegate is Ownable {
         onlyOwner
         external
     {
-        AddressInfo storage addrInfo = addressInfos[addr];
+        var addrInfo = addressInfos[addr];
 
         if (addrInfo.index != 0) { // existing
             if (addrInfo.authorized == false) { // re-authorize
@@ -134,7 +134,7 @@ contract TokenTransferDelegate is Ownable {
         AddressInfo memory addrInfo;
         uint count = 0;
 
-        while (addr != address(0) && max < count) {
+        while (addr != address(0) && count < max) {
             addrInfo = addressInfos[addr];
             if (addrInfo.index == 0) {
                 break;
@@ -165,61 +165,55 @@ contract TokenTransferDelegate is Ownable {
     }
 
     function batchTransferToken(
-        uint ringSize, 
         address lrcTokenAddress,
         address feeRecipient,
         bytes32[] batch)
         onlyAuthorized
         external
     {
-        require(batch.length == ringSize * 6);
+        uint len = batch.length;
+        require(len % 6 == 0);
 
-        uint p = ringSize * 2;
         var lrc = ERC20(lrcTokenAddress);
 
-        for (uint i = 0; i < ringSize; i++) {
-            uint prev = ((i + ringSize - 1) % ringSize);
-            address tokenS = address(batch[i]);
-            address owner = address(batch[ringSize + i]);
-            address prevOwner = address(batch[ringSize + prev]);
+        for (uint i = 0; i < len; i += 6) {
+            address owner = address(batch[i]);
+            address prevOwner = address(batch[(i + len - 6) % len]);
             
-            // Pay tokenS to previous order, or to miner as previous order's
+            // Pay token to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
 
-            ERC20 _tokenS;
-            // Try to create ERC20 instances only once per token.
-            if (owner != prevOwner || owner != feeRecipient && batch[p+1] != 0) {
-                _tokenS = ERC20(tokenS);
-            }
+            var token = ERC20(address(batch[i + 1]));
 
-            // Here batch[p] has been checked not to be 0.
+            // Here batch[i+2] has been checked not to be 0.
             if (owner != prevOwner) {
                 require(
-                    _tokenS.transferFrom(owner, prevOwner, uint(batch[p]))
+                    token.transferFrom(owner, prevOwner, uint(batch[i + 2]))
                 );
             }
 
             if (owner != feeRecipient) {
-                if (batch[p+1] != 0) {
+                bytes32 item = batch[i + 3];
+                if (item != 0) {
                     require(
-                        _tokenS.transferFrom(owner, feeRecipient, uint(batch[p+1]))
+                        token.transferFrom(owner, feeRecipient, uint(item))
                     );
                 } 
 
-                if (batch[p+2] != 0) {
+                item = batch[i + 4];
+                if (item != 0) {
                     require(
-                        lrc.transferFrom(feeRecipient, owner, uint(batch[p+2]))
+                        lrc.transferFrom(feeRecipient, owner, uint(item))
                     );
                 }
 
-                if (batch[p+3] != 0) {
+                item = batch[i + 5];
+                if (item != 0) {
                     require(
-                        lrc.transferFrom(owner, feeRecipient, uint(batch[p+3]))
+                        lrc.transferFrom(owner, feeRecipient, uint(item))
                     );
                 }
             }
-
-            p += 4;
         }
     }
 }

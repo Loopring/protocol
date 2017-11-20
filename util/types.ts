@@ -14,6 +14,9 @@ export interface OrderParams {
   marginSplitPercentage: number;
   scaledAmountS?: number;
   scaledAmountB?: number;
+  rateAmountS?: number;
+  rateAmountB?: number;
+  fillAmountS?: number;
   orderHashHex?: string;
   v?: number;
   r?: string;
@@ -37,6 +40,7 @@ export interface FeeItem {
   feeLrc: number;
   feeS: number;
   feeB: number;
+  lrcReward: number;
 }
 
 export interface BalanceItem {

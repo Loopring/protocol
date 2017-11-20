@@ -26,54 +26,45 @@ contract LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
     /// Constants                                                            ///
     ////////////////////////////////////////////////////////////////////////////
-    uint    public constant FEE_SELECT_LRC               = 0;
-    uint    public constant FEE_SELECT_MARGIN_SPLIT      = 1;
-    uint    public constant FEE_SELECT_MAX_VALUE         = 1;
+    uint8   public constant FEE_SELECT_LRC               = 0;
+    uint8   public constant FEE_SELECT_MARGIN_SPLIT      = 1;
+    uint8   public constant FEE_SELECT_MAX_VALUE         = 1;
     uint8   public constant MARGIN_SPLIT_PERCENTAGE_BASE = 100;
 
-
     ////////////////////////////////////////////////////////////////////////////
-    /// Structs                                                              ///
+    /// Events                                                               ///
     ////////////////////////////////////////////////////////////////////////////
 
-    /// @param tokenS       Token to sell.
-    /// @param amountS      Maximum amount of tokenS to sell.
-    /// @param amountB      Minimum amount of tokenB to buy if all amountS sold.
-    /// @param lrcFee       Max amount of LRC to pay for miner. The real amount
-    ///                     to pay is proportional to fill amount.
-    /// @param buyNoMoreThanAmountB -
-    ///                     If true, this order does not accept buying more
-    ///                     than `amountB`.
-    /// @param marginSplitPercentage -
-    ///                     The percentage of margin paid to miner.
-    /// @param v            ECDSA signature parameter v.
-    /// @param r            ECDSA signature parameters r.
-    /// @param s            ECDSA signature parameters s.
-    struct Order {
-        address owner;
-        address tokenS;
-        uint    amountS;
-        uint    amountB;
-        uint    lrcFee;
-        bool    buyNoMoreThanAmountB;
-        uint8   marginSplitPercentage;
+    struct Fill {
+        bytes32 _orderHash;
+        bytes32 _nextOrderHash;
+        uint    _amountS;
+        uint    _amountB;
+        uint    _lrcReward;
+        uint    _lrcFee;
     }
 
-    /// @param tokenB       Token to buy.
-    /// @param timestamp    Indicating when this order is created/signed.
-    /// @param ttl          Indicating after how many seconds from `timestamp`
-    ///                     this order will expire.
-    /// @param salt         A random number to make this order's hash unique.
-    struct OrderParameters {
-        address tokenB;
-        uint    timestamp;
-        uint    ttl;
-        uint    salt;
-    }
+    event RingMined(
+        uint                _ringIndex,
+        bytes32     indexed _ringhash,
+        address     indexed _miner,
+        address     indexed _feeRecipient,
+        bool                _isRinghashReserved,
+        Fill[]              _fills
+    );
 
+    event OrderCancelled(
+        bytes32     indexed _orderHash,
+        uint                _amountCancelled
+    );
+
+    event CutoffTimestampChanged(
+        address     indexed _address,
+        uint                _cutoff
+    );
 
     ////////////////////////////////////////////////////////////////////////////
-    /// Public Functions                                                     ///
+    /// Functions                                                            ///
     ////////////////////////////////////////////////////////////////////////////
 
     /// @dev Submit a order-ring for validation and settlement.
@@ -137,12 +128,12 @@ contract LoopringProtocol {
         uint8      v,
         bytes32    r,
         bytes32    s
-        ) public;
+        ) external;
 
     /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
     ///        is smaller than or equal to the new value of the address's cutoff
     ///        timestamp.
     /// @param cutoff The cutoff timestamp, will default to `block.timestamp`
     ///        if it is 0.
-    function setCutoff(uint cutoff) public;
+    function setCutoff(uint cutoff) external;
 }

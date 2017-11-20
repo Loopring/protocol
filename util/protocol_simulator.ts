@@ -9,6 +9,7 @@ export class ProtocolSimulator {
   public feeSelectionList: number[];
 
   public availableAmountSList: number[];
+  public spendableLrcFeeList: number[];
   public orderCancelled: number[];
   public orderFilled: number[];
 
@@ -34,6 +35,8 @@ export class ProtocolSimulator {
     for (let i = 0; i < size; i ++) {
       const order = this.ring.orders[i];
       const rateAmountS = order.params.scaledAmountS * rate;
+      order.params.rateAmountS = rateAmountS;
+      order.params.rateAmountB = order.params.scaledAmountB;
       result.push(rateAmountS);
     }
 
@@ -47,7 +50,7 @@ export class ProtocolSimulator {
 
     const fees = this.caculateOrderFees(fillAmountSList, rateAmountSList);
     const balances = this.caculateTraderTokenBalances(fees, fillAmountSList);
-    const totalFees = this.sumFees(fees);
+    const totalFees = this.sumFees(fees, balances);
 
     const result: any = {};
     result.fees = fees;
@@ -163,19 +166,26 @@ export class ProtocolSimulator {
     }
   }
 
-  private sumFees(fees: FeeItem[]) {
+  private sumFees(fees: FeeItem[], balances: BalanceItem[]) {
     const size = this.ring.orders.length;
     const feeTotals: any = {};
     for (let i = 0; i < size; i++) {
       const order = this.ring.orders[i];
       const feeItem = fees[i];
+      const balanceItem = balances[i];
       const tokenS = order.params.tokenS;
       const tokenB = order.params.tokenB;
 
       feeTotals[this.lrcAddress] = this.sumFeeItem(feeTotals, this.lrcAddress, feeItem.feeLrc);
+      feeTotals[this.lrcAddress] = this.sumFeeItem(feeTotals,
+                                                   this.lrcAddress,
+                                                   -feeItem.lrcReward);
+
       feeTotals[tokenS] = this.sumFeeItem(feeTotals, tokenS, feeItem.feeS);
       feeTotals[tokenB] = this.sumFeeItem(feeTotals, tokenB, feeItem.feeB);
     }
+
+    feeTotals[this.lrcAddress] = this.sumFeeItem(feeTotals, this.lrcAddress, this.spendableLrcFeeList[size]);
 
     return feeTotals;
   }
@@ -192,6 +202,7 @@ export class ProtocolSimulator {
     const size = this.ring.orders.length;
     const fees: FeeItem[] = [];
 
+    let minerSpendableLrc = this.spendableLrcFeeList[size];
     // caculate fees for each order. and assemble result.
     for (let i = 0; i < size; i++) {
       const nextInd = (i + 1) % size;
@@ -201,6 +212,7 @@ export class ProtocolSimulator {
         feeB: 0,
         feeLrc: 0,
         feeS: 0,
+        lrcReward: 0,
         fillAmountS: fillAmountSList[i],
       };
 
@@ -209,17 +221,49 @@ export class ProtocolSimulator {
         order.params.marginSplitPercentage = 100;
       }
 
+      if (order.params.tokenB === this.lrcAddress) {
+        this.spendableLrcFeeList[i] += fillAmountSList[nextInd];
+      }
+
+      if (this.spendableLrcFeeList[i] === 0) {
+        this.feeSelectionList[i] = 1;
+        order.params.marginSplitPercentage = 100;
+      }
+
+      let feeLrcToPay = 0;
+      if (order.params.buyNoMoreThanAmountB) {
+        const fillAmountB = fillAmountSList[i] * order.params.rateAmountB / order.params.rateAmountS;
+        feeLrcToPay = order.params.lrcFee.toNumber() * fillAmountB / order.params.amountB.toNumber();
+      } else {
+        feeLrcToPay = order.params.lrcFee.toNumber() * fillAmountSList[i] /
+        order.params.amountS.toNumber();
+      }
+
+      if (this.spendableLrcFeeList[i] < feeLrcToPay) {
+        feeLrcToPay = this.spendableLrcFeeList[i];
+        order.params.marginSplitPercentage = 100;
+      }
+
       if (0 === this.feeSelectionList[i]) {
-        feeItem.feeLrc = order.params.lrcFee.toNumber() * fillAmountSList[i] / order.params.amountS.toNumber();
+        feeItem.feeLrc = feeLrcToPay;
       } else if (1 === this.feeSelectionList[i]) {
-        if (order.params.buyNoMoreThanAmountB) {
-          feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
-            fillAmountSList[i];
-          feeItem.feeS = feeItem.feeS * order.params.marginSplitPercentage / 100;
-        } else {
-          feeItem.feeB = fillAmountSList[nextInd] -
-            fillAmountSList[i] * order.params.amountB.toNumber() / order.params.amountS.toNumber();
-          feeItem.feeB = feeItem.feeB * order.params.marginSplitPercentage / 100;
+        if (minerSpendableLrc >= feeLrcToPay) {
+          if (order.params.buyNoMoreThanAmountB) {
+            feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
+              fillAmountSList[i];
+            feeItem.feeS = feeItem.feeS * order.params.marginSplitPercentage / 100;
+          } else {
+            feeItem.feeB = fillAmountSList[nextInd] -
+              fillAmountSList[i] * order.params.amountB.toNumber() / order.params.amountS.toNumber();
+            feeItem.feeB = feeItem.feeB * order.params.marginSplitPercentage / 100;
+          }
+
+          if (feeItem.feeS > 0 || feeItem.feeB > 0) {
+            minerSpendableLrc -= feeLrcToPay;
+            feeItem.lrcReward = feeLrcToPay;
+          }
+
+          feeItem.feeLrc = 0;
         }
       } else {
         throw new Error("invalid fee selection value.");
@@ -231,7 +275,7 @@ export class ProtocolSimulator {
     return fees;
   }
 
-  // assume that the balance of tokenS of this.ring.orders[i].owner == this.ring.orders[i].params.amountS
+  // The balance of tokenS of this.ring.orders[i].owner is this.availableAmountSList[i].
   private caculateTraderTokenBalances(fees: FeeItem[], fillAmountSList: number[]) {
     const size = this.ring.orders.length;
     const balances: BalanceItem[] = [];
@@ -239,10 +283,23 @@ export class ProtocolSimulator {
       const order = this.ring.orders[i];
       const nextInd = (i + 1) % size;
 
+      let balanceSBefore = order.params.amountS.toNumber();
+      if (this.availableAmountSList) {
+        balanceSBefore = this.availableAmountSList[i];
+      }
+
       const balanceItem: BalanceItem = {
         balanceB: fillAmountSList[nextInd] - fees[i].feeB,
-        balanceS: order.params.amountS.toNumber() - fillAmountSList[i] - fees[i].feeS,
+        balanceS: balanceSBefore - fillAmountSList[i] - fees[i].feeS,
       };
+
+      if (order.params.tokenS === this.lrcAddress && 0 === this.feeSelectionList[i]) {
+        balanceItem.balanceS -= fees[i].feeLrc;
+      }
+
+      if (order.params.tokenB === this.lrcAddress && 0 === this.feeSelectionList[i]) {
+        balanceItem.balanceB -= fees[i].feeLrc;
+      }
 
       balances.push(balanceItem);
     }

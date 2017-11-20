@@ -9,7 +9,7 @@ We'll be collecting optimization bounty submissions and their responses here. Pl
 - From: Brecht Devos <brechtp.devos@gmail.com>
 - Time: 11:22 29/10/2017 Beijing Time
 - PR: https://github.com/Loopring/protocol/pull/35
-- Result: reduced gas usage from 508406 to 462621 (=45785), a 8.95% reduction of 511465.
+- Result: reduced gas usage from 508406 to 465790 (=42616), a 8.33% reduction of 511465.
 
 
 Hey,
@@ -43,7 +43,7 @@ Brecht Devos
 - From: Kecheng Yue <yuekec@gmail.com>
 - Time: 00:46 01/11/2017 Beijing Time
 - PR: https://github.com/Loopring/protocol/pull/37
-- Result: reduced gas usage from 462621 to 447740 (=14881), a 2.91% reduction of 511465.
+- Result: reduced gas usage from 465790 to 447740 (=18050), a 3.53% reduction of 511465.
 
 Hi,  
 
@@ -363,11 +363,10 @@ I also made a pull request for this one: https://github.com/Loopring/protocol/pu
 
 
 
-## #13 [TBD]
+## #13 [REJECTED]
 
 - From: 裴林波 <398202646@qq.com>
 - Time: 00:00 07/11/2017 Beijing Time
-- PR: 
 
 Hi Team
 
@@ -532,3 +531,11 @@ ShangHai China
 - Time: as of PR 121
 - PR: https://github.com/Loopring/protocol/pull/121
 - Result: reduced gas usage from 393367 to 391042 (=2325), a 0.45% reduction of 511465.
+
+## #27 [Merged]
+
+- From: Brecht Devos <brechtp.devos@gmail.com>
+- Time: as of PR 126
+- PR: https://github.com/Loopring/protocol/pull/126
+- Result: reduced gas usage from 390680 to 376267 (=14413), a 2.82% reduction of 511465.
+
