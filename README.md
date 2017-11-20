@@ -1,5 +1,9 @@
 # Loopring Protocol Smart Contracts
 
+## About This Branch
+
+This branch (v2.0) will support ERC223 and cross trade between ERC20 and ERC223 tokens.
+
 ## Compile
 
 
