@@ -36,15 +36,11 @@ contract("TokenRegistry", (accounts: string[]) => {
 
     it("should be able to unregister a token", async () => {
       let isRegistered = await tokenRegistry.isTokenRegistered(testTokenAddr);
-      let isRegisteredBySymbol = await tokenRegistry.isTokenRegisteredBySymbol("TEST");
       assert.equal(isRegistered, true, "token should be registered on start");
-      assert.equal(isRegisteredBySymbol, true, "token should be registered on start");
 
-      await tokenRegistry.unregisterToken(testTokenAddr, "TEST", {from: owner});
+      await tokenRegistry.unregisterToken(testTokenAddr, {from: owner});
       isRegistered = await tokenRegistry.isTokenRegistered(testTokenAddr);
-      isRegisteredBySymbol = await tokenRegistry.isTokenRegisteredBySymbol("TEST");
       assert.equal(isRegistered, false, "token should be unregistered");
-      assert.equal(isRegisteredBySymbol, false, "token should be unregistered");
     });
 
     it("should be able to check all tokens registered in array", async () => {

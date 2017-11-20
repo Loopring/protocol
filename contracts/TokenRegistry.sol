@@ -17,6 +17,7 @@
 */
 pragma solidity 0.4.18;
 
+import "./lib/AddressMap.sol";
 import "./lib/Ownable.sol";
 
 
@@ -25,48 +26,24 @@ import "./lib/Ownable.sol";
 /// @author Kongliang Zhong - <kongliang@loopring.org>,
 /// @author Daniel Wang - <daniel@loopring.org>.
 contract TokenRegistry is Ownable {
-
-    address[] public tokens;
-
-    mapping (address => bool) tokenMap;
-
-    mapping (string => address) tokenSymbolMap;
+    AddressMapping.AddressMap tokenMap;
 
     function registerToken(address _token, string _symbol)
         external
         onlyOwner
     {
         require(_token != address(0));
-        require(!isTokenRegisteredBySymbol(_symbol));
         require(!isTokenRegistered(_token));
-        tokens.push(_token);
-        tokenMap[_token] = true;
-        tokenSymbolMap[_symbol] = _token;
+        AddressMapping.insert(tokenMap, _token, keccak256(_symbol));
     }
 
-    function unregisterToken(address _token, string _symbol)
+    function unregisterToken(address _token)
         external
         onlyOwner
     {
         require(_token != address(0));
-        require(tokenSymbolMap[_symbol] == _token);
-        delete tokenSymbolMap[_symbol];
-        delete tokenMap[_token];
-        for (uint i = 0; i < tokens.length; i++) {
-            if (tokens[i] == _token) {
-                tokens[i] = tokens[tokens.length - 1];
-                tokens.length --;
-                break;
-            }
-        }
-    }
-
-    function isTokenRegisteredBySymbol(string symbol)
-        public
-        view
-        returns (bool)
-    {
-        return tokenSymbolMap[symbol] != address(0);
+        require(AddressMapping.contains(tokenMap, _token));
+        AddressMapping.remove(tokenMap, _token);
     }
 
     function isTokenRegistered(address _token)
@@ -74,7 +51,7 @@ contract TokenRegistry is Ownable {
         view
         returns (bool)
     {
-        return tokenMap[_token];
+        return AddressMapping.contains(tokenMap, _token);
     }
 
     function areAllTokensRegistered(address[] tokenList)
@@ -83,7 +60,7 @@ contract TokenRegistry is Ownable {
         returns (bool)
     {
         for (uint i = 0; i < tokenList.length; i++) {
-            if (!tokenMap[tokenList[i]]) {
+            if (!AddressMapping.contains(tokenMap, tokenList[i])) {
                 return false;
             }
         }
@@ -95,6 +72,15 @@ contract TokenRegistry is Ownable {
         constant
         returns (address)
     {
-        return tokenSymbolMap[symbol];
+        for (uint i = AddressMapping.iterateStart(tokenMap);
+            AddressMapping.iterateValid(tokenMap, i);
+            i = AddressMapping.iterateNext(tokenMap, i)
+        ) {
+            var (key, value) = AddressMapping.iterateGet(tokenMap, i);
+            if (keccak256(symbol) == value) {
+                return key;
+            }
+        }
+
     }
 }
