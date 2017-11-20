@@ -51,7 +51,7 @@ contract TokenRegistry is Ownable {
         require(tokenSymbolMap[_symbol] == _token);
         delete tokenSymbolMap[_symbol];
         delete tokenMap[_token];
-        for (uint i = 0; i < tokens.length; i++) {
+        for (uint i = 0; i < tokens.length; ++i) {
             if (tokens[i] == _token) {
                 tokens[i] = tokens[tokens.length - 1];
                 tokens.length --;
@@ -81,7 +81,7 @@ contract TokenRegistry is Ownable {
         view
         returns (bool)
     {
-        for (uint i = 0; i < tokenList.length; i++) {
+        for (uint i = 0; i < tokenList.length; ++i) {
             if (!tokenMap[tokenList[i]]) {
                 return false;
             }

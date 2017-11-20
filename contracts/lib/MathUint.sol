@@ -57,7 +57,7 @@ library MathUint {
         require(scale > 0);
 
         uint avg = 0;
-        for (uint i = 0; i < len; i++) {
+        for (uint i = 0; i < len; ++i) {
             avg += arr[i];
         }
 
@@ -69,7 +69,7 @@ library MathUint {
 
         uint cvs = 0;
         uint s = 0;
-        for (i = 0; i < len; i++) {
+        for (i = 0; i < len; ++i) {
             s = arr[i] > avg ? arr[i] - avg : avg - arr[i];
             cvs += mul(s, s);
         }
