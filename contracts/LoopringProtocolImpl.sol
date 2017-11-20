@@ -384,9 +384,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
     {
         // Check the ring has no sub-ring.
-        for (uint i = 0; i < ringSize - 1; i++) {
+        for (uint i = 0; i < ringSize - 1; ++i) {
             address tokenS = orders[i].order.tokenS;
-            for (uint j = i + 1; j < ringSize; j++) {
+            for (uint j = i + 1; j < ringSize; ++j) {
                 require(tokenS != orders[j].order.tokenS); // "found sub-ring");
             }
         }
@@ -401,7 +401,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         // Extract the token addresses
         var tokens = new address[](ringSize);
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             tokens[i] = addressList[i][1];
         }
 
@@ -489,7 +489,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         fills = new Fill[](ringSize);
 
         uint p = 0;
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             var state = orders[i];
             var prev = orders[(i + ringSize - 1) % ringSize];
             var next = orders[(i + 1) % ringSize];
@@ -537,7 +537,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         var rateRatios = new uint[](ringSize);
         uint _rateRatioScale = RATE_RATIO_SCALE;
 
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             uint s1b0 = orders[i].rate.amountS.mul(orders[i].order.amountB);
             uint s0b1 = orders[i].order.amountS.mul(orders[i].rate.amountB);
 
@@ -566,7 +566,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint minerLrcSpendable = 0;
         uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
 
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             var state = orders[i];
             var next = orders[(i + 1) % ringSize];
             uint lrcReceiable = 0;
@@ -683,7 +683,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint i;
         uint j;
 
-        for (i = 0; i < ringSize; i++) {
+        for (i = 0; i < ringSize; ++i) {
             j = (i + 1) % ringSize;
             smallestIdx = calculateOrderFillAmount(
                 orders[i],
@@ -694,7 +694,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             );
         }
 
-        for (i = 0; i < smallestIdx; i++) {
+        for (i = 0; i < smallestIdx; ++i) {
             calculateOrderFillAmount(
                 orders[i],
                 orders[(i + 1) % ringSize],
@@ -756,7 +756,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             var state = orders[i];
             var order = state.order;
             uint amount;
@@ -833,7 +833,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(ringSize + 1 == sList.length); // "ring data is inconsistent - sList");
 
         // Validate ring-mining related arguments.
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             require(uintArgsList[i][6] > 0); // "order rateAmountS is zero");
             require(uint8ArgsList[i][1] <= FEE_SELECT_MAX_VALUE); // "invalid order fee selection");
         }
@@ -858,7 +858,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint ringSize = addressList.length;
         orders = new OrderState[](ringSize);
 
-        for (uint i = 0; i < ringSize; i++) {
+        for (uint i = 0; i < ringSize; ++i) {
             var order = Order(
                 addressList[i][0],
                 addressList[i][1],
