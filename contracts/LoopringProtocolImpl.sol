@@ -568,15 +568,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             if (state.lrcFee == 0) {
                 // When an order's LRC fee is 0 or smaller than the specified fee,
                 // we help miner automatically select margin-split.
-
-                
                 state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
-                if (state.order.marginSplitAndNoMoreB >= 128) {
-                    state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase+128;
-                }else {
-                    state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase;
-                }
-                
+                state.order.marginSplitPercentage = _marginSplitPercentageBase;
             } else {
                 uint lrcSpendable = getSpendable(
                     delegate,
@@ -599,14 +592,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 // If order doesn't have enough LRC, set margin split to 100%.
                 if (lrcTotal < state.lrcFee) {
-
                     state.lrcFee = lrcTotal;
-
-                    if (state.order.marginSplitAndNoMoreB >= 128) {
-                        state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase+128;
-                    }else {
-                        state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase;
-                    }
+                    state.order.marginSplitPercentage = _marginSplitPercentageBase;
                 }
 
                 if (state.lrcFee == 0) {
@@ -631,7 +618,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     checkedMinerLrcSpendable = true;
                     minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
                 }
-
+                
+                uint8 pct = state.order.marginSplitAndNoMoreB;
+                
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
                 if (minerLrcSpendable >= state.lrcFee) {
@@ -642,6 +631,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         ) / state.order.amountB).sub(
                             state.fillAmountS
                         );
+
+                        pct = marginSplitAndNoMoreB - 128;
+
                     } else {
                         split = next.fillAmountS.sub(
                             state.fillAmountS.mul(
@@ -650,21 +642,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         );
                     }
 
-
-                    if (state.order.marginSplitAndNoMoreB >= 128) {
-                        
-                        if ((state.order.marginSplitAndNoMoreB - 128) != _marginSplitPercentageBase) {
-                            split = split.mul(
-                                (state.order.marginSplitAndNoMoreB - 128)) / _marginSplitPercentageBase;
-                        }
-
-                    } else {
-                        if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase) {
-                            split = split.mul(
-                                state.order.marginSplitAndNoMoreB) / _marginSplitPercentageBase;
-                        }
+                    if (pct != _marginSplitPercentageBase) {
+                        split = split.mul(
+                            pct
+                        ) / _marginSplitPercentageBase;
                     }
-                    
+
                     if (state.order.marginSplitAndNoMoreB >= 128) {
                         state.splitS = split;
                     } else {
