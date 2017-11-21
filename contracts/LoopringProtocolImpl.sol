@@ -387,7 +387,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
     /// Internal & Private Functions                                         ///
     ////////////////////////////////////////////////////////////////////////////
-
     /// @dev Validate a ring.
     function verifyRingHasNoSubRing(
         uint          ringSize,
@@ -466,7 +465,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecipient,
             _lrcTokenAddress
         );
-
         uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
 
         /// Make payments.
@@ -590,9 +588,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 
                 state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
-                if(state.order.margineSplitAndNoMoreThan >= 128){
+                if (state.order.margineSplitAndNoMoreThan >= 128) {
                     state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase+128;
-                }else{
+                }else {
                     state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase;
                 }
                 
@@ -621,10 +619,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                     state.lrcFee = lrcTotal;
 
-                    if(state.order.margineSplitAndNoMoreThan >= 128){
+                    if (state.order.margineSplitAndNoMoreThan >= 128) {
                         state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase+128;
-                    }else{
-                    state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase;
+                    }else {
+                        state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase;
                     }
                 }
 
@@ -671,22 +669,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                     if (state.order.margineSplitAndNoMoreThan >= 128) {
 
-                        if (state.order.margineSplitAndNoMoreThan != _marginSplitPercentageBase + 128 ) {
-                            split = split.mul(
-                            state.order.margineSplitAndNoMoreThan
-                        ) / _marginSplitPercentageBase;
-                    }
-                        state.splitS = split;
-
-                    } else {
-
-                        if (state.order.margineSplitAndNoMoreThan != _marginSplitPercentageBase ) {
+                        if (state.order.margineSplitAndNoMoreThan != _marginSplitPercentageBase + 128) {
                             split = split.mul(
                             state.order.margineSplitAndNoMoreThan
                         ) / _marginSplitPercentageBase;
                         }
+
+                        state.splitS = split;
+                    } else {
+
+                        if (state.order.margineSplitAndNoMoreThan != _marginSplitPercentageBase) {
+                            split = split.mul(
+                            state.order.margineSplitAndNoMoreThan
+                        ) / _marginSplitPercentageBase;
+                        }
+
                         state.splitB = split;
-                    
                     }
 
                     // This implicits order with smaller index in the ring will
@@ -864,9 +862,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         require(ringSize == addressList.length); // "ring data is inconsistent - addressList");
         require(ringSize == uintArgsList.length); // "ring data is inconsistent - uintArgsList");
-        //require(ringSize == uint8ArgsList.length); // "ring data is inconsistent - uint8ArgsList");
-        //require(ringSize == buyNoMoreThanAmountBList.length); // "ring data is inconsistent - buyNoMoreThanAmountBList");
-        require(ringsize == uint8ArgsListAndNoMoreBList.length) // "Ring data and list of variables is inconistant);
+        require(ringsize == uint8ArgsListAndNoMoreBList.length); // "Ring data and list of variables is inconistant);
         require(ringSize + 1 == vList.length); // "ring data is inconsistent - vList");
         require(ringSize + 1 == rList.length); // "ring data is inconsistent - rList");
         require(ringSize + 1 == sList.length); // "ring data is inconsistent - sList");
@@ -906,8 +902,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uintArgsList[i][0],
                 uintArgsList[i][1],
                 uintArgsList[i][5],
-                //buyNoMoreThanAmountBList[i],
-                //uint8ArgsList[i][0]
                 uint8ArgsListAndNoMoreBList[i][0]
             );
 
@@ -936,7 +930,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orders[i] = OrderState(
                 order,
                 orderHash,
-                //uint8ArgsList[i][1],  // feeSelection
                 uint8ArgsListAndNoMoreBList[i][1],
                 Rate(uintArgsList[i][6], order.amountB),
                 getSpendable(delegate, order.tokenS, order.owner),
@@ -946,7 +939,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0,   // splitS
                 0    // splitB
             );
-
             require(orders[i].availableAmountS > 0); // "order spendable amountS is zero");
         }
     }
@@ -971,12 +963,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(ttl != 0); // "order ttl is 0");
         require(timestamp + ttl > block.timestamp); // "order is expired");
         require(salt != 0); // "invalid order salt");
-        if(order.margineSplitAndNoMoreThan >= 128){
-            require(order.margineSplitAndNoMoreThan <= MARGIN_SPLIT_PERCENTAGE_BASE + 128 ); // "invalid order marginSplitPercentage");
-        }else{
-            require(order.margineSplitAndNoMoreThan <= MARGIN_SPLIT_PERCENTAGE_BASE + 128 ); // "invalid order marginSplitPercentage");
-        }
-        
+        if (order.margineSplitAndNoMoreThan >= 128) {
+            require(order.margineSplitAndNoMoreThan <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
+        }else {
+            require(order.margineSplitAndNoMoreThan <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
+        }    
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
