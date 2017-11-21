@@ -179,7 +179,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -225,7 +225,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -280,7 +280,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -346,7 +346,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -416,7 +416,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -479,7 +479,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -550,7 +550,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -610,7 +610,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-													   p.uint8ArgsListAndNoMoreBList,
+													                             p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -700,7 +700,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       try {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
-											  p.uint8ArgsListAndNoMoreBList,
+                                              p.uint8ArgsListAndNoMoreBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
