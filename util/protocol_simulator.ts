@@ -223,7 +223,6 @@ export class ProtocolSimulator {
         } else {
           order.params.marginSplitAndNoMoreBool = 100;
         }
-        
       }
 
       if (order.params.tokenB === this.lrcAddress) {
@@ -265,20 +264,18 @@ export class ProtocolSimulator {
             feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
               fillAmountSList[i];
             if (order.params.marginSplitAndNoMoreBool > 127 ) {
-              feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool-128) / 100;
+              feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool - 128) / 100;
             } else {
               feeItem.feeS = feeItem.feeS * order.params.marginSplitAndNoMoreBool / 100;
             }
-            
           } else {
             feeItem.feeB = fillAmountSList[nextInd] -
               fillAmountSList[i] * order.params.amountB.toNumber() / order.params.amountS.toNumber();
-            if(order.params.marginSplitAndNoMoreBool > 127){
+            if (order.params.marginSplitAndNoMoreBool > 127) {
               feeItem.feeB = feeItem.feeB * (order.params.marginSplitAndNoMoreBool - 128) / 100;
             } else {
               feeItem.feeB = feeItem.feeB * order.params.marginSplitAndNoMoreBool / 100;
             }
-              
           }
 
           if (feeItem.feeS > 0 || feeItem.feeB > 0) {
