@@ -654,7 +654,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                         if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase + 128) {
                             split = split.mul(
-                            state.order.marginSplitAndNoMoreB
+                            (state.order.marginSplitAndNoMoreB - 128)
                         ) / _marginSplitPercentageBase;
                         }
 
