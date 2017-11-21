@@ -73,12 +73,10 @@ contract LoopringProtocol {
     /// @param uintArgsList List of uint-type arguments in this order:
     ///                     amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                     rateAmountS.
-    /// @param uint8ArgsList -
+    /// @param uint8ArgsListAndNoMoreBList -
     ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList, feeSelectionList.
-    /// @param buyNoMoreThanAmountBList -
-    ///                     This indicates when a order should be considered
-    ///                     as 'completely filled'.
+    ///                     marginSplitPercentageList with complete boolean as 
+    ///                     the 8th bit,feeSelectionList.
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -111,12 +109,10 @@ contract LoopringProtocol {
     /// @param addresses          owner, tokenS, tokenB
     /// @param orderValues        amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                           cancelAmountS, and cancelAmountB.
-    /// @param buyNoMoreThanAmountB -
+    /// @param marginSplitAndNoMoreB -
     ///                           This indicates when a order should be considered
-    ///                           as 'completely filled'.
-    /// @param marginSplitPercentage -
-    ///                           Percentage of margin split to share with miner.
-    /// @param v                  Order ECDSA signature parameter v.
+    ///                           as 'completely filled'. it also looks at Percentage 
+    ///                           of margin split to share with miner.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
     function cancelOrder(

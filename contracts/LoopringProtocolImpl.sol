@@ -90,11 +90,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param salt         A random number to make this order's hash unique.
     /// @param lrcFee       Max amount of LRC to pay for miner. The real amount
     ///                     to pay is proportional to fill amount.
-    /// @param buyNoMoreThanAmountB -
-    ///                     If true, this order does not accept buying more
-    ///                     than `amountB`.
-    /// @param marginSplitPercentage -
-    ///                     The percentage of margin paid to miner.
+    /// @param marginSplitAndNoMoreB -
+    ///                           This indicates when a order should be considered
+    ///                           as 'completely filled'. it also looks at Percentage 
+    ///                           of margin split to share with miner.
     /// @param v            ECDSA signature parameter v.
     /// @param r            ECDSA signature parameters r.
     /// @param s            ECDSA signature parameters s.
@@ -184,12 +183,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param uintArgsList List of uint-type arguments in this order:
     ///                     amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                     rateAmountS.
-    /// @param uint8ArgsList -
+    /// @param uint8ArgsListAndNoMoreBList -
     ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList,feeSelectionList.
-    /// @param buyNoMoreThanAmountBList -
-    ///                     This indicates when a order should be considered
-    ///                     as 'completely filled'.
+    ///                     marginSplitPercentageList with complete boolean as 
+    ///                     the 8th bit,feeSelectionList.
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -296,11 +293,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param addresses          owner, tokenS, tokenB
     /// @param orderValues        amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                           cancelAmountS, and cancelAmountB.
-    /// @param buyNoMoreThanAmountB -
+    /// @param marginSplitAndNoMoreB -
     ///                           This indicates when a order should be considered
-    ///                           as 'completely filled'.
-    /// @param marginSplitPercentage -
-    ///                           Percentage of margin split to share with miner.
+    ///                           as 'completely filled'. it also looks at Percentage 
+    ///                           of margin split to share with miner.
     /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
