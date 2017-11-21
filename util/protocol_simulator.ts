@@ -71,7 +71,7 @@ export class ProtocolSimulator {
       let availableAmountS = amountS;
       let availableAmountB = amountB;
 
-      if (order.params.marginSplitAndNoMoreB >= 128 ) {
+      if (order.params.marginSplitAndNoMoreBool > 127) {
         if (this.orderFilled && this.orderFilled[i]) {
           availableAmountB -= this.orderFilled[i];
         }
@@ -155,7 +155,7 @@ export class ProtocolSimulator {
     const currentFillAmountB = currentFillAmountS * currentOrder.params.scaledAmountB / currentRateAmountS;
 
     let nextFillAmountS = nextRateAmountS;
-    if (! (nextOrder.params.marginSplitAndNoMoreB >= 128) ) {
+    if (!(nextOrder.params.marginSplitAndNoMoreBool > 127)) {
       nextFillAmountS = nextOrder.params.scaledAmountS;
     }
 
@@ -218,12 +218,11 @@ export class ProtocolSimulator {
 
       if (order.params.lrcFee.toNumber() === 0) {
         this.feeSelectionList[i] = 1;
-        if (order.params.marginSplitAndNoMoreB >= 128 ) {
-
-          order.params.marginSplitAndNoMoreB = 228;
-
+        if (order.params.marginSplitAndNoMoreBool > 127) {
+          order.params.marginSplitAndNoMoreBool = 228;
         } else {
-          order.params.marginSplitAndNoMoreB = 100;
+
+          order.params.marginSplitAndNoMoreBool = 100;
         }
       }
 
@@ -233,15 +232,15 @@ export class ProtocolSimulator {
 
       if (this.spendableLrcFeeList[i] === 0) {
         this.feeSelectionList[i] = 1;
-        if (order.params.marginSplitAndNoMoreB >= 128 ) {
-          order.params.marginSplitAndNoMoreB = 228;
+        if (order.params.marginSplitAndNoMoreBool > 127) {
+          order.params.marginSplitAndNoMoreBool = 228;
         } else {
-          order.params.marginSplitAndNoMoreB = 100;
+          order.params.marginSplitAndNoMoreBool = 100;
         }
       }
 
       let feeLrcToPay = 0;
-      if (order.params.marginSplitAndNoMoreB >= 128) {
+      if (order.params.marginSplitAndNoMoreBool > 127) {
         const fillAmountB = fillAmountSList[i] * order.params.rateAmountB / order.params.rateAmountS;
         feeLrcToPay = order.params.lrcFee.toNumber() * fillAmountB / order.params.amountB.toNumber();
       } else {
@@ -251,25 +250,38 @@ export class ProtocolSimulator {
 
       if (this.spendableLrcFeeList[i] < feeLrcToPay) {
         feeLrcToPay = this.spendableLrcFeeList[i];
-        if (order.params.marginSplitAndNoMoreB >= 128 ) {
-          order.params.marginSplitAndNoMoreB = 228;
+        if (order.params.marginSplitAndNoMoreBool > 127) {
+          order.params.marginSplitAndNoMoreBool = 228;
         } else {
-          order.params.marginSplitAndNoMoreB = 100;
+          order.params.marginSplitAndNoMoreBool = 100;
         }
+        
       }
 
       if (0 === this.feeSelectionList[i]) {
         feeItem.feeLrc = feeLrcToPay;
       } else if (1 === this.feeSelectionList[i]) {
         if (minerSpendableLrc >= feeLrcToPay) {
-          if (order.params.marginSplitAndNoMoreB >= 128) {
+          if (order.params.marginSplitAndNoMoreBool > 127) {
             feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
               fillAmountSList[i];
-            feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreB - 128) / 100;
+              if ( order.params.marginSplitAndNoMoreBool > 127) {
+                feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool-128) / 100;
+              } else {
+                feeItem.feeS = feeItem.feeS * order.params.marginSplitAndNoMoreBool / 100;
+              }
+            
           } else {
             feeItem.feeB = fillAmountSList[nextInd] -
               fillAmountSList[i] * order.params.amountB.toNumber() / order.params.amountS.toNumber();
-            feeItem.feeB = feeItem.feeB * (order.params.marginSplitAndNoMoreB - 128) / 100;
+              if ( order.params.marginSplitAndNoMoreBool > 127) {
+
+                feeItem.feeB = feeItem.feeB * (order.params.marginSplitAndNoMoreBool - 128) / 100;
+
+              } else {
+                feeItem.feeB = feeItem.feeB * order.params.marginSplitAndNoMoreBool / 100;
+              }
+            
           }
 
           if (feeItem.feeS > 0 || feeItem.feeB > 0) {

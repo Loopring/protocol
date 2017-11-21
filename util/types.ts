@@ -10,7 +10,7 @@ export interface OrderParams {
   ttl: BigNumber;
   salt: BigNumber;
   lrcFee: BigNumber;
-  marginSplitAndNoMoreB: number;
+  marginSplitAndNoMoreBool: number;
   scaledAmountS?: number;
   scaledAmountB?: number;
   rateAmountS?: number;
@@ -25,7 +25,7 @@ export interface OrderParams {
 export interface LoopringSubmitParams {
   addressList: string[][];
   uintArgsList: BigNumber[][];
-  uint8ArgsListAndNoMoreBList: number[][];
+  uint8ArgsList: number[][];
   vList: number[];
   rList: string[];
   sList: string[];

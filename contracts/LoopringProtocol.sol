@@ -73,10 +73,11 @@ contract LoopringProtocol {
     /// @param uintArgsList List of uint-type arguments in this order:
     ///                     amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                     rateAmountS.
-    /// @param uint8ArgsListAndNoMoreBList -
+    /// @param uint8ArgsList -
     ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList with complete boolean as 
-    ///                     the 8th bit,feeSelectionList.
+    ///                     marginSplitPercentageList, feeSelectionList and 
+    ///                     This indicates when a order should be considered
+    ///                     as 'completely filled'.
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -96,7 +97,7 @@ contract LoopringProtocol {
     function submitRing(
         address[2][]    addressList,
         uint[7][]       uintArgsList,
-        uint8[2][]      uint8ArgsListAndNoMoreBList,
+        uint8[2][]      uint8ArgsList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList,
@@ -109,16 +110,16 @@ contract LoopringProtocol {
     /// @param addresses          owner, tokenS, tokenB
     /// @param orderValues        amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                           cancelAmountS, and cancelAmountB.
-    /// @param marginSplitAndNoMoreB -
+    /// @param marginSplitAndNoMoreBool -
     ///                           This indicates when a order should be considered
-    ///                           as 'completely filled'. it also looks at Percentage 
-    ///                           of margin split to share with miner.
+    ///                           as 'completely filled' and Percentage of margin split to share with miner.
+    /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
     function cancelOrder(
         address[3] addresses,
         uint[7]    orderValues,
-        uint8      marginSplitAndNoMoreB,
+        uint8      marginSplitAndNoMoreBool,
         uint8      v,
         bytes32    r,
         bytes32    s

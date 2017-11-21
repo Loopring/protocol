@@ -90,10 +90,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param salt         A random number to make this order's hash unique.
     /// @param lrcFee       Max amount of LRC to pay for miner. The real amount
     ///                     to pay is proportional to fill amount.
-    /// @param marginSplitAndNoMoreB -
-    ///                           This indicates when a order should be considered
-    ///                           as 'completely filled'. it also looks at Percentage 
-    ///                           of margin split to share with miner.
+    /// @param marginSplitAndNoMoreBool -
+    ///                     If true, this order does not accept buying more
+    ///                     than `amountB`. and The percentage of margin paid to miner.
     /// @param v            ECDSA signature parameter v.
     /// @param r            ECDSA signature parameters r.
     /// @param s            ECDSA signature parameters s.
@@ -104,7 +103,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    amountS;
         uint    amountB;
         uint    lrcFee;
-        uint8   marginSplitAndNoMoreB;
+        uint8   marginSplitAndNoMoreBool;
     }
 
     /// @param order        The original order
@@ -183,10 +182,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param uintArgsList List of uint-type arguments in this order:
     ///                     amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                     rateAmountS.
-    /// @param uint8ArgsListAndNoMoreBList -
+    /// @param uint8ArgsList -
     ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList with complete boolean as 
-    ///                     the 8th bit,feeSelectionList.
+    ///                     marginSplitPercentageList,feeSelectionList.
+    ///                     it also indicates when a order should be considered
+    ///                     as 'completely filled'.
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -206,7 +206,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function submitRing(
         address[2][]  addressList,
         uint[7][]     uintArgsList,
-        uint8[2][]    uint8ArgsListAndNoMoreBList,
+        uint8[2][]    uint8ArgsList,
         uint8[]       vList,
         bytes32[]     rList,
         bytes32[]     sList,
@@ -229,7 +229,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             addressList,
             uintArgsList,
-            uint8ArgsListAndNoMoreBList,
+            uint8ArgsList,
             vList,
             rList,
             sList
@@ -265,7 +265,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             delegate,
             addressList,
             uintArgsList,
-            uint8ArgsListAndNoMoreBList,
+            uint8ArgsList,
             vList,
             rList,
             sList
@@ -293,17 +293,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param addresses          owner, tokenS, tokenB
     /// @param orderValues        amountS, amountB, timestamp, ttl, salt, lrcFee,
     ///                           cancelAmountS, and cancelAmountB.
-    /// @param marginSplitAndNoMoreB -
+    /// @param marginSplitAndNoMoreBool -
     ///                           This indicates when a order should be considered
-    ///                           as 'completely filled'. it also looks at Percentage 
-    ///                           of margin split to share with miner.
+    ///                           as 'completely filled'.and Percentage of margin split to share with miner.
     /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
     function cancelOrder(
         address[3] addresses,
         uint[7]    orderValues,
-        uint8   marginSplitAndNoMoreB,
+        uint8      marginSplitAndNoMoreBool,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -321,7 +320,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[0],
             orderValues[1],
             orderValues[5],
-            marginSplitAndNoMoreB
+            marginSplitAndNoMoreBool
         );
 
         require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
@@ -370,6 +369,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
     /// Internal & Private Functions                                         ///
     ////////////////////////////////////////////////////////////////////////////
+
     /// @dev Validate a ring.
     function verifyRingHasNoSubRing(
         uint          ringSize,
@@ -448,6 +448,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeRecipient,
             _lrcTokenAddress
         );
+
         uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
 
         /// Make payments.
@@ -500,7 +501,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             p += 6;
 
             // Update fill records
-            if (state.order.marginSplitAndNoMoreB >= 128) {
+            if (state.order.marginSplitAndNoMoreBool > 127) {
                 cancelledOrFilled[state.orderHash] += next.fillAmountS;
             } else {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
@@ -558,20 +559,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
+        uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
 
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             var next = orders[(i + 1) % ringSize];
             uint lrcReceiable = 0;
-            
+
             if (state.lrcFee == 0) {
                 // When an order's LRC fee is 0 or smaller than the specified fee,
                 // we help miner automatically select margin-split.
                 state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
-                if (state.order.marginSplitAndNoMoreB >= 128) {
-                    state.order.marginSplitAndNoMoreB = MARGIN_SPLIT_PERCENTAGE_BASE+128;
+                if (state.order.marginSplitAndNoMoreBool > 127) {
+                    state.order.marginSplitAndNoMoreBool = _marginSplitPercentageBase+128;
                 } else {
-                    state.order.marginSplitAndNoMoreB = MARGIN_SPLIT_PERCENTAGE_BASE;
+                    state.order.marginSplitAndNoMoreBool = _marginSplitPercentageBase;
                 }
                 
             } else {
@@ -598,11 +600,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 if (lrcTotal < state.lrcFee) {
                     state.lrcFee = lrcTotal;
 
-                    if (state.order.marginSplitAndNoMoreB >= 128) {
-                        state.order.marginSplitAndNoMoreB = MARGIN_SPLIT_PERCENTAGE_BASE+128;
+                    if (state.order.marginSplitAndNoMoreBool > 127) {
+                        state.order.marginSplitAndNoMoreBool = _marginSplitPercentageBase + 128;
                     } else {
-                        state.order.marginSplitAndNoMoreB = MARGIN_SPLIT_PERCENTAGE_BASE;
-                        }
+                        state.order.marginSplitAndNoMoreBool = _marginSplitPercentageBase;
+                    }
                 }
 
                 if (state.lrcFee == 0) {
@@ -627,39 +629,40 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     checkedMinerLrcSpendable = true;
                     minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
                 }
-                
-                uint8 pct;
-                
+
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
                 if (minerLrcSpendable >= state.lrcFee) {
                     uint split;
-                    if (state.order.marginSplitAndNoMoreB >= 128) {
+                    if (state.order.marginSplitAndNoMoreBool > 127) {
                         split = (next.fillAmountS.mul(
                             state.order.amountS
                         ) / state.order.amountB).sub(
                             state.fillAmountS
                         );
-
-                        pct = state.order.marginSplitAndNoMoreB - 128;
-
                     } else {
                         split = next.fillAmountS.sub(
                             state.fillAmountS.mul(
                                 state.order.amountB
                             ) / state.order.amountS
                         );
-
-                        pct = state.order.marginSplitAndNoMoreB;
                     }
 
-                    if (pct != MARGIN_SPLIT_PERCENTAGE_BASE) {
+                    if ((state.order.marginSplitAndNoMoreBool > 127) && 
+                    (state.order.marginSplitAndNoMoreBool-128 != _marginSplitPercentageBase)) {
+                        
                         split = split.mul(
-                            pct
-                        ) / MARGIN_SPLIT_PERCENTAGE_BASE;
+                            (state.order.marginSplitAndNoMoreBool - 128)
+                            ) / _marginSplitPercentageBase;
+
+                    } else if ((state.order.marginSplitAndNoMoreBool < 128) &&
+                    (state.order.marginSplitAndNoMoreBool != _marginSplitPercentageBase) {
+                        split = split.mul(
+                            state.order.marginSplitAndNoMoreBool
+                            ) / _marginSplitPercentageBase;
                     }
 
-                    if (state.order.marginSplitAndNoMoreB >= 128) {
+                    if (state.order.marginSplitAndNoMoreBool > 127) {
                         state.splitS = split;
                     } else {
                         state.splitB = split;
@@ -734,7 +737,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             state.rate.amountB
         ) / state.rate.amountS;
 
-        if (state.order.marginSplitAndNoMoreB >= 128) {
+        if (state.order.marginSplitAndNoMoreBool > 127) {
             if (fillAmountB > state.order.amountB) {
                 fillAmountB = state.order.amountB;
 
@@ -774,7 +777,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var order = state.order;
             uint amount;
 
-            if (order.marginSplitAndNoMoreB >= 128) {
+            if (order.marginSplitAndNoMoreBool > 127) {
                 amount = order.amountB.tolerantSub(
                     cancelledOrFilled[state.orderHash]
                 );
@@ -828,7 +831,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize,
         address[2][]  addressList,
         uint[7][]     uintArgsList,
-        uint8[2][]    uint8ArgsListAndNoMoreBList,
+        uint8[2][]    uint8ArgsList,
         uint8[]       vList,
         bytes32[]     rList,
         bytes32[]     sList
@@ -838,7 +841,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         require(ringSize == addressList.length); // "ring data is inconsistent - addressList");
         require(ringSize == uintArgsList.length); // "ring data is inconsistent - uintArgsList");
-        require(ringSize == uint8ArgsListAndNoMoreBList.length); // "Ring data and list of variables is inconistant);
+        require(ringSize == uint8ArgsList.length); // "ring data is inconsistent - uint8ArgsList");
         require(ringSize + 1 == vList.length); // "ring data is inconsistent - vList");
         require(ringSize + 1 == rList.length); // "ring data is inconsistent - rList");
         require(ringSize + 1 == sList.length); // "ring data is inconsistent - sList");
@@ -846,7 +849,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Validate ring-mining related arguments.
         for (uint i = 0; i < ringSize; i++) {
             require(uintArgsList[i][6] > 0); // "order rateAmountS is zero");
-            require(uint8ArgsListAndNoMoreBList[i][1] <= FEE_SELECT_MAX_VALUE); // "invalid order fee selection");
+            require(uint8ArgsList[i][1] <= FEE_SELECT_MAX_VALUE); // "invalid order fee selection");
         }
     }
 
@@ -856,7 +859,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
-        uint8[2][]      uint8ArgsListAndNoMoreBList,
+        uint8[2][]      uint8ArgsList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList
@@ -876,7 +879,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uintArgsList[i][0],
                 uintArgsList[i][1],
                 uintArgsList[i][5],
-                uint8ArgsListAndNoMoreBList[i][0]
+                uint8ArgsList[i][0]
             );
 
             bytes32 orderHash = calculateOrderHash(
@@ -904,7 +907,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orders[i] = OrderState(
                 order,
                 orderHash,
-                uint8ArgsListAndNoMoreBList[i][1],
+                uint8ArgsList[i][1],  // feeSelection
                 Rate(uintArgsList[i][6], order.amountB),
                 getSpendable(delegate, order.tokenS, order.owner),
                 0,   // fillAmountS
@@ -913,6 +916,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0,   // splitS
                 0    // splitB
             );
+
             require(orders[i].availableAmountS > 0); // "order spendable amountS is zero");
         }
     }
@@ -937,11 +941,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(ttl != 0); // "order ttl is 0");
         require(timestamp + ttl > block.timestamp); // "order is expired");
         require(salt != 0); // "invalid order salt");
-        if (order.marginSplitAndNoMoreB >= 128) {
-            require((order.marginSplitAndNoMoreB - 128) <= MARGIN_SPLIT_PERCENTAGE_BASE);
-        }else {
-            require(order.marginSplitAndNoMoreB <= MARGIN_SPLIT_PERCENTAGE_BASE);
-        }    
+        if (order.marginSplitAndNoMoreBool > 127) {
+            require((order.marginSplitAndNoMoreBool-128) <= MARGIN_SPLIT_PERCENTAGE_BASE); // "invalid order marginSplitPercentage");
+        } else {
+            require(order.marginSplitAndNoMoreBool <= MARGIN_SPLIT_PERCENTAGE_BASE); // "invalid order marginSplitPercentage");
+        }
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
@@ -966,7 +970,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ttl,
             salt,
             order.lrcFee,
-            order.marginSplitAndNoMoreB
+            order.marginSplitAndNoMoreBool
         );
     }
 

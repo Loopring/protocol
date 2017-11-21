@@ -70,7 +70,7 @@ export class Order {
       this.params.ttl,
       this.params.salt,
       this.params.lrcFee,
-      this.params.marginSplitAndNoMoreB,
+      this.params.marginSplitAndNoMoreBool,
     ]);
     return orderHash;
   }
