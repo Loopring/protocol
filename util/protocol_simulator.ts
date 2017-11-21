@@ -155,7 +155,7 @@ export class ProtocolSimulator {
     const currentFillAmountB = currentFillAmountS * currentOrder.params.scaledAmountB / currentRateAmountS;
 
     let nextFillAmountS = nextRateAmountS;
-    if (nextOrder.params.marginSplitAndNoMoreB < 128) {
+    if (! (nextOrder.params.marginSplitAndNoMoreB >= 128) ) {
       nextFillAmountS = nextOrder.params.scaledAmountS;
     }
 
