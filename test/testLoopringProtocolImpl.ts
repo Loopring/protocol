@@ -132,8 +132,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const ethOfOwnerBefore = await getEthBalanceAsync(owner);
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                         p.uintArgsList,
-                                                        p.uint8ArgsList,
-                                                        p.buyNoMoreThanAmountBList,
+                                                        p.uint8ArgsListAndNoMoreBList,
                                                         p.vList,
                                                         p.rList,
                                                         p.sList,
@@ -180,8 +179,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -227,8 +225,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -283,8 +280,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -350,8 +346,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -421,8 +416,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -485,8 +479,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -557,8 +550,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -618,8 +610,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
-                                                       p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
+													   p.uint8ArgsListAndNoMoreBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
@@ -698,8 +689,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       await loopringProtocolImpl.cancelOrder(addresses,
                                              orderValues,
-                                             order.params.buyNoMoreThanAmountB,
-                                             order.params.marginSplitPercentage,
+                                             order.params.marginSplitAndNoMoreB,
                                              order.params.v,
                                              order.params.r,
                                              order.params.s,
@@ -710,8 +700,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       try {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
-                                              p.uint8ArgsList,
-                                              p.buyNoMoreThanAmountBList,
+											  p.uint8ArgsListAndNoMoreBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
@@ -744,8 +733,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       try {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
-                                              p.uint8ArgsList,
-                                              p.buyNoMoreThanAmountBList,
+                                              p.uint8ArgsListAndNoMoreBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
@@ -781,8 +769,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const cancelledOrFilledAmount0 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
       const tx = await loopringProtocolImpl.cancelOrder(addresses,
                                                         orderValues,
-                                                        order.params.buyNoMoreThanAmountB,
-                                                        order.params.marginSplitPercentage,
+                                                        order.params.marginSplitAndNoMoreB,
                                                         order.params.v,
                                                         order.params.r,
                                                         order.params.s,
@@ -809,8 +796,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       try {
         const tx = await loopringProtocolImpl.cancelOrder(addresses,
                                                           orderValues,
-                                                          order.params.buyNoMoreThanAmountB,
-                                                          order.params.marginSplitPercentage,
+                                                          order.params.marginSplitAndNoMoreB,
                                                           order.params.v,
                                                           order.params.r,
                                                           order.params.s,

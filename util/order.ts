@@ -70,8 +70,7 @@ export class Order {
       this.params.ttl,
       this.params.salt,
       this.params.lrcFee,
-      this.params.buyNoMoreThanAmountB,
-      this.params.marginSplitPercentage,
+      this.params.marginSplitAndNoMoreB,
     ]);
     return orderHash;
   }
