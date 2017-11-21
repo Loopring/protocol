@@ -28,6 +28,12 @@ import "./TokenTransferDelegate.sol";
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
 /// @author Daniel Wang - <daniel@loopring.org>,
 /// @author Kongliang Zhong - <kongliang@loopring.org>
+/// 
+/// Recognized contributing developers from the community:
+///     https://github.com/Brechtpd
+///     https://github.com/rainydio
+///     https://github.com/BenjaminPrice
+///     https://github.com/jonasshen
 contract LoopringProtocolImpl is LoopringProtocol {
     using MathUint      for uint;
     using MathBytes32   for bytes32[];
@@ -86,35 +92,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint amountS;
         uint amountB;
     }
-
-    /// @param tokenS       Token to sell.
-    /// @param tokenB       Token to buy.
-    /// @param amountS      Maximum amount of tokenS to sell.
-    /// @param amountB      Minimum amount of tokenB to buy if all amountS sold.
-    /// @param timestamp    Indicating when this order is created/signed.
-    /// @param ttl          Indicating after how many seconds from `timestamp`
-    ///                     this order will expire.
-    /// @param salt         A random number to make this order's hash unique.
-    /// @param lrcFee       Max amount of LRC to pay for miner. The real amount
-    ///                     to pay is proportional to fill amount.
-    /// @param buyNoMoreThanAmountB -
-    ///                     If true, this order does not accept buying more
-    ///                     than `amountB`.
-    /// @param marginSplitPercentage -
-    ///                     The percentage of margin paid to miner.
-    /// @param v            ECDSA signature parameter v.
-    /// @param r            ECDSA signature parameters r.
-    /// @param s            ECDSA signature parameters s.
-    /*struct Order {
-        address owner;
-        address tokenS;
-        address tokenB;
-        uint    amountS;
-        uint    amountB;
-        uint    lrcFee;
-        bool    buyNoMoreThanAmountB;
-        uint8   marginSplitPercentage;
-    }*/
 
     /// @param order        The original order
     /// @param orderHash    The order's hash
@@ -323,7 +300,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32    r,
         bytes32    s
         )
-        public
+        external
     {
         /*uint cancelAmount = orderValues[6];
 
@@ -370,7 +347,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param cutoff The cutoff timestamp, will default to `block.timestamp`
     ///        if it is 0.
     function setCutoff(uint cutoff)
-        public
+        external
     {
         uint t = cutoff;
         if (t == 0) {
@@ -606,9 +583,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
-        //uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
-        
-        //uint minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
 
         for (uint i = 0; i < ringSize; i++) {
         
@@ -673,15 +647,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
                 if (minerLrcSpendable >= orderState.lrcFee) {
-                    // HACK: reuse 'next' here to save on a local variable to stay below stack limit
+                    // HACK: reuse 'lrcReceiable' here to save on a local variable to stay below stack limit
                     if (orderState.buyNoMoreThanAmountB) {
-                        next = (orderStates[next].fillAmountS.mul(
+                        lrcReceiable = (orderStates[next].fillAmountS.mul(
                             orders[i][IDX_AMOUNT_S]
                         ) / orders[i][IDX_AMOUNT_B]).sub(
                             orderState.fillAmountS
                         );
                     } else {
-                        next = orderStates[next].fillAmountS.sub(
+                        lrcReceiable = orderStates[next].fillAmountS.sub(
                             orderState.fillAmountS.mul(
                                 orders[i][IDX_AMOUNT_B]
                             ) / orders[i][IDX_AMOUNT_S]
@@ -689,21 +663,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     }
 
                     if (orderState.marginSplitPercentage != MARGIN_SPLIT_PERCENTAGE_BASE) {
-                        next = next.mul(
+                        lrcReceiable = lrcReceiable.mul(
                             orderState.marginSplitPercentage
                         ) / MARGIN_SPLIT_PERCENTAGE_BASE;
                     }
 
                     if (orderState.buyNoMoreThanAmountB) {
-                        orderState.splitS = next;
+                        orderState.splitS = lrcReceiable;
                     } else {
-                        orderState.splitB = next;
+                        orderState.splitB = lrcReceiable;
                     }
 
                     // This implicits order with smaller index in the ring will
                     // be paid LRC reward first, so the orders in the ring does
                     // mater.
-                    if (next > 0) {
+                    if (lrcReceiable > 0) {
                         minerLrcSpendable -= orderState.lrcFee;
                         orderState.lrcReward = orderState.lrcFee;
                     }
@@ -783,11 +757,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 newSmallestIdx = i;
             }
+            orderState.lrcFee = order[IDX_LRCFEE].mul(
+                fillAmountB
+            ) / order[IDX_AMOUNT_B];               
+        } else {
+            orderState.lrcFee = order[IDX_LRCFEE].mul(
+                orderState.fillAmountS
+            ) / order[IDX_AMOUNT_S];
         }
-
-        orderState.lrcFee = order[IDX_LRCFEE].mul(
-            orderState.fillAmountS
-        ) / order[IDX_AMOUNT_S];
 
         if (fillAmountB <= nextOrderState.fillAmountS) {
             nextOrderState.fillAmountS = fillAmountB;

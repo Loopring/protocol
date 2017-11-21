@@ -18,9 +18,8 @@
 pragma solidity 0.4.18;
 
 
-/// @title UintUtil
+/// @title Utility Functions for uint
 /// @author Daniel Wang - <daniel@loopring.org>
-/// @dev uint utility functions
 library MathUint {
 
     function mul(uint a, uint b) internal pure returns (uint c) {
@@ -68,12 +67,14 @@ library MathUint {
         }
 
         uint cvs = 0;
-        uint s = 0;
+        uint s;
+        uint item;
         for (i = 0; i < len; i++) {
-            s = arr[i] > avg ? arr[i] - avg : avg - arr[i];
+            item = arr[i];
+            s = item > avg ? item - avg : avg - item;
             cvs += mul(s, s);
         }
 
-        return (mul(mul(cvs, scale) / avg, scale) / avg) / (len - 1);
+        return ((mul(mul(cvs, scale), scale) / avg) / avg) / (len - 1);
     }
 }
