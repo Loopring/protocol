@@ -254,44 +254,40 @@ export class ProtocolSimulator {
         } else {
           order.params.marginSplitAndNoMoreBool = 100;
         }
-      if (0 === this.feeSelectionList[i]) {
-        feeItem.feeLrc = feeLrcToPay;
-      } else if (1 === this.feeSelectionList[i]) {
-        if (minerSpendableLrc >= feeLrcToPay) {
-          if (order.params.marginSplitAndNoMoreBool > 127) {
-            feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
+        if (0 === this.feeSelectionList[i]) {
+          feeItem.feeLrc = feeLrcToPay;
+        } else if (1 === this.feeSelectionList[i]) {
+          if (minerSpendableLrc >= feeLrcToPay) {
+            if (order.params.marginSplitAndNoMoreBool > 127) {
+              feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
               fillAmountSList[i];
-            if ( order.params.marginSplitAndNoMoreBool > 127) {
-              feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool - 128) / 100;
+              if ( order.params.marginSplitAndNoMoreBool > 127) {
+                feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool - 128) / 100;
+              } else {
+                feeItem.feeS = feeItem.feeS * order.params.marginSplitAndNoMoreBool / 100;
+              }
             } else {
-              feeItem.feeS = feeItem.feeS * order.params.marginSplitAndNoMoreBool / 100;
-            }
-          } else {
-            feeItem.feeB = fillAmountSList[nextInd] -
+              feeItem.feeB = fillAmountSList[nextInd] -
               fillAmountSList[i] * order.params.amountB.toNumber() / order.params.amountS.toNumber();
-            if ( order.params.marginSplitAndNoMoreBool > 127) {
-              feeItem.feeB = feeItem.feeB * (order.params.marginSplitAndNoMoreBool - 128) / 100;
-            } else {
+              if ( order.params.marginSplitAndNoMoreBool > 127) {
+                feeItem.feeB = feeItem.feeB * (order.params.marginSplitAndNoMoreBool - 128) / 100;
+              } else {
                 feeItem.feeB = feeItem.feeB * order.params.marginSplitAndNoMoreBool / 100;
               }
+            }
+            if (feeItem.feeS > 0 || feeItem.feeB > 0) {
+              minerSpendableLrc -= feeLrcToPay;
+              feeItem.lrcReward = feeLrcToPay;
+            }
+            feeItem.feeLrc = 0;
           }
-
-          if (feeItem.feeS > 0 || feeItem.feeB > 0) {
-            minerSpendableLrc -= feeLrcToPay;
-            feeItem.lrcReward = feeLrcToPay;
-          }
-
-          feeItem.feeLrc = 0;
+        } else {
+          throw new Error("invalid fee selection value.");
         }
-      } else {
-        throw new Error("invalid fee selection value.");
+        fees.push(feeItem);
       }
-
-      fees.push(feeItem);
+      return fees;
     }
-
-    return fees;
-  }
 
   // The balance of tokenS of this.ring.orders[i].owner is this.availableAmountSList[i].
   private caculateTraderTokenBalances(fees: FeeItem[], fillAmountSList: number[]) {
