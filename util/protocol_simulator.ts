@@ -253,8 +253,7 @@ export class ProtocolSimulator {
           order.params.marginSplitAndNoMoreBool = 228;
         } else {
           order.params.marginSplitAndNoMoreBool = 100;
-        } 
-      }
+        }
       if (0 === this.feeSelectionList[i]) {
         feeItem.feeLrc = feeLrcToPay;
       } else if (1 === this.feeSelectionList[i]) {
@@ -263,7 +262,7 @@ export class ProtocolSimulator {
             feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
               fillAmountSList[i];
             if ( order.params.marginSplitAndNoMoreBool > 127) {
-              feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool-128) / 100;
+              feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreBool - 128) / 100;
             } else {
               feeItem.feeS = feeItem.feeS * order.params.marginSplitAndNoMoreBool / 100;
             }
