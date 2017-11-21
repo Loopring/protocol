@@ -598,7 +598,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 if (lrcTotal < state.lrcFee) {
                     state.lrcFee = lrcTotal;
 
-                    if (marginSplitAndNoMoreB >= 128) {
+                    if (state.order.marginSplitAndNoMoreB >= 128) {
                         state.order.marginSplitAndNoMoreB = MARGIN_SPLIT_PERCENTAGE_BASE+128;
                     } else {
                         state.order.marginSplitAndNoMoreB = MARGIN_SPLIT_PERCENTAGE_BASE;
