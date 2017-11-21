@@ -619,7 +619,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
                 }
                 
-                uint8 pct = state.order.marginSplitAndNoMoreB;
+                uint8 pct;
                 
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
@@ -632,7 +632,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                             state.fillAmountS
                         );
 
-                        pct = marginSplitAndNoMoreB - 128;
+                        pct = state.order.marginSplitAndNoMoreB - 128;
 
                     } else {
                         split = next.fillAmountS.sub(
@@ -640,6 +640,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                                 state.order.amountB
                             ) / state.order.amountS
                         );
+
+                        pct = state.order.marginSplitAndNoMoreB;
                     }
 
                     if (pct != _marginSplitPercentageBase) {
