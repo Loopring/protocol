@@ -650,21 +650,24 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         );
                     }
 
-                    if (state.order.marginSplitAndNoMoreB >= 128) {
 
+                    if (state.order.marginSplitAndNoMoreB >= 128) {
+                        
                         if ((state.order.marginSplitAndNoMoreB - 128) != _marginSplitPercentageBase) {
                             split = split.mul(
-                            (state.order.marginSplitAndNoMoreB - 128)) / _marginSplitPercentageBase;
+                                (state.order.marginSplitAndNoMoreB - 128)) / _marginSplitPercentageBase;
                         }
 
-                        state.splitS = split;
                     } else {
-
                         if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase) {
                             split = split.mul(
-                            state.order.marginSplitAndNoMoreB) / _marginSplitPercentageBase;
+                                state.order.marginSplitAndNoMoreB) / _marginSplitPercentageBase;
                         }
-
+                    }
+                    
+                    if (state.order.marginSplitAndNoMoreB >= 128) {
+                        state.splitS = split;
+                    } else {
                         state.splitB = split;
                     }
 
