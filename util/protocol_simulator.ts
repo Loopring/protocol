@@ -218,12 +218,12 @@ export class ProtocolSimulator {
 
       if (order.params.lrcFee.toNumber() === 0) {
         this.feeSelectionList[i] = 1;
-        if(order.params.marginSplitAndNoMoreB >= 128){
+        if (order.params.marginSplitAndNoMoreB >= 128 ){
 
-          order.params.marginSplitAndNoMoreB = 228
+          order.params.marginSplitAndNoMoreB = 228;
 
-        }else{
-          order.params.marginSplitAndNoMoreB = 100
+        } else {
+          order.params.marginSplitAndNoMoreB = 100;
         }
       }
 
@@ -233,10 +233,10 @@ export class ProtocolSimulator {
 
       if (this.spendableLrcFeeList[i] === 0) {
         this.feeSelectionList[i] = 1;
-        if(order.params.marginSplitAndNoMoreB >= 128){
-          order.params.marginSplitAndNoMoreB = 228
-        }else{
-          order.params.marginSplitAndNoMoreB = 100
+        if (order.params.marginSplitAndNoMoreB >= 128 ){
+          order.params.marginSplitAndNoMoreB = 228;
+        } else {
+          order.params.marginSplitAndNoMoreB = 100;
         }
       }
 
@@ -251,10 +251,10 @@ export class ProtocolSimulator {
 
       if (this.spendableLrcFeeList[i] < feeLrcToPay) {
         feeLrcToPay = this.spendableLrcFeeList[i];
-        if(order.params.marginSplitAndNoMoreB >= 128){
-          order.params.marginSplitAndNoMoreB = 228
-        }else{
-          order.params.marginSplitAndNoMoreB = 100
+        if (order.params.marginSplitAndNoMoreB >= 128 ){
+          order.params.marginSplitAndNoMoreB = 228;
+        } else {
+          order.params.marginSplitAndNoMoreB = 100;
         }
       }
 
