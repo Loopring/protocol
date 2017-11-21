@@ -71,7 +71,7 @@ export class ProtocolSimulator {
       let availableAmountS = amountS;
       let availableAmountB = amountB;
 
-      if (order.params.buyNoMoreThanAmountB) {
+      if (order.params.marginSplitAndNoMoreB >= 128 ) {
         if (this.orderFilled && this.orderFilled[i]) {
           availableAmountB -= this.orderFilled[i];
         }
@@ -155,7 +155,7 @@ export class ProtocolSimulator {
     const currentFillAmountB = currentFillAmountS * currentOrder.params.scaledAmountB / currentRateAmountS;
 
     let nextFillAmountS = nextRateAmountS;
-    if (!nextOrder.params.buyNoMoreThanAmountB) {
+    if (nextOrder.params.marginSplitAndNoMoreB < 128) {
       nextFillAmountS = nextOrder.params.scaledAmountS;
     }
 
@@ -218,7 +218,13 @@ export class ProtocolSimulator {
 
       if (order.params.lrcFee.toNumber() === 0) {
         this.feeSelectionList[i] = 1;
-        order.params.marginSplitPercentage = 100;
+        if(order.params.marginSplitAndNoMoreB >= 128){
+
+          order.params.marginSplitAndNoMoreB = 228
+
+        }else{
+          order.params.marginSplitAndNoMoreB = 100
+        }
       }
 
       if (order.params.tokenB === this.lrcAddress) {
@@ -227,11 +233,15 @@ export class ProtocolSimulator {
 
       if (this.spendableLrcFeeList[i] === 0) {
         this.feeSelectionList[i] = 1;
-        order.params.marginSplitPercentage = 100;
+        if(order.params.marginSplitAndNoMoreB >= 128){
+          order.params.marginSplitAndNoMoreB = 228
+        }else{
+          order.params.marginSplitAndNoMoreB = 100
+        }
       }
 
       let feeLrcToPay = 0;
-      if (order.params.buyNoMoreThanAmountB) {
+      if (order.params.marginSplitAndNoMoreB >= 128) {
         const fillAmountB = fillAmountSList[i] * order.params.rateAmountB / order.params.rateAmountS;
         feeLrcToPay = order.params.lrcFee.toNumber() * fillAmountB / order.params.amountB.toNumber();
       } else {
@@ -241,21 +251,25 @@ export class ProtocolSimulator {
 
       if (this.spendableLrcFeeList[i] < feeLrcToPay) {
         feeLrcToPay = this.spendableLrcFeeList[i];
-        order.params.marginSplitPercentage = 100;
+        if(order.params.marginSplitAndNoMoreB >= 128){
+          order.params.marginSplitAndNoMoreB = 228
+        }else{
+          order.params.marginSplitAndNoMoreB = 100
+        }
       }
 
       if (0 === this.feeSelectionList[i]) {
         feeItem.feeLrc = feeLrcToPay;
       } else if (1 === this.feeSelectionList[i]) {
         if (minerSpendableLrc >= feeLrcToPay) {
-          if (order.params.buyNoMoreThanAmountB) {
+          if (order.params.marginSplitAndNoMoreB >= 128) {
             feeItem.feeS = fillAmountSList[i] * order.params.scaledAmountS / rateAmountSList[i] -
               fillAmountSList[i];
-            feeItem.feeS = feeItem.feeS * order.params.marginSplitPercentage / 100;
+            feeItem.feeS = feeItem.feeS * (order.params.marginSplitAndNoMoreB - 128) / 100;
           } else {
             feeItem.feeB = fillAmountSList[nextInd] -
               fillAmountSList[i] * order.params.amountB.toNumber() / order.params.amountS.toNumber();
-            feeItem.feeB = feeItem.feeB * order.params.marginSplitPercentage / 100;
+            feeItem.feeB = feeItem.feeB * (order.params.marginSplitAndNoMoreB - 128) / 100;
           }
 
           if (feeItem.feeS > 0 || feeItem.feeB > 0) {
