@@ -286,8 +286,8 @@ export class ProtocolSimulator {
         }
         fees.push(feeItem);
       }
-      return fees;
     }
+    return fees;
   }
   // The balance of tokenS of this.ring.orders[i].owner is this.availableAmountSList[i].
   private caculateTraderTokenBalances(fees: FeeItem[], fillAmountSList: number[]) {
