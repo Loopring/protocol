@@ -652,10 +652,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                     if (state.order.marginSplitAndNoMoreB >= 128) {
 
-                        if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase + 128) {
+                        if ((state.order.marginSplitAndNoMoreB - 128) != _marginSplitPercentageBase) {
                             split = split.mul(
-                            (state.order.marginSplitAndNoMoreB - 128)
-                        ) / _marginSplitPercentageBase;
+                            (state.order.marginSplitAndNoMoreB - 128)) / _marginSplitPercentageBase;
                         }
 
                         state.splitS = split;
@@ -663,8 +662,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                         if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase) {
                             split = split.mul(
-                            state.order.marginSplitAndNoMoreB
-                        ) / _marginSplitPercentageBase;
+                            state.order.marginSplitAndNoMoreB) / _marginSplitPercentageBase;
                         }
 
                         state.splitB = split;
@@ -943,9 +941,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(timestamp + ttl > block.timestamp); // "order is expired");
         require(salt != 0); // "invalid order salt");
         if (order.marginSplitAndNoMoreB >= 128) {
-            require(order.marginSplitAndNoMoreB <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
+            require((order.marginSplitAndNoMoreB - 128) <= MARGIN_SPLIT_PERCENTAGE_BASE);
         }else {
-            require(order.marginSplitAndNoMoreB <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
+            require(order.marginSplitAndNoMoreB <= MARGIN_SPLIT_PERCENTAGE_BASE);
         }    
     }
 
