@@ -105,7 +105,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    amountS;
         uint    amountB;
         uint    lrcFee;
-        uint8   margineSplitAndNoMoreThan;
+        uint8   marginSplitAndNoMoreB;
     }
 
     /// @param order        The original order
@@ -307,7 +307,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function cancelOrder(
         address[3] addresses,
         uint[7]    orderValues,
-        uint8   margineSplitAndNoMoreThan,
+        uint8   marginSplitAndNoMoreB,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -325,7 +325,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[0],
             orderValues[1],
             orderValues[5],
-            margineSplitAndNoMoreThan
+            marginSplitAndNoMoreB
         );
 
         require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
@@ -504,7 +504,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             p += 6;
 
             // Update fill records
-            if (state.order.margineSplitAndNoMoreThan >= 128) {
+            if (state.order.marginSplitAndNoMoreB >= 128) {
                 cancelledOrFilled[state.orderHash] += next.fillAmountS;
             } else {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
@@ -575,10 +575,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 
                 state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
-                if (state.order.margineSplitAndNoMoreThan >= 128) {
-                    state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase+128;
+                if (state.order.marginSplitAndNoMoreB >= 128) {
+                    state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase+128;
                 }else {
-                    state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase;
+                    state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase;
                 }
                 
             } else {
@@ -606,10 +606,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                     state.lrcFee = lrcTotal;
 
-                    if (state.order.margineSplitAndNoMoreThan >= 128) {
-                        state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase+128;
+                    if (state.order.marginSplitAndNoMoreB >= 128) {
+                        state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase+128;
                     }else {
-                        state.order.margineSplitAndNoMoreThan = _marginSplitPercentageBase;
+                        state.order.marginSplitAndNoMoreB = _marginSplitPercentageBase;
                     }
                 }
 
@@ -640,7 +640,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // otherwise all splits are 0.
                 if (minerLrcSpendable >= state.lrcFee) {
                     uint split;
-                    if (state.order.margineSplitAndNoMoreThan >= 128) {
+                    if (state.order.marginSplitAndNoMoreB >= 128) {
                         split = (next.fillAmountS.mul(
                             state.order.amountS
                         ) / state.order.amountB).sub(
@@ -654,20 +654,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         );
                     }
 
-                    if (state.order.margineSplitAndNoMoreThan >= 128) {
+                    if (state.order.marginSplitAndNoMoreB >= 128) {
 
-                        if (state.order.margineSplitAndNoMoreThan != _marginSplitPercentageBase + 128) {
+                        if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase + 128) {
                             split = split.mul(
-                            state.order.margineSplitAndNoMoreThan
+                            state.order.marginSplitAndNoMoreB
                         ) / _marginSplitPercentageBase;
                         }
 
                         state.splitS = split;
                     } else {
 
-                        if (state.order.margineSplitAndNoMoreThan != _marginSplitPercentageBase) {
+                        if (state.order.marginSplitAndNoMoreB != _marginSplitPercentageBase) {
                             split = split.mul(
-                            state.order.margineSplitAndNoMoreThan
+                            state.order.marginSplitAndNoMoreB
                         ) / _marginSplitPercentageBase;
                         }
 
@@ -783,7 +783,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var order = state.order;
             uint amount;
 
-            if (order.margineSplitAndNoMoreThan >= 128) {
+            if (order.marginSplitAndNoMoreB >= 128) {
                 amount = order.amountB.tolerantSub(
                     cancelledOrFilled[state.orderHash]
                 );
@@ -946,10 +946,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(ttl != 0); // "order ttl is 0");
         require(timestamp + ttl > block.timestamp); // "order is expired");
         require(salt != 0); // "invalid order salt");
-        if (order.margineSplitAndNoMoreThan >= 128) {
-            require(order.margineSplitAndNoMoreThan <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
+        if (order.marginSplitAndNoMoreB >= 128) {
+            require(order.marginSplitAndNoMoreB <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
         }else {
-            require(order.margineSplitAndNoMoreThan <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
+            require(order.marginSplitAndNoMoreB <= MARGIN_SPLIT_PERCENTAGE_BASE + 128);
         }    
     }
 
@@ -975,7 +975,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ttl,
             salt,
             order.lrcFee,
-            order.margineSplitAndNoMoreThan
+            order.marginSplitAndNoMoreB
         );
     }
 
