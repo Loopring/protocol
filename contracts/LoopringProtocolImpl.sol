@@ -563,7 +563,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var state = orders[i];
             var next = orders[(i + 1) % ringSize];
             uint lrcReceiable = 0;
-s
+            
             if (state.lrcFee == 0) {
                 // When an order's LRC fee is 0 or smaller than the specified fee,
                 // we help miner automatically select margin-split.
