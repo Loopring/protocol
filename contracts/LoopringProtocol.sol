@@ -98,9 +98,7 @@ contract LoopringProtocol {
     function submitRing(
         address[2][]    addressList,
         uint[7][]       uintArgsList,
-        uint8[2][]      uint8ArgsListAndNoMoreThanList,
-        //uint8[2][]      uint8ArgsList,
-        //bool[]          buyNoMoreThanAmountBList,
+        uint8[2][]      uint8ArgsListAndNoMoreBList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList,
@@ -124,9 +122,7 @@ contract LoopringProtocol {
     function cancelOrder(
         address[3] addresses,
         uint[7]    orderValues,
-        //bool       buyNoMoreThanAmountB,
-        //uint8      marginSplitPercentage,
-        uint8      margineSplitAndNoMoreThan,
+        uint8      marginSplitAndNoMoreB,
         uint8      v,
         bytes32    r,
         bytes32    s

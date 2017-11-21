@@ -105,8 +105,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    amountS;
         uint    amountB;
         uint    lrcFee;
-        //bool    buyNoMoreThanAmountB;
-        //uint8   marginSplitPercentage;
         uint8   margineSplitAndNoMoreThan;
     }
 
@@ -211,8 +209,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function submitRing(
         address[2][]  addressList,
         uint[7][]     uintArgsList,
-        //uint8[2][]    uint8ArgsList,
-        //bool[]        buyNoMoreThanAmountBList,
         uint8[2][]    uint8ArgsListAndNoMoreBList,
         uint8[]       vList,
         bytes32[]     rList,
@@ -236,8 +232,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             addressList,
             uintArgsList,
-            //uint8ArgsList,
-            //buyNoMoreThanAmountBList,
             uint8ArgsListAndNoMoreBList,
             vList,
             rList,
@@ -275,8 +269,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             addressList,
             uintArgsList,
             uint8ArgsListAndNoMoreBList,
-            //uint8ArgsList,
-            //buyNoMoreThanAmountBList,
             vList,
             rList,
             sList
@@ -315,9 +307,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function cancelOrder(
         address[3] addresses,
         uint[7]    orderValues,
-
-        //bool    buyNoMoreThanAmountB;
-        //uint8   marginSplitPercentage;
         uint8   margineSplitAndNoMoreThan,
         uint8      v,
         bytes32    r,
@@ -336,8 +325,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[0],
             orderValues[1],
             orderValues[5],
-            //buyNoMoreThanAmountB,
-            //marginSplitPercentage
             margineSplitAndNoMoreThan
         );
 
@@ -850,8 +837,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize,
         address[2][]  addressList,
         uint[7][]     uintArgsList,
-        //uint8[2][]    uint8ArgsList,
-        //bool[]        buyNoMoreThanAmountBList,
         uint8[2][]    uint8ArgsListAndNoMoreBList,
         uint8[]       vList,
         bytes32[]     rList,
@@ -862,7 +847,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         require(ringSize == addressList.length); // "ring data is inconsistent - addressList");
         require(ringSize == uintArgsList.length); // "ring data is inconsistent - uintArgsList");
-        require(ringsize == uint8ArgsListAndNoMoreBList.length); // "Ring data and list of variables is inconistant);
+        require(ringSize == uint8ArgsListAndNoMoreBList.length); // "Ring data and list of variables is inconistant);
         require(ringSize + 1 == vList.length); // "ring data is inconsistent - vList");
         require(ringSize + 1 == rList.length); // "ring data is inconsistent - rList");
         require(ringSize + 1 == sList.length); // "ring data is inconsistent - sList");
@@ -880,8 +865,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         TokenTransferDelegate delegate,
         address[2][]    addressList,
         uint[7][]       uintArgsList,
-        //uint8[2][]      uint8ArgsList,
-        //bool[]          buyNoMoreThanAmountBList,
         uint8[2][]      uint8ArgsListAndNoMoreBList,
         uint8[]         vList,
         bytes32[]       rList,
@@ -992,8 +975,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ttl,
             salt,
             order.lrcFee,
-            //order.buyNoMoreThanAmountB,
-            //order.marginSplitPercentage
             order.margineSplitAndNoMoreThan
         );
     }
