@@ -497,32 +497,32 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
-            var prev = orders[(i + ringSize - 1) % ringSize];
-            var next = orders[(i + 1) % ringSize];
+            var prevSplitB = orders[(i + ringSize - 1) % ringSize].splitB;
+            var nextIdx = (i + 1) % ringSize;
 
             // Store owner and tokenS of every order
             batch[p] = bytes32(state.order.owner);
             batch[p+1] = bytes32(state.order.tokenS);
 
             // Store all amounts
-            batch[p+2] = bytes32(state.fillAmountS - prev.splitB);
-            batch[p+3] = bytes32(prev.splitB + state.splitS);
+            batch[p+2] = bytes32(state.fillAmountS - prevSplitB);
+            batch[p+3] = bytes32(prevSplitB + state.splitS);
             batch[p+4] = bytes32(state.lrcReward);
             batch[p+5] = bytes32(state.lrcFee);
             p += 6;
 
             // Update fill records
             if (state.order.buyNoMoreThanAmountB) {
-                cancelledOrFilled[state.orderHash] += next.fillAmountS;
+                cancelledOrFilled[state.orderHash] += orders[nextIdx].fillAmountS;
             } else {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
             }
 
             fills[i] = Fill(
                 state.orderHash,
-                next.orderHash,
+                orders[nextIdx].orderHash,
                 state.fillAmountS + state.splitS,
-                next.fillAmountS - state.splitB,
+                orders[nextIdx].fillAmountS - state.splitB,
                 state.lrcReward,
                 state.lrcFee
             );
@@ -574,7 +574,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
-            var next = orders[(i + 1) % ringSize];
+            var nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
             uint lrcReceiable = 0;
 
             if (state.lrcFee == 0) {
@@ -597,7 +597,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 // If the order is buyign LRC, it will has more to pay as fee.
                 if (state.order.tokenB == _lrcTokenAddress) {
-                    lrcReceiable = next.fillAmountS;
+                    lrcReceiable = nextFillAmountS;
                 }
 
                 uint lrcTotal = lrcSpendable + lrcReceiable;
@@ -636,13 +636,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 if (minerLrcSpendable >= state.lrcFee) {
                     uint split;
                     if (state.order.buyNoMoreThanAmountB) {
-                        split = (next.fillAmountS.mul(
+                        split = (nextFillAmountS.mul(
                             state.order.amountS
                         ) / state.order.amountB).sub(
                             state.fillAmountS
                         );
                     } else {
-                        split = next.fillAmountS.sub(
+                        split = nextFillAmountS.sub(
                             state.fillAmountS.mul(
                                 state.order.amountB
                             ) / state.order.amountS
