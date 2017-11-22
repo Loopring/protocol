@@ -48,6 +48,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public  maxRingSize                 = 0;
     uint64  public  ringIndex                   = 0;
+    uint    private orderFilledIndex            = 0;
 
     // Exchange rate (rate) is the amount to sell or sold divided by the amount
     // to buy or bought.
@@ -461,7 +462,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
 
         /// Make payments.
-        var fills = settleRing(
+        var fillList = settleRing(
             delegate,
             ringSize,
             orders,
@@ -469,13 +470,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
             _lrcTokenAddress
         );
 
+        var fills = fillListToFills(fillList);
+
         RingMined(
             _ringIndex,
             ringhash,
             miner,
             feeRecipient,
             isRinghashReserved,
-            fills
+            fills.orderHashList,
+            fills.nextOrderHashList,
+            fills.amountSList,
+            fills.amountBList,
+            fills.lrcRewardList,
+            fills.lrcFeeList
         );
     }
 
@@ -528,6 +536,37 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         // Do all transactions
         delegate.batchTransferToken(_lrcTokenAddress, feeRecipient, batch);
+    }
+
+    function fillListToFills(Fill[] fillList)
+        private
+        view
+        returns (Fills memory fills)
+    {
+        uint size = fillList.length;
+        bytes32[] memory orderHashList = new bytes32[](size);
+        bytes32[] memory nextOrderHashList = new bytes32[](size);
+        uint[] memory amountSList = new uint[](size);
+        uint[] memory amountBList = new uint[](size);
+        uint[] memory lrcRewardList = new uint[](size);
+        uint[] memory lrcFeeList = new uint[](size);
+        for (uint i = 0; i < size; i++) {
+            orderHashList[i] = fillList[i].orderHash;
+            nextOrderHashList[i] = fillList[i].nextOrderHash;
+            amountSList[i] = fillList[i].amountS;
+            amountBList[i] = fillList[i].amountB;
+            lrcRewardList[i] = fillList[i].lrcReward;
+            lrcFeeList[i] = fillList[i].lrcFee;
+        }
+
+        fills = Fills(
+            orderHashList,
+            nextOrderHashList,
+            amountSList,
+            amountBList,
+            lrcRewardList,
+            lrcFeeList
+        );
     }
 
     /// @dev Verify miner has calculte the rates correctly.

@@ -36,12 +36,21 @@ contract LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
 
     struct Fill {
-        bytes32 _orderHash;
-        bytes32 _nextOrderHash;
-        uint    _amountS;
-        uint    _amountB;
-        uint    _lrcReward;
-        uint    _lrcFee;
+        bytes32 orderHash;
+        bytes32 nextOrderHash;
+        uint    amountS;
+        uint    amountB;
+        uint    lrcReward;
+        uint    lrcFee;
+    }
+
+    struct Fills {
+        bytes32[] orderHashList;
+        bytes32[] nextOrderHashList;
+        uint[]    amountSList;
+        uint[]    amountBList;
+        uint[]    lrcRewardList;
+        uint[]    lrcFeeList;
     }
 
     event RingMined(
@@ -50,7 +59,12 @@ contract LoopringProtocol {
         address     indexed _miner,
         address     indexed _feeRecipient,
         bool                _isRinghashReserved,
-        Fill[]              _fills
+        bytes32[]           _orderHashList,
+        bytes32[]           _nextOrderHashList,
+        uint[]              _amountSList,
+        uint[]              _amountBList,
+        uint[]              _lrcRewardList,
+        uint[]              _lrcFeeList
     );
 
     event OrderCancelled(
