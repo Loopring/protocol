@@ -464,7 +464,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
 
         /// Make payments.
-        var fills = settleRing(
+        var fillList = settleRing(
             delegate,
             ringSize,
             orders,
@@ -472,13 +472,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
             _lrcTokenAddress
         );
 
+        var fills = fillListToFills(fillList);
+
         RingMined(
             _ringIndex,
             ringhash,
             miner,
             feeRecipient,
             isRinghashReserved,
-            fills
+            fills.orderHashList,
+            fills.nextOrderHashList,
+            fills.amountSList,
+            fills.amountBList,
+            fills.lrcRewardList,
+            fills.lrcFeeList
         );
     }
 
@@ -490,10 +497,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address       _lrcTokenAddress
         )
         private
-        returns (uint[] memory fills)
+        returns (Fill[] memory fills)
     {
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (owner + tokenS + 4 amounts)
-        fills = new uint[](ringSize);
+        fills = new Fill[](ringSize);
 
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
@@ -519,8 +526,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
             }
 
-            OrderFilled(
-                ++orderFilledIndex,
+            fills[i] = Fill(
                 state.orderHash,
                 next.orderHash,
                 state.fillAmountS + state.splitS,
@@ -528,11 +534,41 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.lrcReward,
                 state.lrcFee
             );
-            fills[i] = orderFilledIndex;
         }
 
         // Do all transactions
         delegate.batchTransferToken(_lrcTokenAddress, feeRecipient, batch);
+    }
+
+    function fillListToFills(Fill[] fillList)
+        private
+        view
+        returns (Fills memory fills)
+    {
+        uint size = fillList.length;
+        bytes32[] memory orderHashList = new bytes32[](size);
+        bytes32[] memory nextOrderHashList = new bytes32[](size);
+        uint[] memory amountSList = new uint[](size);
+        uint[] memory amountBList = new uint[](size);
+        uint[] memory lrcRewardList = new uint[](size);
+        uint[] memory lrcFeeList = new uint[](size);
+        for (uint i = 0; i < size; i++) {
+            orderHashList[i] = fillList[i].orderHash;
+            nextOrderHashList[i] = fillList[i].nextOrderHash;
+            amountSList[i] = fillList[i].amountS;
+            amountBList[i] = fillList[i].amountB;
+            lrcRewardList[i] = fillList[i].lrcReward;
+            lrcFeeList[i] = fillList[i].lrcFee;
+        }
+
+        fills = Fills(
+            orderHashList,
+            nextOrderHashList,
+            amountSList,
+            amountBList,
+            lrcRewardList,
+            lrcFeeList
+        );
     }
 
     /// @dev Verify miner has calculte the rates correctly.
