@@ -365,13 +365,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function setCutoff(uint cutoff)
         external
     {
-        uint t = cutoff;
 
-        require(t <= block.timestamp);
-
-        if (t == 0) {
-            t = block.timestamp;
-        }
+        uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
         require(cutoffs[msg.sender] < t); // "attempted to set cutoff to a smaller value"
 
