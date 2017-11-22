@@ -44,13 +44,23 @@ contract LoopringProtocol {
         uint    _lrcFee;
     }
 
+    event OrderFilled(
+        uint    _orderFilledIndex,
+        bytes32 _orderHash,
+        bytes32 _nextOrderHash,
+        uint    _amountS,
+        uint    _amountB,
+        uint    _lrcReward,
+        uint    _lrcFee
+    );
+
     event RingMined(
         uint                _ringIndex,
         bytes32     indexed _ringhash,
         address     indexed _miner,
         address     indexed _feeRecipient,
         bool                _isRinghashReserved,
-        Fill[]              _fills
+        uint[]              _fillIndexList
     );
 
     event OrderCancelled(

@@ -28,7 +28,7 @@ import "./TokenTransferDelegate.sol";
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
 /// @author Daniel Wang - <daniel@loopring.org>,
 /// @author Kongliang Zhong - <kongliang@loopring.org>
-/// 
+///
 /// Recognized contributing developers from the community:
 ///     https://github.com/Brechtpd
 ///     https://github.com/rainydio
@@ -48,6 +48,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public  maxRingSize                 = 0;
     uint64  public  ringIndex                   = 0;
+    uint    private orderFilledIndex            = 0;
 
     // Exchange rate (rate) is the amount to sell or sold divided by the amount
     // to buy or bought.
@@ -489,10 +490,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address       _lrcTokenAddress
         )
         private
-        returns (Fill[] memory fills)
+        returns (uint[] memory fills)
     {
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (owner + tokenS + 4 amounts)
-        fills = new Fill[](ringSize);
+        fills = new uint[](ringSize);
 
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
@@ -518,7 +519,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
             }
 
-            fills[i] = Fill(
+            OrderFilled(
+                ++orderFilledIndex,
                 state.orderHash,
                 next.orderHash,
                 state.fillAmountS + state.splitS,
@@ -526,6 +528,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.lrcReward,
                 state.lrcFee
             );
+            fills[i] = orderFilledIndex;
         }
 
         // Do all transactions
@@ -742,7 +745,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
             state.lrcFee = state.order.lrcFee.mul(
                 fillAmountB
-            ) / state.order.amountB;               
+            ) / state.order.amountB;
         } else {
             state.lrcFee = state.order.lrcFee.mul(
                 state.fillAmountS
