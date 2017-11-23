@@ -43,9 +43,9 @@ contract TokenTransferDelegate is Claimable {
     ////////////////////////////////////////////////////////////////////////////
 
     struct AddressInfo {
-        address previous;
         uint32  index;
         bool    authorized;
+        address previous;
     }
 
 
@@ -81,7 +81,7 @@ contract TokenTransferDelegate is Claimable {
         var addrInfo = addressInfos[addr];
 
         if (addrInfo.index != 0) { // existing
-            if (addrInfo.authorized == false) { // re-authorize
+            if (!addrInfo.authorized) { // re-authorize
                 addrInfo.authorized = true;
                 AddressAuthorized(addr, addrInfo.index);
             }
@@ -125,7 +125,7 @@ contract TokenTransferDelegate is Claimable {
     function getLatestAuthorizedAddresses(uint max)
         external
         view
-        returns (address[] addresses)
+        returns (address[] memory addresses)
     {
         addresses = new address[](max);
         address addr = latestAddress;
@@ -137,7 +137,9 @@ contract TokenTransferDelegate is Claimable {
             if (addrInfo.index == 0) {
                 break;
             }
-            addresses[count++] = addr;
+            if (addrInfo.authorized) {
+                addresses[count++] = addr;
+            }
             addr = addrInfo.previous;
         }
     }
