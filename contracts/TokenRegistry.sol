@@ -125,7 +125,7 @@ contract TokenRegistry is Claimable {
         addresses = new address[](max);
         address addr = lastAddress;
         uint i = 0;
-        TokenInfo info;
+        TokenInfo memory info;
         while(addr != 0x0 && i < skip) {
              info = addressMap[addr];
              if (!info.registered) {
