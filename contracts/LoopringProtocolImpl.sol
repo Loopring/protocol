@@ -493,7 +493,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             var state = orders[i];
             var order = state.order;
             uint prevSplitB = orders[(i + ringSize - 1) % ringSize].splitB;
-            var next = orders[(i + 1) % ringSize];
+            uint nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
 
             // Store owner and tokenS of every order
             batch[p] = bytes32(order.owner);
@@ -508,14 +508,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             // Update fill records
             if (order.buyNoMoreThanAmountB) {
-                cancelledOrFilled[state.orderHash] += next.fillAmountS;
+                cancelledOrFilled[state.orderHash] += nextFillAmountS;
             } else {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
             }
 
             orderHashList[i] = state.orderHash;
             amountsList[i][0] = state.fillAmountS + state.splitS;
-            amountsList[i][1] = next.fillAmountS - state.splitB;
+            amountsList[i][1] = nextFillAmountS - state.splitB;
             amountsList[i][2] = state.lrcReward;
             amountsList[i][3] = state.lrcFee;
         }
