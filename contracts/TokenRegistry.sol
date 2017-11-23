@@ -28,10 +28,22 @@ contract TokenRegistry is Claimable {
 
     address[] public tokens;
 
-    mapping (address => bool) tokenMap;
+    mapping (address => TokenInfo) tokenMap;
 
     mapping (string => address) tokenSymbolMap;
+    
+    
+    uint8 public constant TOKEN_STANDARD_ERC20   = 0;
+    uint8 public constant TOKEN_STANDARD_ERC223  = 1;
+    
+    struct TokenInfo {
+        uint index;             // Index + 1 of the address in the tokens array, 0 means unregistered.
+        uint8 tokenStandard;    // ERC20 or ERC223
+        string symbol;          // Symbol of the token
+    }
+    
 
+    // TODO: need to add token standard
     function registerToken(address _token, string _symbol)
         external
         onlyOwner
@@ -40,7 +52,7 @@ contract TokenRegistry is Claimable {
         require(!isTokenRegisteredBySymbol(_symbol));
         require(!isTokenRegistered(_token));
         tokens.push(_token);
-        tokenMap[_token] = true;
+        tokenMap[_token] = TokenInfo(tokens.length, TOKEN_STANDARD_ERC20, _symbol);
         tokenSymbolMap[_symbol] = _token;
     }
 
@@ -51,14 +63,26 @@ contract TokenRegistry is Claimable {
         require(_token != 0x0);
         require(tokenSymbolMap[_symbol] == _token);
         delete tokenSymbolMap[_symbol];
+        
+        uint index = tokenMap[_token].index;
+        require(index != 0);
         delete tokenMap[_token];
-        for (uint i = 0; i < tokens.length; i++) {
-            if (tokens[i] == _token) {
-                tokens[i] = tokens[tokens.length - 1];
-                tokens.length --;
-                break;
-            }
+        
+        // Stored index in TokenInfo is index+1
+        index--;
+        
+        // We will replace the token we need to unregister with the last token
+        // Only the index of the last token will need to be updated
+        uint numTokens = tokens.length;
+        address lastToken = tokens[numTokens - 1];
+        
+        // Don't do anything if the last token is the one we want to delete
+        if (_token != lastToken) {
+            // Swap with the last token and update the index
+            tokens[index] = lastToken;
+            tokenMap[lastToken].index = index + 1;
         }
+        tokens.length--;
     }
 
     function isTokenRegisteredBySymbol(string symbol)
@@ -74,7 +98,7 @@ contract TokenRegistry is Claimable {
         view
         returns (bool)
     {
-        return tokenMap[_token];
+        return tokenMap[_token].index != 0;
     }
 
     function areAllTokensRegistered(address[] tokenList)
@@ -83,11 +107,21 @@ contract TokenRegistry is Claimable {
         returns (bool)
     {
         for (uint i = 0; i < tokenList.length; i++) {
-            if (!tokenMap[tokenList[i]]) {
+            if (tokenMap[tokenList[i]].index == 0) {
                 return false;
             }
         }
         return true;
+    }
+    
+    function getTokenStandard(address _token)
+        public
+        view
+        returns (uint8)
+    {
+        var info = tokenMap[_token];
+        require(info.index != 0);
+        return info.tokenStandard;
     }
 
     function getAddressBySymbol(string symbol)
@@ -105,22 +139,22 @@ contract TokenRegistry is Claimable {
     {
         uint numTokens = tokens.length;
         
-        if(startIdx >= numTokens) {
+        if (startIdx >= numTokens) {
             return;
         }
         
         uint endIdx = startIdx + count;
-        if(endIdx > numTokens) {
+        if (endIdx > numTokens) {
             endIdx = numTokens;
         }
 
         uint subListLength = endIdx - startIdx;
-        if(subListLength == 0) {
+        if (subListLength == 0) {
             return;
         }
         
         tokensSubList = new address[](subListLength);
-        for(uint i = startIdx; i < endIdx; i++) {
+        for (uint i = startIdx; i < endIdx; i++) {
             tokensSubList[i - startIdx] = tokens[i];
         }
     }
