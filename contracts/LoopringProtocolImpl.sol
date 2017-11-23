@@ -420,7 +420,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
         address _lrcTokenAddress = lrcTokenAddress;
-        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        var delegate = TokenTransferDelegate(delegateAddress);
                 
         // Do the hard work.
         verifyRingHasNoSubRing(ringSize, orders);
