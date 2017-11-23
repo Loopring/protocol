@@ -97,4 +97,31 @@ contract TokenRegistry is Claimable {
     {
         return tokenSymbolMap[symbol];
     }
+    
+    function getTokens(uint startIdx, uint count)
+        public
+        view
+        returns (address[] tokensSubList)
+    {
+        uint numTokens = tokens.length;
+        
+        if(startIdx >= numTokens) {
+            return;
+        }
+        
+        uint endIdx = startIdx + count;
+        if(endIdx > numTokens) {
+            endIdx = numTokens;
+        }
+
+        uint subListLength = endIdx - startIdx;
+        if(subListLength == 0) {
+            return;
+        }
+        
+        tokensSubList = new address[](subListLength);
+        for(uint i = startIdx; i < endIdx; i++) {
+            tokensSubList[i - startIdx] = tokens[i];
+        }
+    }
 }
