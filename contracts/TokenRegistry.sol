@@ -26,39 +26,132 @@ import "./lib/Claimable.sol";
 /// @author Daniel Wang - <daniel@loopring.org>.
 contract TokenRegistry is Claimable {
 
-    address[] public tokens;
+    address lastAddress;
+    uint    numOfTokens;
 
-    mapping (address => bool) tokenMap;
+    mapping (address => TokenInfo) addressMap;
+    mapping (string => address) symbolMap;
 
-    mapping (string => address) tokenSymbolMap;
 
-    function registerToken(address _token, string _symbol)
-        external
-        onlyOwner
-    {
-        require(_token != 0x0);
-        require(!isTokenRegisteredBySymbol(_symbol));
-        require(!isTokenRegistered(_token));
-        tokens.push(_token);
-        tokenMap[_token] = true;
-        tokenSymbolMap[_symbol] = _token;
+    ////////////////////////////////////////////////////////////////////////////
+    /// Structs                                                              ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    struct TokenInfo {
+        bool    registered;
+        address previous;
+        address next;
+        string  symbol;
     }
 
-    function unregisterToken(address _token, string _symbol)
+    ////////////////////////////////////////////////////////////////////////////
+    /// Events                                                               ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    event TokenRegistered(address indexed addr, string symbol, uint numOfTokens);
+
+    event TokenUnregistered(address indexed addr, string symbol, uint numOfTokens);
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    /// Public Functions                                                     ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    function registerToken(
+        address _address,
+        string _symbol
+        )
         external
         onlyOwner
     {
-        require(_token != 0x0);
-        require(tokenSymbolMap[_symbol] == _token);
-        delete tokenSymbolMap[_symbol];
-        delete tokenMap[_token];
-        for (uint i = 0; i < tokens.length; i++) {
-            if (tokens[i] == _token) {
-                tokens[i] = tokens[tokens.length - 1];
-                tokens.length --;
-                break;
-            }
+        require(_address != 0x0);
+        require(!addressMap[_address].registered);
+        require(bytes(_symbol).length > 0);
+        require(symbolMap[_symbol] == 0x0);
+
+        address _lastAddress = lastAddress;
+        if (_lastAddress != 0x0) {
+            addressMap[_lastAddress].next = _address;
         }
+        addressMap[_address] = TokenInfo(true, _lastAddress, 0x0, _symbol);
+        symbolMap[_symbol] = _address;
+        lastAddress = _address;
+
+        numOfTokens++;
+        TokenRegistered(_address, _symbol, numOfTokens);
+    }
+
+    function unregisterToken(
+        address _address,
+        string _symbol
+        )
+        external
+        onlyOwner
+    {
+        require(_address != 0x0);
+        require(addressMap[_address].registered);
+        require(bytes(_symbol).length > 0);
+        require(symbolMap[_symbol] == _address);
+
+        var tokenInfo = addressMap[_address];
+        address nextAddr = addressMap[_address].next;
+        address prevAddr = addressMap[_address].previous;
+        if (nextAddr != 0x0) {
+            addressMap[nextAddr].previous = prevAddr;
+        }
+        if (prevAddr != 0x0) {
+            addressMap[nextAddr].next = nextAddr;
+        }
+        if (_address == lastAddress) {
+            lastAddress = prevAddr;
+        }
+
+        addressMap[_address].registered = false;
+        symbolMap[tokenInfo.symbol] = 0x0;
+
+        numOfTokens--;
+        TokenRegistered(_address, _symbol, numOfTokens);
+    }
+
+    function getRegisteredTokens(
+        uint skip,
+        uint max
+        )
+        external
+        view
+        returns (
+        address[] memory addresses)
+    {
+        addresses = new address[](max);
+        address addr = lastAddress;
+        uint i = 0;
+        TokenInfo info;
+        while(addr != 0x0 && i < skip) {
+             info = addressMap[addr];
+             if (!info.registered) {
+                break;
+             }
+             addr = info.previous;
+             i++;
+        }
+
+        i = 0;
+        while(addr != 0x0 && i < max) {
+             info = addressMap[addr];
+             if (!info.registered) {
+                break;
+             }
+             addresses[i] = addr;
+             addr = info.previous;
+        }
+    }
+
+    function isTokenRegisteredByAddress(address addr)
+        public
+        view
+        returns (bool)
+    {
+        return addressMap[addr].registered;
     }
 
     function isTokenRegisteredBySymbol(string symbol)
@@ -66,24 +159,16 @@ contract TokenRegistry is Claimable {
         view
         returns (bool)
     {
-        return tokenSymbolMap[symbol] != 0x0;
+        return addressMap[symbolMap[symbol]].registered;
     }
 
-    function isTokenRegistered(address _token)
-        public
-        view
-        returns (bool)
-    {
-        return tokenMap[_token];
-    }
-
-    function areAllTokensRegistered(address[] tokenList)
+    function areAllTokensRegistered(address[] addresses)
         external
         view
         returns (bool)
     {
-        for (uint i = 0; i < tokenList.length; i++) {
-            if (!tokenMap[tokenList[i]]) {
+        for (uint i = 0; i < addresses.length; i++) {
+            if (!addressMap[addresses[i]].registered) {
                 return false;
             }
         }
@@ -95,6 +180,16 @@ contract TokenRegistry is Claimable {
         view
         returns (address)
     {
-        return tokenSymbolMap[symbol];
+        require(isTokenRegisteredBySymbol(symbol));
+        return symbolMap[symbol];
+    }
+
+    function getSymbolByAddress(address addr)
+        external
+        view
+        returns (string)
+    {
+        require(isTokenRegisteredByAddress(addr));
+        return addressMap[addr].symbol;
     }
 }
