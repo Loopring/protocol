@@ -28,7 +28,7 @@ import "./TokenTransferDelegate.sol";
 /// @title Loopring Token Exchange Protocol Implementation Contract v1
 /// @author Daniel Wang - <daniel@loopring.org>,
 /// @author Kongliang Zhong - <kongliang@loopring.org>
-/// 
+///
 /// Recognized contributing developers from the community:
 ///     https://github.com/Brechtpd
 ///     https://github.com/rainydio
@@ -41,10 +41,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// Variables                                                            ///
     ////////////////////////////////////////////////////////////////////////////
 
-    address public  lrcTokenAddress             = address(0);
-    address public  tokenRegistryAddress        = address(0);
-    address public  ringhashRegistryAddress     = address(0);
-    address public  delegateAddress             = address(0);
+    address public  lrcTokenAddress             = 0x0;
+    address public  tokenRegistryAddress        = 0x0;
+    address public  ringhashRegistryAddress     = 0x0;
+    address public  delegateAddress             = 0x0;
 
     uint    public  maxRingSize                 = 0;
     uint64  public  ringIndex                   = 0;
@@ -148,10 +148,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         public
     {
-        require(address(0) != _lrcTokenAddress);
-        require(address(0) != _tokenRegistryAddress);
-        require(address(0) != _ringhashRegistryAddress);
-        require(address(0) != _delegateAddress);
+        require(0x0 != _lrcTokenAddress);
+        require(0x0 != _tokenRegistryAddress);
+        require(0x0 != _ringhashRegistryAddress);
+        require(0x0 != _delegateAddress);
 
         require(_maxRingSize > 1);
         require(_rateRatioCVSThreshold > 0);
@@ -272,7 +272,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList
         );
 
-        if (feeRecipient == address(0)) {
+        if (feeRecipient == 0x0) {
             feeRecipient = ringminer;
         }
 
@@ -358,12 +358,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function setCutoff(uint cutoff)
         external
     {
-        uint t = cutoff;
-        if (t == 0) {
-            t = block.timestamp;
-        }
 
-        require(cutoffs[msg.sender] < t); // "attempted to set cutoff to a smaller value");
+        uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
+
+        require(cutoffs[msg.sender] < t); // "attempted to set cutoff to a smaller value"
 
         cutoffs[msg.sender] = t;
 
@@ -454,8 +452,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             _lrcTokenAddress
         );
 
-        /// Make payments.
-        var fills = settleRing(
+        /// Make transfers.
+        var (orderHashList, amountsList) = settleRing(
             delegate,
             ringSize,
             orders,
@@ -469,7 +467,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             miner,
             feeRecipient,
             isRinghashReserved,
-            fills
+            orderHashList,
+            amountsList
         );
     }
 
@@ -481,10 +480,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address       _lrcTokenAddress
         )
         private
-        returns (Fill[] memory fills)
+        returns(
+        bytes32[] memory orderHashList,
+        uint[4][] memory amountsList)
     {
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (owner + tokenS + 4 amounts)
-        fills = new Fill[](ringSize);
+        orderHashList = new bytes32[](ringSize);
+        amountsList = new uint[4][](ringSize);
 
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
@@ -511,14 +513,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
             }
 
-            fills[i] = Fill(
-                state.orderHash,
-                next.orderHash,
-                state.fillAmountS + state.splitS,
-                next.fillAmountS - state.splitB,
-                state.lrcReward,
-                state.lrcFee
-            );
+            orderHashList[i] = state.orderHash;
+            amountsList[i][0] = state.fillAmountS + state.splitS;
+            amountsList[i][1] = next.fillAmountS - state.splitB;
+            amountsList[i][2] = state.lrcReward;
+            amountsList[i][3] = state.lrcFee;
         }
 
         // Do all transactions
@@ -737,7 +736,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
             state.lrcFee = state.order.lrcFee.mul(
                 fillAmountB
-            ) / state.order.amountB;               
+            ) / state.order.amountB;
         } else {
             state.lrcFee = state.order.lrcFee.mul(
                 state.fillAmountS
@@ -925,9 +924,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
-        require(order.owner != address(0)); // "invalid order owner");
-        require(order.tokenS != address(0)); // "invalid order tokenS");
-        require(order.tokenB != address(0)); // "invalid order tokenB");
+        require(order.owner != 0x0); // "invalid order owner");
+        require(order.tokenS != 0x0); // "invalid order tokenS");
+        require(order.tokenB != 0x0); // "invalid order tokenB");
         require(order.amountS != 0); // "invalid order amountS");
         require(order.amountB != 0); // "invalid order amountB");
         require(timestamp <= block.timestamp); // "order is too early to match");
