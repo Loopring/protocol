@@ -44,16 +44,17 @@ contract TokenRegistry is Claimable {
     
 
     // TODO: need to add token standard
-    function registerToken(address _token, string _symbol)
+    function registerToken(address _addr, string _symbol)
         external
         onlyOwner
     {
-        require(_token != 0x0);
+        require(_addr != 0x0);
+        require(bytes(_symbol).length > 0);
         require(!isTokenRegisteredBySymbol(_symbol));
-        require(!isTokenRegistered(_token));
-        tokens.push(_token);
-        tokenMap[_token] = TokenInfo(tokens.length, TOKEN_STANDARD_ERC20, _symbol);
-        tokenSymbolMap[_symbol] = _token;
+        require(!isTokenRegistered(_addr));
+        tokens.push(_addr);
+        tokenMap[_addr] = TokenInfo(tokens.length, TOKEN_STANDARD_ERC20, _symbol);
+        tokenSymbolMap[_symbol] = _addr;
     }
 
     function unregisterToken(address _token, string _symbol)
@@ -68,9 +69,6 @@ contract TokenRegistry is Claimable {
         require(index != 0);
         delete tokenMap[_token];
         
-        // Stored index in TokenInfo is index+1
-        index--;
-        
         // We will replace the token we need to unregister with the last token
         // Only the index of the last token will need to be updated
         address lastToken = tokens[tokens.length - 1];
@@ -78,8 +76,8 @@ contract TokenRegistry is Claimable {
         // Don't do anything if the last token is the one we want to delete
         if (_token != lastToken) {
             // Swap with the last token and update the index
-            tokens[index] = lastToken;
-            tokenMap[lastToken].index = index + 1;
+            tokens[index - 1] = lastToken;
+            tokenMap[lastToken].index = index;
         }
         tokens.length--;
     }
@@ -147,12 +145,11 @@ contract TokenRegistry is Claimable {
             endIdx = numTokens;
         }
 
-        uint subListLength = endIdx - startIdx;
-        if (subListLength == 0) {
+        if (startIdx == endIdx) {
             return;
         }
         
-        tokensSubList = new address[](subListLength);
+        tokensSubList = new address[](endIdx - startIdx);
         for (uint i = startIdx; i < endIdx; i++) {
             tokensSubList[i - startIdx] = tokens[i];
         }
