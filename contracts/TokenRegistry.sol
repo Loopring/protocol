@@ -73,8 +73,7 @@ contract TokenRegistry is Claimable {
         
         // We will replace the token we need to unregister with the last token
         // Only the index of the last token will need to be updated
-        uint numTokens = tokens.length;
-        address lastToken = tokens[numTokens - 1];
+        address lastToken = tokens[tokens.length - 1];
         
         // Don't do anything if the last token is the one we want to delete
         if (_token != lastToken) {
