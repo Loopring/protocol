@@ -444,13 +444,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
+
+        ERC20 _lrcToken = ERC20(_lrcTokenAddress);
         calculateRingFees(
             delegate,
             ringSize,
             orders,
             feeRecipient,
             _lrcTokenAddress,
-            ERC20(_lrcTokenAddress)
+            _lrcToken
         );
 
         /// Make transfers.
@@ -459,7 +461,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             orders,
             feeRecipient,
-            _lrcTokenAddress
+            _lrcToken
         );
 
         RingMined(
@@ -478,7 +480,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize,
         OrderState[]  orders,
         address       feeRecipient,
-        address       _lrcTokenAddress
+        ERC20       _lrcToken
         )
         private
         returns(
@@ -522,7 +524,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         // Do all transactions
-        delegate.batchTransferToken(_lrcTokenAddress, feeRecipient, batch);
+        delegate.batchTransferToken(_lrcToken, feeRecipient, batch);
     }
 
     /// @dev Verify miner has calculte the rates correctly.
@@ -565,7 +567,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
         uint nextFillAmountS;
-        
+
+
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             uint lrcReceiable = 0;

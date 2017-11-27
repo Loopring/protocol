@@ -163,7 +163,7 @@ contract TokenTransferDelegate is Claimable {
     }
 
     function batchTransferToken(
-        address lrcTokenAddress,
+        ERC20 lrc,
         address feeRecipient,
         bytes32[] batch)
         onlyAuthorized
@@ -171,8 +171,6 @@ contract TokenTransferDelegate is Claimable {
     {
         uint len = batch.length;
         require(len % 6 == 0);
-
-        var lrc = ERC20(lrcTokenAddress);
 
         for (uint i = 0; i < len; i += 6) {
             address owner = address(batch[i]);
