@@ -449,7 +449,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             orders,
             feeRecipient,
-            _lrcTokenAddress
+            _lrcTokenAddress,
+            ERC20(_lrcTokenAddress)
         );
 
         /// Make transfers.
@@ -555,7 +556,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders,
         address         feeRecipient,
-        address         _lrcTokenAddress
+        address         _lrcTokenAddress,
+        ERC20           _lrcToken
         )
         private
         view
@@ -563,7 +565,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
         uint nextFillAmountS;
-
+        
         for (uint i = 0; i < ringSize; i++) {
             var state = orders[i];
             uint lrcReceiable = 0;
@@ -576,7 +578,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             } else {
                 uint lrcSpendable = getSpendable(
                     delegate,
-                    _lrcTokenAddress,
+                    _lrcToken,
                     state.order.owner
                 );
 
@@ -618,7 +620,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // Only check the available miner balance when absolutely needed
                 if (!checkedMinerLrcSpendable && minerLrcSpendable < state.lrcFee) {
                     checkedMinerLrcSpendable = true;
-                    minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
+                    minerLrcSpendable = getSpendable(delegate, _lrcToken, feeRecipient);
                 }
 
                 // Only calculate split when miner has enough LRC;
@@ -785,7 +787,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0); // "amountS is zero");
             require(order.amountB > 0); // "amountB is zero");
             
-            uint availableAmountS = getSpendable(delegate, order.tokenS, order.owner);
+            uint availableAmountS = getSpendable(delegate, ERC20(order.tokenS), order.owner);
             require(availableAmountS > 0); // "order spendable amountS is zero");
 
             state.fillAmountS = (
@@ -798,14 +800,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @return Amount of ERC20 token that can be spent by this contract.
     function getSpendable(
         TokenTransferDelegate delegate,
-        address tokenAddress,
+        ERC20 token,
         address tokenOwner
         )
         private
         view
         returns (uint)
     {
-        var token = ERC20(tokenAddress);
         uint allowance = token.allowance(
             tokenOwner,
             address(delegate)
