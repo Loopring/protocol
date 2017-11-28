@@ -444,12 +444,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
+
+        ERC20 _lrcToken = ERC20(_lrcTokenAddress);
         calculateRingFees(
             delegate,
             ringSize,
             orders,
             feeRecipient,
-            _lrcTokenAddress
+            _lrcTokenAddress,
+            _lrcToken
         );
 
         /// Make transfers.
@@ -458,7 +461,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringSize,
             orders,
             feeRecipient,
-            _lrcTokenAddress
+            _lrcToken
         );
 
         RingMined(
@@ -477,7 +480,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize,
         OrderState[]  orders,
         address       feeRecipient,
-        address       _lrcTokenAddress
+        ERC20       _lrcToken
         )
         private
         returns(
@@ -521,7 +524,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         // Do all transactions
-        delegate.batchTransferToken(_lrcTokenAddress, feeRecipient, batch);
+        delegate.batchTransferToken(_lrcToken, feeRecipient, batch);
     }
 
     /// @dev Verify miner has calculte the rates correctly.
@@ -555,15 +558,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint            ringSize,
         OrderState[]    orders,
         address         feeRecipient,
-        address         _lrcTokenAddress
+        address         _lrcTokenAddress,
+        ERC20           _lrcToken
         )
         private
         view
     {
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
-        uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
         uint nextFillAmountS;
+
 
         for (uint i = 0; i < ringSize; i++) {
             OrderState memory state = orders[i];
@@ -573,11 +577,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // When an order's LRC fee is 0 or smaller than the specified fee,
                 // we help miner automatically select margin-split.
                 state.feeSelection = FEE_SELECT_MARGIN_SPLIT;
-                state.order.marginSplitPercentage = _marginSplitPercentageBase;
+                state.order.marginSplitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
             } else {
                 uint lrcSpendable = getSpendable(
                     delegate,
-                    _lrcTokenAddress,
+                    _lrcToken,
                     state.order.owner
                 );
 
@@ -593,12 +597,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                     lrcReceiable = nextFillAmountS;
                 }
 
-                uint lrcTotal = lrcSpendable + lrcReceiable;
-
                 // If order doesn't have enough LRC, set margin split to 100%.
-                if (lrcTotal < state.lrcFee) {
-                    state.lrcFee = lrcTotal;
-                    state.order.marginSplitPercentage = _marginSplitPercentageBase;
+                if ((lrcSpendable + lrcReceiable) < state.lrcFee) {
+                    state.lrcFee = (lrcSpendable + lrcReceiable);
+                    state.order.marginSplitPercentage = MARGIN_SPLIT_PERCENTAGE_BASE;
                 }
 
                 if (state.lrcFee == 0) {
@@ -621,7 +623,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // Only check the available miner balance when absolutely needed
                 if (!checkedMinerLrcSpendable && minerLrcSpendable < state.lrcFee) {
                     checkedMinerLrcSpendable = true;
-                    minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, feeRecipient);
+                    minerLrcSpendable = getSpendable(delegate, _lrcToken, feeRecipient);
                 }
 
                 // Only calculate split when miner has enough LRC;
@@ -643,10 +645,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         );
                     }
 
-                    if (state.order.marginSplitPercentage != _marginSplitPercentageBase) {
+                    if (state.order.marginSplitPercentage != MARGIN_SPLIT_PERCENTAGE_BASE) {
                         split = split.mul(
                             state.order.marginSplitPercentage
-                        ) / _marginSplitPercentageBase;
+                        ) / MARGIN_SPLIT_PERCENTAGE_BASE;
                     }
 
                     if (state.order.buyNoMoreThanAmountB) {
@@ -788,7 +790,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0); // "amountS is zero");
             require(order.amountB > 0); // "amountB is zero");
             
-            uint availableAmountS = getSpendable(delegate, order.tokenS, order.owner);
+            uint availableAmountS = getSpendable(delegate, ERC20(order.tokenS), order.owner);
             require(availableAmountS > 0); // "order spendable amountS is zero");
 
             state.fillAmountS = (
@@ -801,14 +803,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @return Amount of ERC20 token that can be spent by this contract.
     function getSpendable(
         TokenTransferDelegate delegate,
-        address tokenAddress,
+        ERC20 token,
         address tokenOwner
         )
         private
         view
         returns (uint)
     {
-        var token = ERC20(tokenAddress);
         uint allowance = token.allowance(
             tokenOwner,
             address(delegate)
