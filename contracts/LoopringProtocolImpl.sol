@@ -169,10 +169,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
 
     /// @dev Disable default function.
-    function ()
-        payable
-        public
-    {
+    function () payable public {
         revert();
     }
 
@@ -420,8 +417,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint64 _ringIndex = ringIndex ^ ENTERED_MASK;
         address _lrcTokenAddress = lrcTokenAddress;
-        var delegate = TokenTransferDelegate(delegateAddress);
-                
+
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+
         // Do the hard work.
         verifyRingHasNoSubRing(ringSize, orders);
 
@@ -482,11 +480,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         returns(
         bytes32[] memory orderHashList,
-        uint[4][] memory amountsList)
+        uint[6][] memory amountsList)
     {
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (owner + tokenS + 4 amounts)
         orderHashList = new bytes32[](ringSize);
-        amountsList = new uint[4][](ringSize);
+        amountsList = new uint[6][](ringSize);
 
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
@@ -518,6 +516,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             amountsList[i][1] = nextFillAmountS - state.splitB;
             amountsList[i][2] = state.lrcReward;
             amountsList[i][3] = state.lrcFee;
+            amountsList[i][4] = state.splitS;
+            amountsList[i][5] = state.splitB;
         }
 
         // Do all transactions
@@ -791,6 +791,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             uint availableAmountS = getSpendable(delegate, order.tokenS, order.owner);
             require(availableAmountS > 0); // "order spendable amountS is zero");
 
+            uint availableAmountS = getSpendable(delegate, order.tokenS, order.owner);
+            require(availableAmountS > 0); // "order spendable amountS is zero");
+
             state.fillAmountS = (
                 order.amountS < availableAmountS ?
                 order.amountS : availableAmountS
@@ -808,7 +811,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
         returns (uint)
     {
-        var token = ERC20(tokenAddress);
+        ERC20 token = ERC20(tokenAddress);
         uint allowance = token.allowance(
             tokenOwner,
             address(delegate)
@@ -859,14 +862,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
         view
-        returns (OrderState[] orders)
+        returns (OrderState[] memory orders)
     {
         uint ringSize = addressList.length;
         orders = new OrderState[](ringSize);
 
         for (uint i = 0; i < ringSize; i++) {
-            var uintArgs = uintArgsList[i];
-        
+            uint[7] memory uintArgs = uintArgsList[i];
+
             Order memory order = Order(
                 addressList[i][0],
                 addressList[i][1],

@@ -38,7 +38,6 @@ contract RinghashRegistry {
 
     mapping (bytes32 => Submission) submissions;
 
-
     ////////////////////////////////////////////////////////////////////////////
     /// Events                                                               ///
     ////////////////////////////////////////////////////////////////////////////
@@ -62,6 +61,11 @@ contract RinghashRegistry {
     ////////////////////////////////////////////////////////////////////////////
     /// Public Functions                                                     ///
     ////////////////////////////////////////////////////////////////////////////
+
+    /// @dev Disable default function.
+    function () payable public {
+        revert();
+    }
 
     function submitRinghash(
         address     ringminer,
@@ -148,7 +152,9 @@ contract RinghashRegistry {
         returns (bool)
     {
         require(ringminer != 0x0);
-        var submission = submissions[ringhash];
+
+        Submission memory submission = submissions[ringhash];
+
         address miner = submission.ringminer;
         return (
             miner == 0x0 || (
@@ -166,7 +172,7 @@ contract RinghashRegistry {
         view
         returns (bool)
     {
-        var submission = submissions[ringhash];
+        Submission memory submission = submissions[ringhash];
         return (
             submission.block + blocksToLive >= block.number && (
             submission.ringminer == ringminer)
