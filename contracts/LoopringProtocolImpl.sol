@@ -48,6 +48,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public  maxRingSize                 = 0;
     uint64  public  ringIndex                   = 0;
+    uint8   public  walletSplitPercentage       = 0;
 
     // Exchange rate (rate) is the amount to sell or sold divided by the amount
     // to buy or bought.
@@ -99,6 +100,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param r            ECDSA signature parameters r.
     /// @param s            ECDSA signature parameters s.
     struct Order {
+        address wallet;
         address owner;
         address tokenS;
         address tokenB;
@@ -144,7 +146,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address _ringhashRegistryAddress,
         address _delegateAddress,
         uint    _maxRingSize,
-        uint    _rateRatioCVSThreshold
+        uint    _rateRatioCVSThreshold,
+        uint8   _walletSplitPercentage
         )
         public
     {
@@ -155,6 +158,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(_maxRingSize > 1);
         require(_rateRatioCVSThreshold > 0);
+        require(_walletSplitPercentage >= 0 && _walletSplitPercentage <= 100);
 
         lrcTokenAddress = _lrcTokenAddress;
         tokenRegistryAddress = _tokenRegistryAddress;
@@ -162,6 +166,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         delegateAddress = _delegateAddress;
         maxRingSize = _maxRingSize;
         rateRatioCVSThreshold = _rateRatioCVSThreshold;
+        walletSplitPercentage = _walletSplitPercentage;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -202,7 +207,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///                     of fee selection model, LRC will also be sent from
     ///                     this address.
     function submitRing(
-        address[2][]  addressList,
+        address[3][]  addressList,
         uint[7][]     uintArgsList,
         uint8[2][]    uint8ArgsList,
         bool[]        buyNoMoreThanAmountBList,
@@ -299,7 +304,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
     function cancelOrder(
-        address[3] addresses,
+        address[4] addresses,
         uint[7]    orderValues,
         bool       buyNoMoreThanAmountB,
         uint8      marginSplitPercentage,
@@ -317,6 +322,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             addresses[0],
             addresses[1],
             addresses[2],
+            addresses[3],
             orderValues[0],
             orderValues[1],
             orderValues[5],
@@ -388,7 +394,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     function verifyTokensRegistered(
         uint          ringSize,
-        address[2][]  addressList
+        address[3][]  addressList
         )
         private
         view
@@ -396,7 +402,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Extract the token addresses
         address[] memory tokens = new address[](ringSize);
         for (uint i = 0; i < ringSize; i++) {
-            tokens[i] = addressList[i][1];
+            tokens[i] = addressList[i][2];
         }
 
         // Test all token addresses at once
@@ -482,6 +488,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint[6][] memory amountsList)
     {
         bytes32[] memory batch = new bytes32[](ringSize * 6); // ringSize * (owner + tokenS + 4 amounts)
+        address[] memory walletAddresses = new address[](ringSize);
+
         orderHashList = new bytes32[](ringSize);
         amountsList = new uint[6][](ringSize);
 
@@ -491,6 +499,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             Order memory order = state.order;
             uint prevSplitB = orders[(i + ringSize - 1) % ringSize].splitB;
             uint nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
+
+            walletAddresses[i] = order.wallet;
 
             // Store owner and tokenS of every order
             batch[p] = bytes32(order.owner);
@@ -520,7 +530,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         // Do all transactions
-        delegate.batchTransferToken(_lrcTokenAddress, feeRecipient, batch);
+        delegate.batchTransferToken(_lrcTokenAddress, feeRecipient, walletAddresses, walletSplitPercentage, batch);
     }
 
     /// @dev Verify miner has calculte the rates correctly.
@@ -819,7 +829,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev verify input data's basic integrity.
     function verifyInputDataIntegrity(
         uint          ringSize,
-        address[2][]  addressList,
+        address[3][]  addressList,
         uint[7][]     uintArgsList,
         uint8[2][]    uint8ArgsList,
         bool[]        buyNoMoreThanAmountBList,
@@ -848,7 +858,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
-        address[2][]    addressList,
+        address[3][]    addressList,
         uint[7][]       uintArgsList,
         uint8[2][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
@@ -869,6 +879,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             Order memory order = Order(
                 addressList[i][0],
                 addressList[i][1],
+                addressList[i][2],
                 addressList[(i + 1) % ringSize][1],
                 uintArgs[0],
                 uintArgs[1],
@@ -923,17 +934,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
-        require(order.owner != 0x0); // "invalid order owner");
-        require(order.tokenS != 0x0); // "invalid order tokenS");
-        require(order.tokenB != 0x0); // "invalid order tokenB");
-        require(order.amountS != 0); // "invalid order amountS");
-        require(order.amountB != 0); // "invalid order amountB");
-        require(timestamp <= block.timestamp); // "order is too early to match");
-        require(timestamp > cutoffs[order.owner]); // "order is cut off");
-        require(ttl != 0); // "order ttl is 0");
-        require(timestamp + ttl > block.timestamp); // "order is expired");
-        require(salt != 0); // "invalid order salt");
-        require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE); // "invalid order marginSplitPercentage");
+        require(order.wallet != 0x0); // "invalid wallet address";
+        require(order.owner != 0x0); // "invalid order owner";
+        require(order.tokenS != 0x0); // "invalid order tokenS";
+        require(order.tokenB != 0x0); // "invalid order tokenB";
+        require(order.amountS != 0); // "invalid order amountS";
+        require(order.amountB != 0); // "invalid order amountB";
+        require(timestamp <= block.timestamp); // "order is too early to match";
+        require(timestamp > cutoffs[order.owner]); // "order is cut off";
+        require(ttl != 0); // "order ttl is 0";
+        require(timestamp + ttl > block.timestamp); // "order is expired";
+        require(salt != 0); // "invalid order salt";
+        require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE); // "invalid order marginSplitPercentage";
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
@@ -949,6 +961,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         return keccak256(
             address(this),
+            order.wallet,
             order.owner,
             order.tokenS,
             order.tokenB,
