@@ -138,5 +138,5 @@ contract LoopringProtocol {
     ///        timestamp.
     /// @param cutoff The cutoff timestamp, will default to `block.timestamp`
     ///        if it is 0.
-    function setCutoff(uint cutoff) external;
+    function cancelAllOrders(uint cutoff) external;
 }

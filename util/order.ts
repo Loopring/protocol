@@ -1,4 +1,5 @@
 import { BigNumber } from "bignumber.js";
+import xor = require("bitwise-xor");
 import promisify = require("es6-promisify");
 import ethUtil = require("ethereumjs-util");
 import * as _ from "lodash";
@@ -56,6 +57,12 @@ export class Order {
       s: ethUtil.bufferToHex(s),
       v,
     });
+  }
+
+  public getTradingPairId(token1: string, token2: string) {
+    const combinedTokenHash = xor(new Buffer(token1, "hex"), new Buffer(token2, "hex"));
+    const combinedTokenHexHash  = combinedTokenHash.toString("hex");
+    return combinedTokenHexHash;
   }
 
   private getOrderHash() {
