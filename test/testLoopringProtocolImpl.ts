@@ -7,7 +7,6 @@ import { ProtocolSimulator } from "../util/protocol_simulator";
 import { Ring } from "../util/ring";
 import { RingFactory } from "../util/ring_factory";
 import { OrderParams } from "../util/types";
-import { crypto } from "../util/crypto";
 
 const {
   LoopringProtocolImpl,
