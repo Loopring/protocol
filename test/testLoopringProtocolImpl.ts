@@ -727,7 +727,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
     });
 
-    it("should not fill orders which are cancelled by setCutoff.", async () => {
+    it("should not fill orders which are cancelled by cancelAllOrders.", async () => {
       const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
       const feeSelectionList = [1, 1, 1];
       const availableAmountSList = [1000e18, 2006e18, 20e18];
@@ -740,7 +740,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await lrc.setBalance(feeRecepient, spendableLrcFeeList[3],  {from: owner});
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
-      await loopringProtocolImpl.setCutoff(new BigNumber(currBlockTimeStamp), {from: order1Owner});
+      await loopringProtocolImpl.cancelAllOrders(new BigNumber(currBlockTimeStamp), {from: order1Owner});
       try {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
@@ -823,9 +823,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
   });
 
-  describe("setCutoff", () => {
+  describe("cancelAllOrders", () => {
     it("should be able to set cutoff timestamp for msg sender", async () => {
-      await loopringProtocolImpl.setCutoff(new BigNumber(1508566125), {from: order2Owner});
+      await loopringProtocolImpl.cancelAllOrders(new BigNumber(1508566125), {from: order2Owner});
       const cutoff = await loopringProtocolImpl.cutoffs(order2Owner);
       assert.equal(cutoff.toNumber(), 1508566125, "cutoff not set correctly");
     });
