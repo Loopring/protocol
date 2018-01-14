@@ -7,6 +7,7 @@ import { ProtocolSimulator } from "../util/protocol_simulator";
 import { Ring } from "../util/ring";
 import { RingFactory } from "../util/ring_factory";
 import { OrderParams } from "../util/types";
+import { crypto } from "../util/crypto";
 
 const {
   LoopringProtocolImpl,
@@ -761,6 +762,40 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
     });
 
+    it("should not fill orders which are cancelled by setTradingPairCutoff.", async () => {
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
+      const feeSelectionList = [1, 1, 1];
+      const availableAmountSList = [1000e18, 2006e18, 20e18];
+      const spendableLrcFeeList = [0, 6e18, 1e18, 0];
+
+      await eos.setBalance(order1Owner, availableAmountSList[0], {from: owner});
+      await lrc.setBalance(order2Owner, availableAmountSList[1],  {from: owner});
+      await neo.setBalance(order3Owner, availableAmountSList[2],  {from: owner});
+      await lrc.setBalance(order3Owner, spendableLrcFeeList[2],  {from: owner});
+      await lrc.setBalance(feeRecepient, spendableLrcFeeList[3],  {from: owner});
+
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
+      const order = ring.orders[0];
+      await loopringProtocolImpl.setTradingPairCutoff(new BigNumber(currBlockTimeStamp), order.params.amountS, order.params.amountB, {from: order1Owner});      
+      try {
+        await loopringProtocolImpl.submitRing(p.addressList,
+                                              p.uintArgsList,
+                                              p.uint8ArgsList,
+                                              p.buyNoMoreThanAmountBList,
+                                              p.vList,
+                                              p.rList,
+                                              p.sList,
+                                              p.ringOwner,
+                                              p.feeRecepient,
+                                              {from: owner});
+      } catch (err) {
+        const errMsg = `${err}`;
+        assert(_.includes(errMsg, "Error: VM Exception while processing transaction: revert"),
+               `Expected contract to throw, got: ${err}`);
+      }
+
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+    });
   });
 
   describe("cancelOrder", () => {
@@ -831,4 +866,15 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
   });
 
+  describe("setTradingPairCutoff", () => {
+    it("should be able to set trading pair cutoff timestamp for msg sender", async () => {
+      const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
+      const order = ring.orders[0];
+      await loopringProtocolImpl.setTradingPairCutoff(new BigNumber(1508566125), order.params.amountS, order.params.amountB, {from: order1Owner});
+      const tradingPairCutoff = await loopringProtocolImpl.tradingPairCutoffs(order.params.amountS, order1Owner);
+
+      // TODO: how to implment the assert when getTradingPairId is an internal function?
+      // assert.equal(tradingPairCutoff[tokenPairId].toNumber(), 1508566125, "cutoff not set correctly");
+    });
+  })
 });
