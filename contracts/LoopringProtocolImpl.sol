@@ -370,7 +370,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ///        timestamp.
     /// @param cutoff The cutoff timestamp, will default to `block.timestamp`
     ///        if it is 0.
-    function setTradingPairCutoff(
+    function cancelOrders(
         address token1,
         address token2,
         uint cutoff)

@@ -7,6 +7,10 @@ import { ProtocolSimulator } from "../util/protocol_simulator";
 import { Ring } from "../util/ring";
 import { RingFactory } from "../util/ring_factory";
 import { OrderParams } from "../util/types";
+import { config } from "bluebird";
+
+var bigInt = require("big-integer");
+var keccak256 = require('js-sha3').keccak256;
 
 const {
   LoopringProtocolImpl,
@@ -761,7 +765,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
     });
 
-    it("should not fill orders which are cancelled by setTradingPairCutoff.", async () => {
+    it("should not fill orders which are cancelled by cancelOrders.", async () => {
       const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
       const feeSelectionList = [1, 1, 1];
       const availableAmountSList = [1000e18, 2006e18, 20e18];
@@ -775,7 +779,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
       const order = ring.orders[0];
-      await loopringProtocolImpl.setTradingPairCutoff(new BigNumber(currBlockTimeStamp), order.params.amountS, order.params.amountB, {from: order1Owner});      
+      await loopringProtocolImpl.cancelOrders(new BigNumber(currBlockTimeStamp), order.params.amountS, order.params.amountB, {from: order1Owner});      
       try {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
@@ -865,15 +869,22 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
   });
 
-  describe("setTradingPairCutoff", () => {
+  describe("cancelOrders", () => {
     it("should be able to set trading pair cutoff timestamp for msg sender", async () => {
       const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
       const order = ring.orders[0];
-      await loopringProtocolImpl.setTradingPairCutoff(new BigNumber(1508566125), order.params.amountS, order.params.amountB, {from: order1Owner});
-      const tradingPairCutoff = await loopringProtocolImpl.tradingPairCutoffs(order.params.amountS, order1Owner);
+      await loopringProtocolImpl.cancelOrders(new BigNumber(1508566125), order.params.amountS, order.params.amountB, {from: order1Owner});
+     
+      const token1_256 = keccak256(order.params.amountS.toString(10));;
+      const token2_256 = keccak256(order.params.amountB.toString(10));;
 
-      // TODO: how to implment the assert when getTradingPairId is an internal function?
-      // assert.equal(tradingPairCutoff[tokenPairId].toNumber(), 1508566125, "cutoff not set correctly");
+      const tradingPairIdBigInt = bigInt(token1_256, 16).xor(bigInt(token2_256, 16));
+      const tradingPairId = web3.toHex(tradingPairIdBigInt.toString(10));
+      const tradingPairCutoff = await loopringProtocolImpl.tradingPairCutoffs(order1Owner, tradingPairId);
+
+      // FIXME: tradingPairCutoff.toNumber() is 0
+      // console.log(tradingPairCutoff.toNumber())
+      // assert.equal(tradingPairCutoff.toNumber(), 1508566125, "trading pair cutoff not set correctly");
     });
   })
 });
