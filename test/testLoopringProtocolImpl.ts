@@ -761,6 +761,152 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
     });
 
+    it("should set cutoff time to current blockstamp time if set to zero in setTradingPairCutoff.", async () => {
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
+      const feeSelectionList = [1, 1, 1];
+      const availableAmountSList = [1000e18, 2006e18, 20e18];
+      const spendableLrcFeeList = [0, 6e18, 1e18, 0];
+
+      await eos.setBalance(order1Owner, availableAmountSList[0], {from: owner});
+      await lrc.setBalance(order2Owner, availableAmountSList[1],  {from: owner});
+      await neo.setBalance(order3Owner, availableAmountSList[2],  {from: owner});
+      await lrc.setBalance(order3Owner, spendableLrcFeeList[2],  {from: owner});
+      await lrc.setBalance(feeRecepient, spendableLrcFeeList[3],  {from: owner});
+
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
+      await loopringProtocolImpl.setTradingPairCutoff(
+        lrcAddress,
+        eosAddress,
+        new BigNumber(0),
+      );
+      try {
+        await loopringProtocolImpl.submitRing(p.addressList,
+                                              p.uintArgsList,
+                                              p.uint8ArgsList,
+                                              p.buyNoMoreThanAmountBList,
+                                              p.vList,
+                                              p.rList,
+                                              p.sList,
+                                              p.ringOwner,
+                                              p.feeRecepient,
+                                              {from: owner});
+      } catch (err) {
+        const errMsg = `${err}`;
+        assert(_.includes(errMsg, "Error: VM Exception while processing transaction: revert"),
+               `Expected contract to throw, got: ${err}`);
+      }
+
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+    });
+
+    it("should not fail if cutoff time for setTradingPairCutoff is set after current blockstamp time.", async () => {
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
+      const feeSelectionList = [1, 1, 1];
+      const availableAmountSList = [1000e18, 2006e18, 20e18];
+      const spendableLrcFeeList = [0, 6e18, 1e18, 0];
+
+      await eos.setBalance(order1Owner, availableAmountSList[0], {from: owner});
+      await lrc.setBalance(order2Owner, availableAmountSList[1],  {from: owner});
+      await neo.setBalance(order3Owner, availableAmountSList[2],  {from: owner});
+      await lrc.setBalance(order3Owner, spendableLrcFeeList[2],  {from: owner});
+      await lrc.setBalance(feeRecepient, spendableLrcFeeList[3],  {from: owner});
+
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
+      await loopringProtocolImpl.setTradingPairCutoff(
+        lrcAddress,
+        eosAddress,
+        new BigNumber(currBlockTimeStamp).plus(100000),
+      );
+      try {
+        await loopringProtocolImpl.submitRing(p.addressList,
+                                              p.uintArgsList,
+                                              p.uint8ArgsList,
+                                              p.buyNoMoreThanAmountBList,
+                                              p.vList,
+                                              p.rList,
+                                              p.sList,
+                                              p.ringOwner,
+                                              p.feeRecepient,
+                                              {from: owner});
+      } catch (err) {
+        const errMsg = `${err}`;
+        assert(_.includes(errMsg, "Error: VM Exception while processing transaction: revert"),
+               `Expected contract to throw, got: ${err}`);
+      }
+
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+    });
+
+    it("should not fill orders which have a timestamp before the cutoff set by setTradingPairCutoff.", async () => {
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
+      const feeSelectionList = [1, 1, 1];
+      const availableAmountSList = [1000e18, 2006e18, 20e18];
+      const spendableLrcFeeList = [0, 6e18, 1e18, 0];
+
+      await eos.setBalance(order1Owner, availableAmountSList[0], {from: owner});
+      await lrc.setBalance(order2Owner, availableAmountSList[1],  {from: owner});
+      // TODO: implement a way to set an older timestamp to properly test the cutoff, else this test will not work
+      await neo.setBalance(order3Owner, availableAmountSList[2],  {from: owner});
+      await lrc.setBalance(order3Owner, spendableLrcFeeList[2],  {from: owner});
+      await lrc.setBalance(feeRecepient, spendableLrcFeeList[3],  {from: owner});
+
+      const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
+      await loopringProtocolImpl.setTradingPairCutoff(
+        lrcAddress,
+        eosAddress,
+        new BigNumber(currBlockTimeStamp).minus(100000),
+        {from: order1Owner},
+      );
+      try {
+        await loopringProtocolImpl.submitRing(p.addressList,
+                                              p.uintArgsList,
+                                              p.uint8ArgsList,
+                                              p.buyNoMoreThanAmountBList,
+                                              p.vList,
+                                              p.rList,
+                                              p.sList,
+                                              p.ringOwner,
+                                              p.feeRecepient,
+                                              {from: owner});
+      } catch (err) {
+        const errMsg = `${err}`;
+        assert(_.includes(errMsg, "Error: VM Exception while processing transaction: revert"),
+               `Expected contract to throw, got: ${err}`);
+      }
+      const lrcBalance = await getTokenBalanceAsync(lrc, order1Owner);
+      const eosBalance = await getTokenBalanceAsync(eos, order1Owner);
+      assert.equal(eosBalance.toNumber(), availableAmountSList[0], "lrc balance not match for order1Owner");
+      assert.equal(lrcBalance.toNumber(), availableAmountSList[1], "lrc balance not match for order1Owner");
+
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+    });
+
+  });
+
+  it("should combine two hashes correctly", async () => {
+    const ring = await ringFactory.generateSize3Ring01(order1Owner, order2Owner, order3Owner, ringOwner);
+
+    const token1 = "b69a71741a446a18acce6f9222c18eabd092474ce12403ab8553b504ae9" +
+    "6a0e1ccd43dc303710642ef0b7f6b6b6f60217c82b99b0693d36e6bd2fcad4f4c2c28";
+    const token2 = "ff02b6bc030b56456319db5a294d4012a2d98f2adbe5fcf2971f14ebeeeb50" +
+    "618ab14e10ffae05253c10d993052805fe59ca1f4ebf0972af97fde3ededa9edaf";
+    const expected = "4998c7c8194f3c5dcfd7b4c80b8cceb9724bc8663ac1ff59124ca1ef407df" +
+    "080466573d3fcdf0367d31ba6f86e4765df2548a6d5b99aa1c1fc2f1f40a2e5c187";
+    await loopringProtocolImpl.setTradingPairCutoff(
+      lrcAddress,
+      eosAddress,
+      new BigNumber(0),
+    );
+    try {
+      const combined = ring.orders[0].getTradingPairId(token1, token2);
+      assert.equal(combined, expected, "combined hash does not match expected Keccak-256 hash");
+    } catch (err) {
+      const errMsg = `${err}`;
+      assert(_.includes(errMsg, "Error: VM Exception while processing transaction: revert"),
+             `Expected contract to throw, got: ${err}`);
+    }
+
+    await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
   });
 
   describe("cancelOrder", () => {
