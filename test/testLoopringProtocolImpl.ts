@@ -9,8 +9,8 @@ import { RingFactory } from "../util/ring_factory";
 import { OrderParams } from "../util/types";
 import { config } from "bluebird";
 
-var bigInt = require("big-integer");
 var keccak256 = require('js-sha3').keccak256;
+var xor = require('bitwise-xor');
 
 const {
   LoopringProtocolImpl,
@@ -779,7 +779,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
       const order = ring.orders[0];
-      await loopringProtocolImpl.cancelOrders(new BigNumber(currBlockTimeStamp), order.params.amountS, order.params.amountB, {from: order1Owner});      
+      await loopringProtocolImpl.cancelOrders(order.params.tokenS, order.params.tokenB, new BigNumber(currBlockTimeStamp), {from: order1Owner});      
       try {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
@@ -873,14 +873,12 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     it("should be able to set trading pair cutoff timestamp for msg sender", async () => {
       const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
       const order = ring.orders[0];
-      await loopringProtocolImpl.cancelOrders(new BigNumber(1508566125), order.params.amountS, order.params.amountB, {from: order1Owner});
+      await loopringProtocolImpl.cancelOrders(order.params.tokenS, order.params.tokenB, new BigNumber(1558566125), {from: order1Owner});
      
-      const token1_256 = keccak256(order.params.amountS.toString(10));;
-      const token2_256 = keccak256(order.params.amountB.toString(10));;
-
-      const tradingPairIdBigInt = bigInt(token1_256, 16).xor(bigInt(token2_256, 16));
-      const tradingPairId = web3.toHex(tradingPairIdBigInt.toString(10));
-      const tradingPairCutoff = await loopringProtocolImpl.tradingPairCutoffs(order1Owner, tradingPairId);
+      const token1_256 = keccak256(order.params.tokenS);
+      const token2_256 = keccak256(order.params.tokenB);
+      const combinedTokenHash = xor(new Buffer(token1_256), new Buffer(token2_256));
+      const tradingPairCutoff = await loopringProtocolImpl.tradingPairCutoffs(order1Owner, [...combinedTokenHash]); //, combinedTokenHash.toString("hex"));
 
       // FIXME: tradingPairCutoff.toNumber() is 0
       // console.log(tradingPairCutoff.toNumber())
