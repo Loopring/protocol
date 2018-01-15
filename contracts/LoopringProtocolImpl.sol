@@ -354,10 +354,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderCancelled(orderHash, cancelAmount);
     }
 
-    function toBytes(address x) pure returns (bytes b) {
-        b = new bytes(20);
+    function toBytes(address x) view returns (bytes20 b) {
+        bytes memory big = new bytes(32);
         for (uint i = 0; i < 20; i++) {
-            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
+            big[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
+        }
+        b = extract(big, 0);
+    }
+
+    function extract(bytes data, uint pos) internal constant
+    returns (bytes20 result)
+    { 
+        for (uint i=0; i<20;i++) {
+            result ^= (bytes20(0xff00000000000000000000000000000000000000)&data[i+pos]) >> (i*8);
         }
     }
 
@@ -366,13 +375,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address token2
         )
         internal
-        pure
+        view
         returns (bytes32 id)
     {
         // convert from address to byteArray to reduce gas used for computation
-        bytes memory byteArray1 = toBytes(token1);
-        bytes memory byteArray2 = toBytes(token2);
-        id = keccak256(byteArray1, byteArray2);
+        bytes20 byteArray1 = toBytes(token1);
+        bytes20 byteArray2 = toBytes(token2);
+        id = keccak256(byteArray1 ^ byteArray2);
     }
 
   /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
