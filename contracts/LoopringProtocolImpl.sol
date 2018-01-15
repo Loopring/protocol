@@ -354,6 +354,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderCancelled(orderHash, cancelAmount);
     }
 
+    function toBytes(address x) pure returns (bytes b) {
+        b = new bytes(20);
+        for (uint i = 0; i < 20; i++) {
+            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
+        }
+    }
+
     function getTradingPairId(
         address token1,
         address token2
@@ -362,7 +369,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
         returns (bytes32 id)
     {
-        id = keccak256(token1) ^ keccak256(token2);
+        // convert from address to byteArray to reduce gas used for computation
+        bytes memory byteArray1 = toBytes(token1);
+        bytes memory byteArray2 = toBytes(token2);
+        id = keccak256(byteArray1, byteArray2);
     }
 
   /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
