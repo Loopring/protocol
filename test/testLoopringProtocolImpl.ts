@@ -845,15 +845,29 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       await eos.setBalance(order1Owner, availableAmountSList[0], {from: owner});
       await lrc.setBalance(order2Owner, availableAmountSList[1],  {from: owner});
-      // TODO: implement a way to set an older timestamp to properly test the cutoff, else this test will not work
       await neo.setBalance(order3Owner, availableAmountSList[2],  {from: owner});
       await lrc.setBalance(order3Owner, spendableLrcFeeList[2],  {from: owner});
       await lrc.setBalance(feeRecepient, spendableLrcFeeList[3],  {from: owner});
+      // TODO: implement a way to set an older timestamp to properly test the cutoff, else this test will not work
+      const order = ring.orders[0];
+      const cancelAmount = new BigNumber(2006e18);
+      const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
+      const orderValues = [order.params.amountS,
+                           order.params.amountB,
+                           order.params.timestamp.minus(200000),
+                           order.params.ttl,
+                           order.params.salt,
+                           order.params.lrcFee,
+                           cancelAmount];
+
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      simulator.spendableLrcFeeList = spendableLrcFeeList;
+      const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
 
       const p = ringFactory.ringToSubmitableParams(ring, feeSelectionList, feeRecepient);
       await loopringProtocolImpl.setTradingPairCutoff(
         lrcAddress,
-        eosAddress,
+        neoAddress,
         new BigNumber(currBlockTimeStamp).minus(100000),
         {from: order1Owner},
       );
@@ -868,16 +882,15 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                                               p.ringOwner,
                                               p.feeRecepient,
                                               {from: owner});
+        console.log(feeAndBalanceExpected);
+        assert.equal(feeAndBalanceExpected.balances[0].balanceB, availableAmountSList[1],
+          "lrc balance not match for order2Owner");
+        // TODO: another way to approach this would be to compare the entries for cancelledTradingPairs
       } catch (err) {
         const errMsg = `${err}`;
         assert(_.includes(errMsg, "Error: VM Exception while processing transaction: revert"),
                `Expected contract to throw, got: ${err}`);
       }
-      const lrcBalance = await getTokenBalanceAsync(lrc, order1Owner);
-      const eosBalance = await getTokenBalanceAsync(eos, order1Owner);
-      assert.equal(eosBalance.toNumber(), availableAmountSList[0], "lrc balance not match for order1Owner");
-      assert.equal(lrcBalance.toNumber(), availableAmountSList[1], "lrc balance not match for order1Owner");
-
       await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
     });
 
