@@ -2,7 +2,6 @@ import { BigNumber } from "bignumber.js";
 import xor = require("bitwise-xor");
 import promisify = require("es6-promisify");
 import ethUtil = require("ethereumjs-util");
-import sha3 = require("js-sha3");
 import * as _ from "lodash";
 import Web3 = require("web3");
 import { crypto } from "./crypto";
@@ -61,9 +60,7 @@ export class Order {
   }
 
   public getTradingPairId(token1: string, token2: string) {
-    const combinedTokenBuffer = xor(new Buffer(token1, "hex"), new Buffer(token2, "hex"));
-    const combinedTokenHexHash  = sha3.keccak256(combinedTokenBuffer);
-    return combinedTokenHexHash;
+    return (xor(new Buffer(token1, "hex"), new Buffer(token2, "hex"))).toString("hex");
   }
 
   private getOrderHash() {
