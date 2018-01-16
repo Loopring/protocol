@@ -354,33 +354,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
         OrderCancelled(orderHash, cancelAmount);
     }
 
-    function toBytes(address x) view returns (bytes20 b) {
-        bytes memory big = new bytes(32);
-        for (uint i = 0; i < 20; i++) {
-            big[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
-        }
-        b = extract(big, 0);
-    }
-
-    function extract(bytes data, uint pos) internal constant
-    returns (bytes20 result)
-    { 
-        for (uint i=0; i<20;i++) {
-            result ^= (bytes20(0xff00000000000000000000000000000000000000)&data[i+pos]) >> (i*8);
-        }
-    }
-
     function getTradingPairId(
         address token1,
         address token2
         )
         internal
-        view
+        pure
         returns (bytes32 id)
     {
         // convert from address to byteArray to reduce gas used for computation
-        bytes20 byteArray1 = toBytes(token1);
-        bytes20 byteArray2 = toBytes(token2);
+        bytes20 byteArray1 = bytes20(token1);
+        bytes20 byteArray2 = bytes20(token2);
         id = keccak256(byteArray1 ^ byteArray2);
     }
 
