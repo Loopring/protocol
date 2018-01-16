@@ -363,9 +363,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (bytes32 id)
     {
         // convert from address to byteArray to reduce gas used for computation
-        bytes20 byteArray1 = bytes20(token1);
-        bytes20 byteArray2 = bytes20(token2);
-        id = keccak256(byteArray1 ^ byteArray2);
+        id = keccak256(bytes20(token1) ^ bytes20(token2));
     }
 
   /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
