@@ -360,10 +360,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         internal
         pure
-        returns (bytes32 id)
+        returns (bytes32)
     {
         // convert from address to byteArray to reduce gas used for computation
-        id = keccak256(bytes20(token1) ^ bytes20(token2));
+        return keccak256(bytes20(token1) ^ bytes20(token2));
     }
 
   /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
