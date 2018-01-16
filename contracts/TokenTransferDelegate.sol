@@ -35,6 +35,8 @@ contract TokenTransferDelegate is Claimable {
 
     mapping(address => AddressInfo) private addressInfos;
 
+    mapping(address => mapping(address => uint)) feeLegder;
+
     address public latestAddress;
 
 
@@ -198,8 +200,9 @@ contract TokenTransferDelegate is Claimable {
             if (owner != feeRecipient) {
                 bytes32 item = batch[i + 3];
                 if (item != 0) {
+                    feeLegder[address(batch[i + 1])][feeRecipient] = feeLegder[address(batch[i + 1])][feeRecipient].add(uint(item));
                     require(
-                        token.transferFrom(owner, feeRecipient, uint(item))
+                        token.transferFrom(owner, address(this), uint(item))
                     );
                 }
 
@@ -212,11 +215,37 @@ contract TokenTransferDelegate is Claimable {
 
                 item = batch[i + 5];
                 if (item != 0) {
+                    feeLegder[lrcTokenAddress][feeRecipient] = feeLegder[lrcTokenAddress][feeRecipient].add(uint(item));
                     require(
-                        lrc.transferFrom(owner, feeRecipient, uint(item))
+                        lrc.transferFrom(owner, address(this), uint(item))
                     );
                 }
             }
         }
     }
+
+    function withdrawFee(address _tokenAddress) external {
+        uint userTokenAmount = feeLegder[_tokenAddress][msg.sender];
+        if (userTokenAmount != 0) {
+            ERC20 token = ERC20(_tokenAddress);
+
+            feeLegder[_tokenAddress][msg.sender] = 0;
+            require(token.transfer(msg.sender, userTokenAmount));
+        }
+    }
+
+    function withdrawFee(address _tokenAddress, uint _amount) external {
+        require(_amount > 0);
+        uint userTokenAmount = feeLegder[_tokenAddress][msg.sender];
+        require(userTokenAmount >= _amount);
+        ERC20 token = ERC20(_tokenAddress);
+
+        feeLegder[_tokenAddress][msg.sender] = feeLegder[_tokenAddress][msg.sender].sub(_amount);
+        require(token.transfer(msg.sender, _amount));
+    }
+
+    function checkFeeBalance(address _owner, address _tokenAddress) view external returns (uint) {
+        return feeLegder[_tokenAddress][_owner];
+    }
+
 }

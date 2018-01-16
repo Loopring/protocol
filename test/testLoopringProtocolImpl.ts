@@ -88,7 +88,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     qtumAddress = await tokenRegistry.getAddressBySymbol("QTUM");
     delegateAddr = TokenTransferDelegate.address;
 
-    tokenTransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
+    await tokenTransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
 
     [lrc, eos, neo, qtum] = await Promise.all([
       DummyToken.at(lrcAddress),
@@ -153,6 +153,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const eosBalance22 = await getTokenBalanceAsync(eos, order2Owner);
       const neoBalance22 = await getTokenBalanceAsync(neo, order2Owner);
 
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
       const lrcBalance23 = await getTokenBalanceAsync(lrc, feeRecepient);
 
       assert.equal(lrcBalance21.toNumber(), 90e18, "lrc balance not match for order1Owner");
@@ -165,7 +166,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       assert.equal(lrcBalance23.toNumber(), 15e18, "lrc balance not match for feeRecepient");
 
-      await clear([eos, neo, lrc], [order1Owner, order2Owner, feeRecepient]);
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to fill ring with 2 orders where fee selection type is margin split", async () => {
@@ -195,6 +196,9 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const eosBalance22 = await getTokenBalanceAsync(eos, order2Owner);
       const neoBalance22 = await getTokenBalanceAsync(neo, order2Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+
       const eosBalance23 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance23 = await getTokenBalanceAsync(neo, feeRecepient);
 
@@ -210,7 +214,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(eosBalance23.toNumber(), feeAndBalanceExpected.totalFees[eosAddress]);
       assertNumberEqualsWithPrecision(neoBalance23.toNumber(), feeAndBalanceExpected.totalFees[neoAddress]);
 
-      await clear([eos, neo], [order1Owner, order2Owner, feeRecepient]);
+      await clear([eos, neo], [order1Owner, order2Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to fill orders where fee selection type is margin split and lrc", async () => {
@@ -244,6 +248,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const eosBalance22 = await getTokenBalanceAsync(eos, order2Owner);
       const neoBalance22 = await getTokenBalanceAsync(neo, order2Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+
       const eosBalance23 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance23 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance23 = await getTokenBalanceAsync(lrc, feeRecepient);
@@ -260,7 +268,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(neoBalance23.toNumber(), feeAndBalanceExpected.totalFees[neoAddress]);
       assertNumberEqualsWithPrecision(lrcBalance23.toNumber(), feeAndBalanceExpected.totalFees[lrcAddress]);
 
-      await clear([eos, neo, lrc], [order1Owner, order2Owner, feeRecepient]);
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to fill ring with 3 orders", async () => {
@@ -303,6 +311,11 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const qtumBalance23 = await getTokenBalanceAsync(qtum, order3Owner);
       const eosBalance23 = await getTokenBalanceAsync(eos, order3Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(qtumAddress, {from: feeRecepient});
+
       const eosBalance24 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const qtumBalance24 = await getTokenBalanceAsync(qtum, feeRecepient);
@@ -325,7 +338,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(qtumBalance24.toNumber(), feeAndBalanceExpected.totalFees[qtumAddress]);
       assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), 5e18);
 
-      await clear([eos, neo, lrc, qtum], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc, qtum],
+                  [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to partial fill ring with 3 orders", async () => {
@@ -370,6 +384,11 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const qtumBalance23 = await getTokenBalanceAsync(qtum, order3Owner);
       const eosBalance23 = await getTokenBalanceAsync(eos, order3Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(qtumAddress, {from: feeRecepient});
+
       const eosBalance24 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const qtumBalance24 = await getTokenBalanceAsync(qtum, feeRecepient);
@@ -393,7 +412,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(qtumBalance24.toNumber(), feeAndBalanceExpected.totalFees[qtumAddress]);
       assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), feeAndBalanceExpected.totalFees[lrcAddress]);
 
-      await clear([eos, neo, lrc, qtum], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc, qtum],
+                  [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to switch fee selection to margin-split(100%) when lrcFee is 0", async () => {
@@ -441,6 +461,11 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const qtumBalance23 = await getTokenBalanceAsync(qtum, order3Owner);
       const eosBalance23 = await getTokenBalanceAsync(eos, order3Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(qtumAddress, {from: feeRecepient});
+
       const eosBalance24 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const qtumBalance24 = await getTokenBalanceAsync(qtum, feeRecepient);
@@ -464,7 +489,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(qtumBalance24.toNumber(), feeAndBalanceExpected.totalFees[qtumAddress]);
       assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), feeAndBalanceExpected.totalFees[lrcAddress] + 15e18);
 
-      await clear([eos, neo, lrc, qtum], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc, qtum],
+                  [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to pay lrc fee when receiving lrc as result of trading.", async () => {
@@ -505,6 +531,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance23 = await getTokenBalanceAsync(neo, order3Owner);
       const eosBalance23 = await getTokenBalanceAsync(eos, order3Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+
       const eosBalance24 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
@@ -538,7 +568,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(neoBalance24.toNumber(), feeAndBalanceExpected.totalFees[neoAddress]);
       assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), feeAndBalanceExpected.totalFees[lrcAddress]);
 
-      await clear([eos, neo, lrc, qtum], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc, qtum], [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should be able to choose margin split(100%) for fee when order owner's spendable lrc is 0.", async () => {
@@ -577,6 +607,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance23 = await getTokenBalanceAsync(neo, order3Owner);
       const eosBalance23 = await getTokenBalanceAsync(eos, order3Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+
       const eosBalance24 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
@@ -598,7 +632,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(neoBalance24.toNumber(), feeAndBalanceExpected.totalFees[neoAddress]);
       assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), feeAndBalanceExpected.totalFees[lrcAddress]);
 
-      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc],
+                  [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should not be able to get margin split fee if miner's spendable lrc is less than order's lrcFee.",
@@ -638,6 +673,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance23 = await getTokenBalanceAsync(neo, order3Owner);
       const eosBalance23 = await getTokenBalanceAsync(eos, order3Owner);
 
+      await tokenTransferDelegate.withdrawFee(eosAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(neoAddress, {from: feeRecepient});
+      await tokenTransferDelegate.withdrawFee(lrcAddress, {from: feeRecepient});
+
       const eosBalance24 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
@@ -670,7 +709,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(neoBalance24.toNumber(), feeAndBalanceExpected.totalFees[neoAddress]);
       assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), feeAndBalanceExpected.totalFees[lrcAddress]);
 
-      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should not fill orders which are fully cancelled.", async () => {
@@ -724,7 +763,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                `Expected contract to throw, got: ${err}`);
       }
 
-      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
     it("should not fill orders which are cancelled by setCutoff.", async () => {
@@ -758,7 +797,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                `Expected contract to throw, got: ${err}`);
       }
 
-      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient]);
+      await clear([eos, neo, lrc], [order1Owner, order2Owner, order3Owner, feeRecepient, delegateAddr]);
     });
 
   });
