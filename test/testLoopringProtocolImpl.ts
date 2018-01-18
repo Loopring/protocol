@@ -99,7 +99,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     ]);
 
     const currBlockNumber = web3.eth.blockNumber;
-    currBlockTimeStamp = web3.eth.getBlock(currBlockNumber).validSince;
+    currBlockTimeStamp = web3.eth.getBlock(currBlockNumber).timestamp;
 
     ringFactory = new RingFactory(LoopringProtocolImpl.address,
                                   eosAddress,
