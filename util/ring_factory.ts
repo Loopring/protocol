@@ -252,6 +252,7 @@ export class RingFactory {
       amountS: new BigNumber(80000e18),
       amountB: new BigNumber(12345e18),
       validSince: new BigNumber(this.currBlockTimeStamp * 1000),
+      validUntil: new BigNumber((this.currBlockTimeStamp + 360000) * 1000),
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
@@ -299,8 +300,7 @@ export class RingFactory {
   public async generateSize3Ring03(order1Owner: string,
                                    order2Owner: string,
                                    order3Owner: string,
-                                   ringOwner: string,
-                                   salt: number) {
+                                   ringOwner: string) {
     const orderPrams1: OrderParams = {
       loopringProtocol: this.loopringProtocolAddr,
       tokenS: this.eosAddress,

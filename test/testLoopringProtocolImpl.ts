@@ -99,7 +99,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     ]);
 
     const currBlockNumber = web3.eth.blockNumber;
-    currBlockTimeStamp = web3.eth.getBlock(currBlockNumber).timestamp;
+    currBlockTimeStamp = web3.eth.getBlock(currBlockNumber).validSince;
 
     ringFactory = new RingFactory(LoopringProtocolImpl.address,
                                   eosAddress,
@@ -469,7 +469,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
 
     it("should be able to pay lrc fee when receiving lrc as result of trading.", async () => {
-      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 100);
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner);
 
       const feeSelectionList = [0, 0, 1];
 
@@ -543,7 +543,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
 
     it("should be able to choose margin split(100%) for fee when order owner's spendable lrc is 0.", async () => {
-      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 200);
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner);
       const feeSelectionList = [0, 0, 0];
       const availableAmountSList = [1000e18, 2006e18, 20e18];
       const spendableLrcFeeList = [0, 6e18, 0, 20e18];
@@ -604,7 +604,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
     it("should not be able to get margin split fee if miner's spendable lrc is less than order's lrcFee.",
     async () => {
-      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 300);
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner);
       const feeSelectionList = [1, 1, 1];
       const availableAmountSList = [1000e18, 2006e18, 20e18];
       const spendableLrcFeeList = [0, 6e18, 1e18, 0];
@@ -675,7 +675,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
 
     it("should not fill orders which are fully cancelled.", async () => {
-      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 400);
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner);
       const feeSelectionList = [1, 1, 1];
       const availableAmountSList = [1000e18, 2006e18, 20e18];
       const spendableLrcFeeList = [0, 6e18, 1e18, 0];
@@ -691,9 +691,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
       const orderValues = [order.params.amountS,
                            order.params.amountB,
-                           order.params.timestamp,
-                           order.params.ttl,
-                           order.params.salt,
+                           order.params.validSince,
+                           order.params.validUntil,
                            order.params.lrcFee,
                            cancelAmount];
 
@@ -729,7 +728,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
 
     it("should not fill orders which are cancelled by cancelAllOrders.", async () => {
-      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner, 500);
+      const ring = await ringFactory.generateSize3Ring03(order1Owner, order2Owner, order3Owner, ringOwner);
       const feeSelectionList = [1, 1, 1];
       const availableAmountSList = [1000e18, 2006e18, 20e18];
       const spendableLrcFeeList = [0, 6e18, 1e18, 0];
@@ -772,9 +771,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
       const orderValues = [order.params.amountS,
                            order.params.amountB,
-                           order.params.timestamp,
-                           order.params.ttl,
-                           order.params.salt,
+                           order.params.validSince,
+                           order.params.validUntil,
                            order.params.lrcFee,
                            cancelAmount];
 
@@ -801,9 +799,8 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
       const orderValues = [order.params.amountS,
                            order.params.amountB,
-                           order.params.timestamp,
-                           order.params.ttl,
-                           order.params.salt,
+                           order.params.validSince,
+                           order.params.validUntil,
                            order.params.lrcFee,
                            cancelAmount];
       try {
