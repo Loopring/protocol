@@ -320,7 +320,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]     rList,
         bytes32[]     sList,
         address       ringminer,
-        address       feeRecipient
+        address       feeRecepient
         )
         public
     {
@@ -379,16 +379,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
             sList
         );
 
-        if (feeRecipient == 0x0) {
-            feeRecipient = ringminer;
-        }
+        address _feeRecepient = (feeRecepient != 0x0) ? feeRecepient : ringminer;
 
         handleRing(
             ringSize,
             ringhash,
             orders,
             ringminer,
-            feeRecipient,
+            _feeRecepient,
             ringhashAttributes[1]
         );
 
@@ -894,7 +892,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         orders = new OrderState[](ringSize);
 
         for (uint i = 0; i < ringSize; i++) {
-            uint[7] memory uintArgs = uintArgsList[i];
+            uint[6] memory uintArgs = uintArgsList[i];
 
             Order memory order = Order(
                 addressList[i][0],
@@ -931,7 +929,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order,
                 orderHash,
                 uint8ArgsList[i][1],  // feeSelection
-                Rate(uintArgs[6], order.amountB),
+                Rate(uintArgs[5], order.amountB),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
