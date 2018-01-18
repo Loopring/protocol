@@ -330,7 +330,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
 
     it("should be able to partial fill ring with 3 orders", async () => {
-      const ring = await ringFactory.generateSize3Ring02(order1Owner, order2Owner, order3Owner, ringOwner, 100);
+      const ring = await ringFactory.generateSize3Ring02(order1Owner, order2Owner, order3Owner, ringOwner);
 
       assert(ring.orders[0].isValidSignature(), "invalid signature");
       assert(ring.orders[1].isValidSignature(), "invalid signature");
@@ -398,7 +398,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     });
 
     it("should be able to switch fee selection to margin-split(100%) when lrcFee is 0", async () => {
-      const ring = await ringFactory.generateSize3Ring02(order1Owner, order2Owner, order3Owner, ringOwner, 200);
+      const ring = await ringFactory.generateSize3Ring02(order1Owner, order2Owner, order3Owner, ringOwner);
 
       assert(ring.orders[0].isValidSignature(), "invalid signature");
       assert(ring.orders[1].isValidSignature(), "invalid signature");
