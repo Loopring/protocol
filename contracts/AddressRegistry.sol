@@ -22,9 +22,12 @@ pragma solidity 0.4.18;
 /// @author Kongliang Zhong - <kongliang@loopring.org>,
 contract AddressRegistry {
 
-    mapping (string => address) namedAddresses;
+    mapping (bytes12 => address) public namedAddressMap;
+    mapping (address => string) public addressNameMap;
 
-    mapping (string => MinerInfo) minerMap;
+    mapping (bytes12 => MinerInfo) public minerMap;
+    mapping (bytes12 => bool) public isMinerNameRegistered;
+    mapping (address => string) public minerNameMap;
 
     struct MinerInfo {
         address signer;
@@ -32,19 +35,46 @@ contract AddressRegistry {
     }
 
     event NameRegistered(string name, address addr);
+    event MinerRegistered(string name, address signer, address feeRecipient);
 
-    function registerAddress(string name, address addr) external {
-        require(addr != 0x0);
+    function registerAddress(string name) external {
+        require(isValidName(name));
+        require(namedAddressMap[stringToBytes12(name)] == 0x0);
+
+        namedAddressMap[stringToBytes12(name)] = msg.sender;
+        addressNameMap[msg.sender] = name;
+        NameRegistered(name, msg.sender);
+    }
+
+    function registerMiner(string name, address feeRecipient) external {
+        require(isValidName(name));
+        require(feeRecipient != 0x0);
+        require(!isMinerNameRegistered[stringToBytes12(name)]);
+
+        MinerInfo memory minerInfo = MinerInfo(msg.sender, feeRecipient);
+        minerMap[stringToBytes12(name)] = minerInfo;
+        isMinerNameRegistered[stringToBytes12(name)] = true;
+        minerNameMap[msg.sender] = name;
+
+        MinerRegistered(name, msg.sender, feeRecipient);
+    }
+
+    function isValidName(string name) internal pure returns (bool) {
         bytes memory tempBs = bytes(name);
 
         // name's length should be greater than 0 and less than 13.
-        require(tempBs.length > 0 && tempBs.length < 13);
-
-        require(namedAddresses[name] == 0x0);
-        namedAddresses[name] = addr;
-        NameRegistered(name, addr);
+        return tempBs.length > 0 && tempBs.length < 13;
     }
 
+    function stringToBytes12(string source) internal pure returns (bytes12 result) {
+        bytes memory tempBs = bytes(source);
+        if (tempBs.length == 0) {
+            return 0x0;
+        }
 
+        assembly {
+            result := mload(add(source, 12))
+        }
+    }
 
 }
