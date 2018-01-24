@@ -110,14 +110,15 @@ contract NameRegistry {
         );
     }
 
-    function getAddressesById(uint64 id)
+    function getParticipantById(uint64 id)
         external
         view
-        returns (address[2])
+        returns (address feeRecipient, address signer)
     {
         AddressSet storage addressSet = addressSetMap[id];
 
-        return [addressSet.feeRecipient, addressSet.signer];
+        feeRecipient = addressSet.feeRecipient;
+        signer = addressSet.signer;
     }
 
     function isNameValid(string name)
