@@ -21,41 +21,48 @@ pragma solidity 0.4.18;
 /// @dev This contract maintains a name service for addresses and miner.
 /// @author Kongliang Zhong - <kongliang@loopring.org>,
 contract NameRegistry {
-    uint32 id = 0;
+    uint64 nextId = 1;
 
-    mapping (uint32 => AddressSet) public addressSetMap;
-    mapping (address => NameInfo)  public nameInfoMap;
-    mapping (bytes12 => address)   public nameMap;
-    mapping (address => uint32)    public feeRecipientMap;
+    mapping (uint64  => AddressSet) public addressSetMap;
+    mapping (address => NameInfo)   public nameInfoMap;
+    mapping (bytes12 => address)    public nameMap;
+    mapping (address => uint64)     public feeRecipientMap;
 
     struct NameInfo {
         bytes12 name;
-        uint32  rootId;
+        uint64  rootId;
     }
 
     struct AddressSet {
         address signer;
         address feeRecipient;
-        uint32  nextId;
+        uint64  nextId;
     }
 
-    event NameRegistered(string name, address addr);
+    event NameRegistered(
+        string            name,
+        address   indexed addr
+    );
+
     event AddressSetRegistered(
         bytes12           name,
         address   indexed owner,
-        uint32    indexed addressSetId,
+        uint64    indexed addressSetId,
         address           singer,
         address           feeRecipient
     );
 
     function registerName(string name) external {
-        require(isValidName(name));
-        require(nameMap[stringToBytes12(name)] == 0x0);
+        require(isNameValid(name));
+
+        bytes12 nameBytes = stringToBytes12(name);
+
+        require(nameMap[nameBytes] == 0x0);
         require(nameInfoMap[msg.sender].name.length == 0);
 
-        NameInfo memory nameInfo = NameInfo(stringToBytes12(name), 0);
-        nameInfoMap[msg.sender] = nameInfo;
-        nameMap[stringToBytes12(name)] = msg.sender;
+        nameMap[nameBytes] = msg.sender;
+        nameInfoMap[msg.sender] = NameInfo(nameBytes, 0);
+
         NameRegistered(name, msg.sender);
     }
 
@@ -67,7 +74,7 @@ contract NameRegistry {
         require(nameInfoMap[msg.sender].name.length > 0);
         require(feeRecipient != 0x0);
 
-        uint32 addrSetId = ++id;
+        uint64 addrSetId = nextId++;
         AddressSet memory addrSet = AddressSet(singer, feeRecipient, 0);
 
         var _nameInfo = nameInfoMap[msg.sender];
@@ -92,27 +99,25 @@ contract NameRegistry {
         );
     }
 
-    function getAddressesById(uint32 addrSetId) external view returns (address[2]) {
+    function getAddressesById(uint64 addrSetId) external view returns (address[2]) {
         var _addressSet = addressSetMap[addrSetId];
 
         return [_addressSet.signer, _addressSet.feeRecipient];
     }
 
-    function isValidName(string name) internal pure returns (bool) {
+    function isNameValid(string name) internal pure returns (bool) {
         bytes memory tempBs = bytes(name);
-
-        // name's length should be greater than 0 and less than 13.
-        return tempBs.length > 0 && tempBs.length < 13;
+        return tempBs.length >= 6 && tempBs.length <= 12;
     }
 
-    function stringToBytes12(string source) internal pure returns (bytes12 result) {
-        bytes memory tempBs = bytes(source);
-        if (tempBs.length == 0) {
-            return 0x0;
+    function stringToBytes12(string str) internal pure returns (bytes12 result) {
+        bytes memory temp = bytes(str);
+        if (temp.length == 0) {
+            result = 0x0;
         }
 
         assembly {
-            result := mload(add(source, 12))
+            result := mload(add(str, 12))
         }
     }
 
