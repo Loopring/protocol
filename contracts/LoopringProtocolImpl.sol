@@ -359,8 +359,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         verifyTokensRegistered(ringSize, addressList);
 
         address[2] memory minerAddrs = NameRegistry(nameRegistryAddress).getAddressesById(minerAddrSetId);
-        address feeRecipient = minerAddrs[0];
-        address ringminer = minerAddrs[1];
+        address ringminer = minerAddrs[0];
+        address feeRecipient = minerAddrs[1];
 
         var (ringhash, ringhashAttributes) = RinghashRegistry(
             ringhashRegistryAddress
