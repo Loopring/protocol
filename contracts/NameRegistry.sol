@@ -24,11 +24,11 @@ contract NameRegistry {
     uint64 nextId = 1;
 
     mapping (uint64  => Participant) public addressSetMap;
-    mapping (address => NameInfo)    public ownerMap;
+    mapping (address => NamedGroup)  public ownerMap;
     mapping (bytes12 => address)     public nameMap;
     mapping (address => uint64)      public feeRecipientMap;
 
-    struct NameInfo {
+    struct NamedGroup {
         bytes12 name;
         uint64  rootId;
     }
@@ -63,7 +63,7 @@ contract NameRegistry {
         require(ownerMap[msg.sender].name.length == 0);
 
         nameMap[nameBytes] = msg.sender;
-        ownerMap[msg.sender] = NameInfo(nameBytes, 0);
+        ownerMap[msg.sender] = NamedGroup(nameBytes, 0);
 
         NameRegistered(name, msg.sender);
     }
@@ -87,7 +87,7 @@ contract NameRegistry {
         uint64 addrSetId = nextId++;
         Participant memory addrSet = Participant(feeRecipient, singer, 0);
 
-        NameInfo storage nameInfo = ownerMap[msg.sender];
+        NamedGroup storage nameInfo = ownerMap[msg.sender];
 
         if (nameInfo.rootId == 0) {
             nameInfo.rootId = addrSetId;
