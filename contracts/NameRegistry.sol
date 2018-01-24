@@ -39,7 +39,7 @@ contract NameRegistry {
         uint64  nextId;
     }
 
-    event NameRegistered (
+    event NamedGroupRegistered (
         string            name,
         address   indexed addr
     );
@@ -65,7 +65,7 @@ contract NameRegistry {
         nameMap[nameBytes] = msg.sender;
         ownerMap[msg.sender] = NamedGroup(nameBytes, 0);
 
-        NameRegistered(name, msg.sender);
+        NamedGroupRegistered(name, msg.sender);
     }
 
     function addParticipant(address feeRecipient)
