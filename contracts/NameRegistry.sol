@@ -23,17 +23,17 @@ pragma solidity 0.4.18;
 contract NameRegistry {
     uint64 nextId = 1;
 
-    mapping (uint64  => AddressSet) public addressSetMap;
-    mapping (address => NameInfo)   public ownerMap;
-    mapping (bytes12 => address)    public nameMap;
-    mapping (address => uint64)     public feeRecipientMap;
+    mapping (uint64  => Participant) public addressSetMap;
+    mapping (address => NameInfo)    public ownerMap;
+    mapping (bytes12 => address)     public nameMap;
+    mapping (address => uint64)      public feeRecipientMap;
 
     struct NameInfo {
         bytes12 name;
         uint64  rootId;
     }
 
-    struct AddressSet {
+    struct Participant {
         address feeRecipient;
         address signer;
         uint64  nextId;
@@ -44,7 +44,7 @@ contract NameRegistry {
         address   indexed addr
     );
 
-    event AddressSetRegistered (
+    event ParticipantRegistered (
         bytes12           name,
         address   indexed owner,
         uint64    indexed addressSetId,
@@ -68,13 +68,13 @@ contract NameRegistry {
         NameRegistered(name, msg.sender);
     }
 
-    function addAddressSet(address feeRecipient)
+    function addParticipant(address feeRecipient)
         external
     {
-        addAddressSet(feeRecipient, feeRecipient);
+        addParticipant(feeRecipient, feeRecipient);
     }
 
-    function addAddressSet(
+    function addParticipant(
         address feeRecipient,
         address singer
         )
@@ -85,7 +85,7 @@ contract NameRegistry {
         require(ownerMap[msg.sender].name.length > 0);
 
         uint64 addrSetId = nextId++;
-        AddressSet memory addrSet = AddressSet(feeRecipient, singer, 0);
+        Participant memory addrSet = Participant(feeRecipient, singer, 0);
 
         NameInfo storage nameInfo = ownerMap[msg.sender];
 
@@ -101,7 +101,7 @@ contract NameRegistry {
 
         addressSetMap[addrSetId] = addrSet;
 
-        AddressSetRegistered(
+        ParticipantRegistered(
             nameInfo.name,
             msg.sender,
             addrSetId,
@@ -115,7 +115,7 @@ contract NameRegistry {
         view
         returns (address feeRecipient, address signer)
     {
-        AddressSet storage addressSet = addressSetMap[id];
+        Participant storage addressSet = addressSetMap[id];
 
         feeRecipient = addressSet.feeRecipient;
         signer = addressSet.signer;
