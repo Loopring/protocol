@@ -87,12 +87,12 @@ contract NameRegistry {
         uint64 addrSetId = nextId++;
         AddressSet memory addrSet = AddressSet(feeRecipient, singer, 0);
 
-        NameInfo storage _nameInfo = ownerMap[msg.sender];
+        NameInfo storage nameInfo = ownerMap[msg.sender];
 
-        if (_nameInfo.rootId == 0) {
-            _nameInfo.rootId = addrSetId;
+        if (nameInfo.rootId == 0) {
+            nameInfo.rootId = addrSetId;
         } else {
-            var _addrSet = addressSetMap[_nameInfo.rootId];
+            var _addrSet = addressSetMap[nameInfo.rootId];
             while (_addrSet.nextId != 0) {
                 _addrSet = addressSetMap[_addrSet.nextId];
             }
@@ -102,7 +102,7 @@ contract NameRegistry {
         addressSetMap[addrSetId] = addrSet;
 
         AddressSetRegistered(
-            _nameInfo.name,
+            nameInfo.name,
             msg.sender,
             addrSetId,
             singer,
@@ -110,14 +110,14 @@ contract NameRegistry {
         );
     }
 
-    function getAddressesById(uint64 addrSetId)
+    function getAddressesById(uint64 id)
         external
         view
         returns (address[2])
     {
-        var _addressSet = addressSetMap[addrSetId];
+        AddressSet storage addressSet = addressSetMap[id];
 
-        return [_addressSet.signer, _addressSet.feeRecipient];
+        return [addressSet.feeRecipient, addressSet.signer];
     }
 
     function isNameValid(string name)
