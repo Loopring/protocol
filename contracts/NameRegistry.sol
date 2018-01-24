@@ -17,6 +17,7 @@
 */
 pragma solidity 0.4.18;
 
+
 /// @title Ethereum Address Register Contract
 /// @dev This contract maintains a name service for addresses and miner.
 /// @author Kongliang Zhong - <kongliang@loopring.org>,
