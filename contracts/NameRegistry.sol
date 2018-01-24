@@ -24,7 +24,7 @@ contract NameRegistry {
     uint64 nextId = 1;
 
     mapping (uint64  => AddressSet) public addressSetMap;
-    mapping (address => NameInfo)   public nameInfoMap;
+    mapping (address => NameInfo)   public ownerMap;
     mapping (bytes12 => address)    public nameMap;
     mapping (address => uint64)     public feeRecipientMap;
 
@@ -34,17 +34,17 @@ contract NameRegistry {
     }
 
     struct AddressSet {
-        address signer;
         address feeRecipient;
+        address signer;
         uint64  nextId;
     }
 
-    event NameRegistered(
+    event NameRegistered (
         string            name,
         address   indexed addr
     );
 
-    event AddressSetRegistered(
+    event AddressSetRegistered (
         bytes12           name,
         address   indexed owner,
         uint64    indexed addressSetId,
@@ -52,32 +52,43 @@ contract NameRegistry {
         address           feeRecipient
     );
 
-    function registerName(string name) external {
+    function registerName(string name)
+        external
+    {
         require(isNameValid(name));
 
         bytes12 nameBytes = stringToBytes12(name);
 
         require(nameMap[nameBytes] == 0x0);
-        require(nameInfoMap[msg.sender].name.length == 0);
+        require(ownerMap[msg.sender].name.length == 0);
 
         nameMap[nameBytes] = msg.sender;
-        nameInfoMap[msg.sender] = NameInfo(nameBytes, 0);
+        ownerMap[msg.sender] = NameInfo(nameBytes, 0);
 
         NameRegistered(name, msg.sender);
     }
 
-    function addAddressSet(address feeRecipient) external {
-        addAddressSet(0x0, feeRecipient);
+    function addAddressSet(address feeRecipient)
+        external
+    {
+        addAddressSet(feeRecipient, feeRecipient);
     }
 
-    function addAddressSet(address singer, address feeRecipient) public {
-        require(nameInfoMap[msg.sender].name.length > 0);
+    function addAddressSet(
+        address feeRecipient,
+        address singer
+        )
+        public
+    {
         require(feeRecipient != 0x0);
+        require(singer != 0x0);
+        require(ownerMap[msg.sender].name.length > 0);
 
         uint64 addrSetId = nextId++;
-        AddressSet memory addrSet = AddressSet(singer, feeRecipient, 0);
+        AddressSet memory addrSet = AddressSet(feeRecipient, singer, 0);
 
-        var _nameInfo = nameInfoMap[msg.sender];
+        NameInfo storage _nameInfo = ownerMap[msg.sender];
+
         if (_nameInfo.rootId == 0) {
             _nameInfo.rootId = addrSetId;
         } else {
@@ -99,23 +110,30 @@ contract NameRegistry {
         );
     }
 
-    function getAddressesById(uint64 addrSetId) external view returns (address[2]) {
+    function getAddressesById(uint64 addrSetId)
+        external
+        view
+        returns (address[2])
+    {
         var _addressSet = addressSetMap[addrSetId];
 
         return [_addressSet.signer, _addressSet.feeRecipient];
     }
 
-    function isNameValid(string name) internal pure returns (bool) {
-        bytes memory tempBs = bytes(name);
-        return tempBs.length >= 6 && tempBs.length <= 12;
+    function isNameValid(string name)
+        internal
+        pure
+        returns (bool)
+    {
+        bytes memory temp = bytes(name);
+        return temp.length >= 6 && temp.length <= 12;
     }
 
-    function stringToBytes12(string str) internal pure returns (bytes12 result) {
-        bytes memory temp = bytes(str);
-        if (temp.length == 0) {
-            result = 0x0;
-        }
-
+    function stringToBytes12(string str)
+        internal
+        pure
+        returns (bytes12 result)
+    {
         assembly {
             result := mload(add(str, 12))
         }
