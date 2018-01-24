@@ -23,8 +23,8 @@ pragma solidity 0.4.18;
 contract NameRegistry {
     uint64 nextId = 1;
 
-    mapping (uint64  => Participant) public addressSetMap;
-    mapping (address => NamedGroup)  public ownerMap;
+    mapping (uint64  => Participant) public participantMap;
+    mapping (address => NamedGroup)  public namedGroupMap;
     mapping (bytes12 => address)     public nameMap;
     mapping (address => uint64)      public feeRecipientMap;
 
@@ -60,10 +60,10 @@ contract NameRegistry {
         bytes12 nameBytes = stringToBytes12(name);
 
         require(nameMap[nameBytes] == 0x0);
-        require(ownerMap[msg.sender].name.length == 0);
+        require(namedGroupMap[msg.sender].name.length == 0);
 
         nameMap[nameBytes] = msg.sender;
-        ownerMap[msg.sender] = NamedGroup(nameBytes, 0);
+        namedGroupMap[msg.sender] = NamedGroup(nameBytes, 0);
 
         NamedGroupRegistered(name, msg.sender);
     }
@@ -80,29 +80,28 @@ contract NameRegistry {
         )
         public
     {
-        require(feeRecipient != 0x0);
-        require(singer != 0x0);
-        require(ownerMap[msg.sender].name.length > 0);
+        require(feeRecipient != 0x0 && singer != 0x0);
+        require(namedGroupMap[msg.sender].name.length > 0);
 
         uint64 addrSetId = nextId++;
         Participant memory addrSet = Participant(feeRecipient, singer, 0);
 
-        NamedGroup storage nameInfo = ownerMap[msg.sender];
+        NamedGroup storage group = namedGroupMap[msg.sender];
 
-        if (nameInfo.rootId == 0) {
-            nameInfo.rootId = addrSetId;
+        if (group.rootId == 0) {
+            group.rootId = addrSetId;
         } else {
-            var _addrSet = addressSetMap[nameInfo.rootId];
+            var _addrSet = participantMap[group.rootId];
             while (_addrSet.nextId != 0) {
-                _addrSet = addressSetMap[_addrSet.nextId];
+                _addrSet = participantMap[_addrSet.nextId];
             }
             _addrSet.nextId == addrSetId;
         }
 
-        addressSetMap[addrSetId] = addrSet;
+        participantMap[addrSetId] = addrSet;
 
         ParticipantRegistered(
-            nameInfo.name,
+            group.name,
             msg.sender,
             addrSetId,
             singer,
@@ -115,7 +114,7 @@ contract NameRegistry {
         view
         returns (address feeRecipient, address signer)
     {
-        Participant storage addressSet = addressSetMap[id];
+        Participant storage addressSet = participantMap[id];
 
         feeRecipient = addressSet.feeRecipient;
         signer = addressSet.signer;
