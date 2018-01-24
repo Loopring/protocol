@@ -24,9 +24,9 @@ contract NameRegistry {
     uint32 id = 0;
 
     mapping (uint32 => AddressSet) public addressSetMap;
-    mapping (address => NameInfo) public nameInfoMap;
-    mapping (bytes12 => address) public nameMap;
-    mapping (address => uint32) public feeRecipientMap;
+    mapping (address => NameInfo)  public nameInfoMap;
+    mapping (bytes12 => address)   public nameMap;
+    mapping (address => uint32)    public feeRecipientMap;
 
     struct NameInfo {
         bytes12 name;
@@ -90,6 +90,15 @@ contract NameRegistry {
             singer,
             feeRecipient
         );
+    }
+
+    function getAddressesById(uint32 addrSetId) external view returns (address[]) {
+        var _addressSet = addressSetMap[addrSetId];
+
+        var addrs = new address[](2);
+        addrs[0] = _addressSet.signer;
+        addrs[1] = _addressSet.feeRecipient;
+        return addrs;
     }
 
     function isValidName(string name) internal pure returns (bool) {
