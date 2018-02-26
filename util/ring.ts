@@ -12,6 +12,10 @@ export class Ring {
   public r: string;
   public s: string;
 
+  public authV: number[] = [];
+  public authR: string[] = [];
+  public authS: string[] = [];
+
   public web3Instance: Web3;
 
   constructor(owner: string, orders: Order[]) {
@@ -47,11 +51,20 @@ export class Ring {
   public async signAsync() {
     const ringHash = this.getRingHash();
     // console.log("ring hash: ", ethUtil.bufferToHex(ringHash));
-    const signature = await promisify(this.web3Instance.eth.sign)(this.owner, ethUtil.bufferToHex(ringHash));
+    const signer = promisify(this.web3Instance.eth.sign);
+    const signature = await signer(this.owner, ethUtil.bufferToHex(ringHash));
     const { v, r, s } = ethUtil.fromRpcSig(signature);
     this.v = v;
     this.r = ethUtil.bufferToHex(r);
     this.s = ethUtil.bufferToHex(s);
+
+    for (const order of this.orders) {
+      const authSig = await signer(order.params.authAddr, ethUtil.bufferToHex(ringHash));
+      const sigRes = ethUtil.fromRpcSig(authSig);
+      this.authV.push(sigRes.v);
+      this.authR.push(ethUtil.bufferToHex(sigRes.r));
+      this.authS.push(ethUtil.bufferToHex(sigRes.s));
+    }
   }
 
   public getRingHash() {

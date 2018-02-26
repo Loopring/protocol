@@ -413,7 +413,7 @@ export class RingFactory {
 
     for (let i = 0; i < ringSize; i++) {
       const order = ring.orders[i];
-      const addressListItem = [order.owner, order.params.tokenS];
+      const addressListItem = [order.owner, order.params.tokenS, order.params.authAddr];
       addressList.push(addressListItem);
 
       const uintArgsListItem = [
@@ -441,6 +441,10 @@ export class RingFactory {
     vList.push(ring.v);
     rList.push(ring.r);
     sList.push(ring.s);
+
+    vList.push(...ring.authV);
+    rList.push(...ring.authR);
+    sList.push(...ring.authS);
 
     const submitParams = {
       addressList,

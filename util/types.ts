@@ -47,3 +47,9 @@ export interface BalanceItem {
   balanceS: number;
   balanceB: number;
 }
+
+export interface SignResult {
+  v: number;
+  r: string;
+  s: string;
+}
