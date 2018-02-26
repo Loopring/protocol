@@ -12,6 +12,7 @@ export interface OrderParams {
   buyNoMoreThanAmountB: boolean;
   marginSplitPercentage: number;
   authAddr: string;
+  walletId: number;
   scaledAmountS?: number;
   scaledAmountB?: number;
   rateAmountS?: number;

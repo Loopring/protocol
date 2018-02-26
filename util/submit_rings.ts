@@ -52,6 +52,7 @@ async function size2Ring01() {
     buyNoMoreThanAmountB: true,
     marginSplitPercentage: 55,
     authAddr: "",
+    walletId: 0,
   };
 
   const orderPrams2 = {
@@ -66,6 +67,7 @@ async function size2Ring01() {
     buyNoMoreThanAmountB: false,
     marginSplitPercentage: 0,
     authAddr: "",
+    walletId: 0,
   };
 
   const order1 = new Order(order1Owner, orderPrams1);
@@ -97,6 +99,7 @@ async function size3Ring01() {
     buyNoMoreThanAmountB: true,
     marginSplitPercentage: 55,
     authAddr: "",
+    walletId: 0,
   };
 
   const orderPrams2 = {
@@ -111,6 +114,7 @@ async function size3Ring01() {
     buyNoMoreThanAmountB: false,
     marginSplitPercentage: 0,
     authAddr: "",
+    walletId: 0,
   };
 
   const orderPrams3 = {
@@ -125,6 +129,7 @@ async function size3Ring01() {
     buyNoMoreThanAmountB: false,
     marginSplitPercentage: 60,
     authAddr: "",
+    walletId: 0,
   };
 
   const order1 = new Order(order1Owner, orderPrams1);
