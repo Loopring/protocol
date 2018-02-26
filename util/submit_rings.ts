@@ -51,6 +51,7 @@ async function size2Ring01() {
     lrcFee: new BigNumber(2e18),
     buyNoMoreThanAmountB: true,
     marginSplitPercentage: 55,
+    authAddr: "",
   };
 
   const orderPrams2 = {
@@ -64,6 +65,7 @@ async function size2Ring01() {
     lrcFee: new BigNumber(15e17),
     buyNoMoreThanAmountB: false,
     marginSplitPercentage: 0,
+    authAddr: "",
   };
 
   const order1 = new Order(order1Owner, orderPrams1);
@@ -94,6 +96,7 @@ async function size3Ring01() {
     lrcFee: new BigNumber(2e18),
     buyNoMoreThanAmountB: true,
     marginSplitPercentage: 55,
+    authAddr: "",
   };
 
   const orderPrams2 = {
@@ -107,6 +110,7 @@ async function size3Ring01() {
     lrcFee: new BigNumber(15e17),
     buyNoMoreThanAmountB: false,
     marginSplitPercentage: 0,
+    authAddr: "",
   };
 
   const orderPrams3 = {
@@ -120,6 +124,7 @@ async function size3Ring01() {
     lrcFee: new BigNumber(25e17),
     buyNoMoreThanAmountB: false,
     marginSplitPercentage: 60,
+    authAddr: "",
   };
 
   const order1 = new Order(order1Owner, orderPrams1);
@@ -173,7 +178,7 @@ async function main() {
   const ring = await size3Ring01();
   const feeSelectionList = [0, 0, 0];
 
-  const ringFactory = new RingFactory("", "", "", "", "", 0);
+  const ringFactory = new RingFactory("", "", "", "", "", "", 0);
   const params = ringFactory.ringToSubmitableParams(ring,
                                                     feeSelectionList,
                                                     ring.owner);

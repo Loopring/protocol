@@ -24,6 +24,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
   const order3Owner = accounts[3];
   const order4Owner = accounts[4];
   const order5Owner = accounts[5];
+  const orderAuthAddr = accounts[7]; // should generate each time in front-end. we just mock it here.
   const ringOwner = accounts[0];
   const feeRecepient = accounts[6];
 
@@ -119,6 +120,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                                   neoAddress,
                                   lrcAddress,
                                   qtumAddress,
+                                  orderAuthAddr,
                                   currBlockTimeStamp);
 
     // approve only once for all test cases.

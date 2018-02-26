@@ -10,18 +10,21 @@ export class RingFactory {
   public lrcAddress: string;
   public qtumAddress: string;
   public currBlockTimeStamp: number;
+  public authAddress: string;
 
   constructor(loopringProtocolAddr: string,
               eosAddress: string,
               neoAddress: string,
               lrcAddress: string,
               qtumAddress: string,
+              authAddress: string,
               currBlockTimeStamp: number) {
     this.loopringProtocolAddr = loopringProtocolAddr;
     this.eosAddress = eosAddress;
     this.neoAddress = neoAddress;
     this.lrcAddress = lrcAddress;
     this.qtumAddress = qtumAddress;
+    this.authAddress = authAddress;
     this.currBlockTimeStamp = currBlockTimeStamp;
   }
 
@@ -39,6 +42,7 @@ export class RingFactory {
       lrcFee: new BigNumber(1e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2 = {
@@ -52,6 +56,7 @@ export class RingFactory {
       lrcFee: new BigNumber(1e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -79,6 +84,7 @@ export class RingFactory {
       lrcFee: new BigNumber(10e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2 = {
@@ -92,6 +98,7 @@ export class RingFactory {
       lrcFee: new BigNumber(5e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -119,6 +126,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 100,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2 = {
@@ -132,6 +140,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 45,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -159,6 +168,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 65,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2: OrderParams = {
@@ -172,6 +182,7 @@ export class RingFactory {
       lrcFee: new BigNumber(5e17),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 45,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -200,6 +211,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2: OrderParams = {
@@ -213,6 +225,7 @@ export class RingFactory {
       lrcFee: new BigNumber(6e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const orderPrams3: OrderParams = {
@@ -226,6 +239,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 60,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -257,6 +271,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2: OrderParams = {
@@ -270,6 +285,7 @@ export class RingFactory {
       lrcFee: new BigNumber(6e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const orderPrams3: OrderParams = {
@@ -283,6 +299,7 @@ export class RingFactory {
       lrcFee: new BigNumber(0),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 60,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -314,6 +331,7 @@ export class RingFactory {
       lrcFee: new BigNumber(10e18),
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
+      authAddr: this.authAddress,
     };
 
     const orderPrams2: OrderParams = {
@@ -327,6 +345,7 @@ export class RingFactory {
       lrcFee: new BigNumber(6e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
+      authAddr: this.authAddress,
     };
 
     const orderPrams3: OrderParams = {
@@ -340,6 +359,7 @@ export class RingFactory {
       lrcFee: new BigNumber(1e18),
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 60,
+      authAddr: this.authAddress,
     };
 
     const order1 = new Order(order1Owner, orderPrams1);

@@ -16,6 +16,7 @@ contract("RinghashRegistry", (accounts: string[]) => {
   const order1Owner = accounts[1];
   const order2Owner = accounts[2];
   const feeRecepient = accounts[6];
+  const orderAuthAddr = accounts[7];
 
   let ringhashRegistry: any;
   let tokenRegistry: any;
@@ -53,6 +54,7 @@ contract("RinghashRegistry", (accounts: string[]) => {
                                   neoAddress,
                                   lrcAddress,
                                   qtumAddress,
+                                  orderAuthAddr,
                                   currBlockTimeStamp);
     const blocksToLiveBN = await ringhashRegistry.blocksToLive();
     blocksToLive = blocksToLiveBN.toNumber();
