@@ -61,18 +61,25 @@ export class Order {
 
   private getOrderHash() {
     const orderHash = crypto.solSHA3([
+      "\x19Ethereum Signed Message:\n32",
       this.params.loopringProtocol,
       this.owner,
       this.params.tokenS,
       this.params.tokenB,
+      this.params.authAddr,
       this.params.amountS,
       this.params.amountB,
       this.params.validSince,
       this.params.validUntil,
       this.params.lrcFee,
       this.params.buyNoMoreThanAmountB,
+      this.params.walletId,
       this.params.marginSplitPercentage,
     ]);
-    return orderHash;
+
+    const res = orderHash.slice(0, 20);
+    console.log("order hash 20:", ethUtil.bufferToHex(res));
+
+    return res;
   }
 }

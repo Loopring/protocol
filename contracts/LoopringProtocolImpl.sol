@@ -379,19 +379,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
             0x0         // ringHash
         );
 
+        updateFeeRecipient(params);
 
-        // verifyInputDataIntegrity(params);
+        verifyInputDataIntegrity(params);
 
         // Assemble input data into structs so we can pass them to other functions.
         // This method also calculates ringHash, therefore it must be called before
         // calling `verifyRingSignatures`.
-        /* OrderState[] memory orders = assembleOrders(params); */
+        OrderState[] memory orders = assembleOrders(params);
 
         /* verifyRingSignatures(params); */
 
         /* verifyTokensRegistered(params); */
-
-        /* updateFeeRecipient(params); */
 
         /* handleRing(params, orders); */
 
@@ -946,42 +945,43 @@ contract LoopringProtocolImpl is LoopringProtocol {
             validateOrder(order);
 
             bytes20 orderHash = bytes20(calculateOrderHash(order));
+            log0(orderHash);
 
-            verifySignature(
-                order.owner,
-                orderHash,
-                params.vList[i],
-                params.rList[i],
-                params.sList[i]
-            );
+            /* verifySignature( */
+            /*     order.owner, */
+            /*     orderHash, */
+            /*     params.vList[i], */
+            /*     params.rList[i], */
+            /*     params.sList[i] */
+            /* ); */
 
-            orders[i] = OrderState(
-                order,
-                orderHash,
-                params.uint8ArgsList[i][1],  // feeSelection
-                Rate(params.uintArgsList[i][5], order.amountB),
-                0,   // fillAmountS
-                0,   // lrcReward
-                0,   // lrcFee
-                0,   // splitS
-                0    // splitB
-            );
+            /* orders[i] = OrderState( */
+            /*     order, */
+            /*     orderHash, */
+            /*     params.uint8ArgsList[i][1],  // feeSelection */
+            /*     Rate(params.uintArgsList[i][5], order.amountB), */
+            /*     0,   // fillAmountS */
+            /*     0,   // lrcReward */
+            /*     0,   // lrcFee */
+            /*     0,   // splitS */
+            /*     0    // splitB */
+            /* ); */
 
             params.ringHash ^= orderHash;
         }
 
-        uint8[] memory feeSelections = new uint8[](params.ringSize);
-        for (i = 0; i < params.ringSize; i++) {
-            feeSelections[i] = params.uint8ArgsList[i][0];
-        }
-        params.ringHash = bytes20(
-            keccak256(
-                "\x19Ethereum Signed Message:\n32",
-                params.ringHash,
-                params.minerId,
-                feeSelections
-            )
-        );
+        /* uint8[] memory feeSelections = new uint8[](params.ringSize); */
+        /* for (i = 0; i < params.ringSize; i++) { */
+        /*     feeSelections[i] = params.uint8ArgsList[i][0]; */
+        /* } */
+        /* params.ringHash = bytes20( */
+        /*     keccak256( */
+        /*         "\x19Ethereum Signed Message:\n32", */
+        /*         params.ringHash, */
+        /*         params.minerId, */
+        /*         feeSelections */
+        /*     ) */
+        /* ); */
     }
 
     /// @dev validate order's parameters are OK.
