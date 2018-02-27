@@ -360,7 +360,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Check if the highest bit of ringIndex is '1'.
         require(ringIndex & ENTERED_MASK != ENTERED_MASK); // "attempted to re-ent submitRing function");
 
-    
+
         // Set the highest bit of ringIndex to '1'.
         ringIndex |= ENTERED_MASK;
 
@@ -380,20 +380,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
 
-        verifyInputDataIntegrity(params);
+        // verifyInputDataIntegrity(params);
 
         // Assemble input data into structs so we can pass them to other functions.
         // This method also calculates ringHash, therefore it must be called before
         // calling `verifyRingSignatures`.
-        OrderState[] memory orders = assembleOrders(params);
+        /* OrderState[] memory orders = assembleOrders(params); */
 
-        verifyRingSignatures(params);
+        /* verifyRingSignatures(params); */
 
-        verifyTokensRegistered(params);
+        /* verifyTokensRegistered(params); */
 
-        updateFeeRecipient(params);
+        /* updateFeeRecipient(params); */
 
-        handleRing(params, orders);
+        /* handleRing(params, orders); */
 
         ringIndex = (ringIndex ^ ENTERED_MASK) + 1;
     }
@@ -426,7 +426,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
     {
         uint j;
-        for (uint i = 0; i < params.ringSize; i++) { 
+        for (uint i = 0; i < params.ringSize; i++) {
             j = i + params.ringSize;
             verifySignature(
                 params.addressList[i][2],  // authAddr
@@ -976,7 +976,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
         params.ringHash = bytes20(
             keccak256(
-                "\x19Ethereum Signed Message:\n32", 
+                "\x19Ethereum Signed Message:\n32",
                 params.ringHash,
                 params.minerId,
                 feeSelections
@@ -1012,7 +1012,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         return bytes20(
             keccak256(
-                "\x19Ethereum Signed Message:\n32", 
+                "\x19Ethereum Signed Message:\n32",
                 address(this),
                 order.owner,
                 order.tokenS,
