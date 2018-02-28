@@ -78,7 +78,7 @@ export class Order {
     ]);
 
     const res = orderHash.slice(0, 20);
-    console.log("order hash 20:", ethUtil.bufferToHex(res));
+    // console.log("order hash 20:", ethUtil.bufferToHex(res));
 
     return res;
   }

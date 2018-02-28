@@ -43,7 +43,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2 = {
@@ -58,7 +58,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -87,7 +87,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2 = {
@@ -102,7 +102,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -131,7 +131,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 100,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2 = {
@@ -146,7 +146,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 45,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -175,7 +175,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 65,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2: OrderParams = {
@@ -190,7 +190,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 45,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -220,7 +220,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2: OrderParams = {
@@ -235,7 +235,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams3: OrderParams = {
@@ -250,7 +250,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 60,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -283,7 +283,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2: OrderParams = {
@@ -298,7 +298,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams3: OrderParams = {
@@ -313,7 +313,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 60,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -346,7 +346,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: true,
       marginSplitPercentage: 55,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams2: OrderParams = {
@@ -361,7 +361,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 0,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const orderPrams3: OrderParams = {
@@ -376,7 +376,7 @@ export class RingFactory {
       buyNoMoreThanAmountB: false,
       marginSplitPercentage: 60,
       authAddr: this.authAddress,
-      walletId: 0,
+      walletId: new BigNumber(0),
     };
 
     const order1 = new Order(order1Owner, orderPrams1);
@@ -440,7 +440,7 @@ export class RingFactory {
         order.params.validUntil,
         order.params.lrcFee,
         rateAmountSList[i],
-        new BigNumber(order.params.walletId),
+        order.params.walletId,
       ];
       uintArgsList.push(uintArgsListItem);
 
