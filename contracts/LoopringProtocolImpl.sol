@@ -166,7 +166,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize;         // computed
         address       ringMiner;        // queried
         address       feeRecipient;     // queried
-        bytes20       ringHash;         // computed
+        bytes32       ringHash;         // computed
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -257,7 +257,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
 
-        bytes20 orderHash = calculateOrderHash(order);
+        bytes32 orderHash = calculateOrderHash(order);
 
         verifySignature(
             order.owner,
@@ -388,11 +388,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // calling `verifyRingSignatures`.
         OrderState[] memory orders = assembleOrders(params);
 
-        /* verifyRingSignatures(params); */
+        verifyRingSignatures(params);
 
-        /* verifyTokensRegistered(params); */
+        verifyTokensRegistered(params);
 
-        /* handleRing(params, orders); */
+        handleRing(params, orders);
 
         ringIndex = (ringIndex ^ ENTERED_MASK) + 1;
     }
@@ -424,28 +424,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         pure
     {
-        uint j;
-        for (uint i = 0; i < params.ringSize; i++) {
-            j = i + params.ringSize;
-            verifySignature(
-                params.addressList[i][2],  // authAddr
-                params.ringHash,
-                params.vList[j],
-                params.rList[j],
-                params.sList[j]
-            );
-        }
+        /* uint j; */
+        /* for (uint i = 0; i < params.ringSize; i++) { */
+        /*     j = i + params.ringSize; */
+        /*     verifySignature( */
+        /*         params.addressList[i][2],  // authAddr */
+        /*         params.ringHash, */
+        /*         params.vList[j], */
+        /*         params.rList[j], */
+        /*         params.sList[j] */
+        /*     ); */
+        /* } */
 
-        if (params.ringMiner != 0x0) {
-            j++;
-            verifySignature(
-                params.ringMiner,
-                params.ringHash,
-                params.vList[j],
-                params.rList[j],
-                params.sList[j]
-            );
-        }
+        /* if (params.ringMiner != 0x0) { */
+        /*     j++; */
+        /*     verifySignature( */
+        /*         params.ringMiner, */
+        /*         params.ringHash, */
+        /*         params.vList[j], */
+        /*         params.rList[j], */
+        /*         params.sList[j] */
+        /*     ); */
+        /* } */
     }
 
     function verifyTokensRegistered(RingParams params)
@@ -944,15 +944,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             validateOrder(order);
 
-            bytes20 orderHash = bytes20(calculateOrderHash(order));
+            bytes32 orderHash = calculateOrderHash(order);
 
-            /* verifySignature( */
-            /*     order.owner, */
-            /*     orderHash, */
-            /*     params.vList[i], */
-            /*     params.rList[i], */
-            /*     params.sList[i] */
-            /* ); */
+            verifySignature(
+                order.owner,
+                orderHash,
+                params.vList[i],
+                params.rList[i],
+                params.sList[i]
+            );
 
             orders[i] = OrderState(
                 order,
@@ -973,13 +973,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         for (i = 0; i < params.ringSize; i++) {
             feeSelections[i] = params.uint8ArgsList[i][0];
         }
-        params.ringHash = bytes20(
-            keccak256(
-                "\x19Ethereum Signed Message:\n32",
-                params.ringHash,
-                params.minerId,
-                feeSelections
-            )
+        params.ringHash = keccak256(
+            params.ringHash,
+            params.minerId,
+            feeSelections
         );
     }
 
@@ -1007,32 +1004,29 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function calculateOrderHash(Order order)
         private
         view
-        returns (bytes20)
+        returns (bytes32)
     {
-        return bytes20(
-            keccak256(
-                "\x19Ethereum Signed Message:\n32",
-                address(this),
-                order.owner,
-                order.tokenS,
-                order.tokenB,
-                order.authAddr,
-                order.amountS,
-                order.amountB,
-                order.validSince,
-                order.validUntil,
-                order.lrcFee,
-                order.buyNoMoreThanAmountB,
-                order.walletId,
-                order.marginSplitPercentage
-            )
+        return keccak256(
+            address(this),
+            order.owner,
+            order.tokenS,
+            order.tokenB,
+            order.authAddr,
+            order.amountS,
+            order.amountB,
+            order.validSince,
+            order.validUntil,
+            order.lrcFee,
+            order.buyNoMoreThanAmountB,
+            order.walletId,
+            order.marginSplitPercentage
         );
     }
 
     /// @dev Verify signer's signature.
     function verifySignature(
         address signer,
-        bytes20 hash,
+        bytes32 hash,
         uint8   v,
         bytes32 r,
         bytes32 s
@@ -1042,7 +1036,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         require(
             signer == ecrecover(
-                hash,
+                keccak256("\x19Ethereum Signed Message:\n32", hash),
                 v,
                 r,
                 s
