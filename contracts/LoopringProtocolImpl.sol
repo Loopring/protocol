@@ -360,7 +360,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // Check if the highest bit of ringIndex is '1'.
         require(ringIndex & ENTERED_MASK != ENTERED_MASK); // "attempted to re-ent submitRing function");
 
-
         // Set the highest bit of ringIndex to '1'.
         ringIndex |= ENTERED_MASK;
 
@@ -390,9 +389,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyRingSignatures(params);
 
-        /* verifyTokensRegistered(params); */
+        verifyTokensRegistered(params);
 
-        /* handleRing(params, orders); */
+        handleRing(params, orders);
 
         ringIndex = (ringIndex ^ ENTERED_MASK) + 1;
     }
@@ -424,28 +423,29 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         pure
     {
-        /* uint j; */
-        /* for (uint i = 0; i < params.ringSize; i++) { */
-        /*     j = i + params.ringSize; */
-        /*     verifySignature( */
-        /*         params.addressList[i][2],  // authAddr */
-        /*         params.ringHash, */
-        /*         params.vList[j], */
-        /*         params.rList[j], */
-        /*         params.sList[j] */
-        /*     ); */
-        /* } */
+        uint j;
+        for (uint i = 0; i < params.ringSize; i++) {
+            j = i + params.ringSize;
 
-        /* if (params.ringMiner != 0x0) { */
-        /*     j++; */
-        /*     verifySignature( */
-        /*         params.ringMiner, */
-        /*         params.ringHash, */
-        /*         params.vList[j], */
-        /*         params.rList[j], */
-        /*         params.sList[j] */
-        /*     ); */
-        /* } */
+            verifySignature(
+                params.addressList[i][2],  // authAddr
+                params.ringHash,
+                params.vList[j],
+                params.rList[j],
+                params.sList[j]
+            );
+        }
+
+        if (params.ringMiner != 0x0) {
+            j++;
+            verifySignature(
+                params.ringMiner,
+                params.ringHash,
+                params.vList[j],
+                params.rList[j],
+                params.sList[j]
+            );
+        }
     }
 
     function verifyTokensRegistered(RingParams params)
@@ -969,17 +969,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
             params.ringHash ^= orderHash;
         }
 
-        uint8 feeSelectionsXor = params.uint8ArgsList[0][0];
+        uint8 feeSelectionsXor = params.uint8ArgsList[0][1];
         for (i = 1; i < params.ringSize; i++) {
-            feeSelectionsXor ^= params.uint8ArgsList[i][0];
+            feeSelectionsXor ^= params.uint8ArgsList[i][1];
         }
+
         params.ringHash = keccak256(
             params.ringHash,
             params.minerId,
             feeSelectionsXor
         );
-
-        log0(params.ringHash);
     }
 
     /// @dev validate order's parameters are OK.

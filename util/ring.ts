@@ -60,7 +60,8 @@ export class Ring {
 
   public async signAsync() {
     const ringHash = this.getRingHash();
-    console.log("ring hash: ", ethUtil.bufferToHex(ringHash));
+    // console.log("ring hash: ", ethUtil.bufferToHex(ringHash));
+
     const signer = promisify(this.web3Instance.eth.sign);
     const signature = await signer(this.owner, ethUtil.bufferToHex(ringHash));
     const { v, r, s } = ethUtil.fromRpcSig(signature);
@@ -71,6 +72,7 @@ export class Ring {
     for (const order of this.orders) {
       const authSig = await signer(order.params.authAddr, ethUtil.bufferToHex(ringHash));
       const sigRes = ethUtil.fromRpcSig(authSig);
+
       this.authV.push(sigRes.v);
       this.authR.push(ethUtil.bufferToHex(sigRes.r));
       this.authS.push(ethUtil.bufferToHex(sigRes.s));
