@@ -749,12 +749,13 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
       const order = ring.orders[0];
       const cancelAmount = new BigNumber(1000e18);
-      const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
+      const addresses = [order.owner, order.params.tokenS, order.params.tokenB, order.params.authAddr];
       const orderValues = [order.params.amountS,
                            order.params.amountB,
                            order.params.validSince,
                            order.params.validUntil,
                            order.params.lrcFee,
+                           order.params.walletId,
                            cancelAmount];
 
       await loopringProtocolImpl.cancelOrder(addresses,
@@ -840,12 +841,13 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const order = ring.orders[0];
       const cancelAmount = new BigNumber(100e18);
 
-      const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
+      const addresses = [order.owner, order.params.tokenS, order.params.tokenB, order.params.authAddr];
       const orderValues = [order.params.amountS,
                            order.params.amountB,
                            order.params.validSince,
                            order.params.validUntil,
                            order.params.lrcFee,
+                           order.params.walletId,
                            cancelAmount];
 
       const cancelledOrFilledAmount0 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
@@ -874,12 +876,13 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const order = ring.orders[0];
       const cancelAmount = new BigNumber(100e18);
 
-      const addresses = [order.owner, order.params.tokenS, order.params.tokenB];
+      const addresses = [order.owner, order.params.tokenS, order.params.tokenB, order.params.authAddr];
       const orderValues = [order.params.amountS,
                            order.params.amountB,
                            order.params.validSince,
                            order.params.validUntil,
                            order.params.lrcFee,
+                           order.params.walletId,
                            cancelAmount];
       try {
         const tx = await loopringProtocolImpl.cancelOrder(addresses,
