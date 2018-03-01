@@ -59,7 +59,7 @@ export class Order {
     });
   }
 
-  private getOrderHash() {
+  public getOrderHash() {
     const orderHash = crypto.solSHA3([
       this.params.loopringProtocol,
       this.owner,

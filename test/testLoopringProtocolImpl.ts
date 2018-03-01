@@ -135,7 +135,12 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
   describe("submitRing", () => {
     it("should be able to fill ring with 2 orders", async () => {
-      const ring = await ringFactory.generateSize2Ring01(order1Owner, order2Owner, ringOwner);
+      const feeSelections: number[] = [0, 0];
+      const ring = await ringFactory.generateSize2Ring01(order1Owner,
+                                                         order2Owner,
+                                                         ringOwner,
+                                                         new BigNumber(participantId),
+                                                         feeSelections);
 
       await lrc.setBalance(order1Owner, web3.toWei(100),   {from: owner});
       await eos.setBalance(order1Owner, web3.toWei(10000), {from: owner});

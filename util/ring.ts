@@ -1,3 +1,4 @@
+import { BigNumber } from "bignumber.js";
 import promisify = require("es6-promisify");
 import ethUtil = require("ethereumjs-util");
 import * as _ from "lodash";
@@ -8,6 +9,10 @@ import { Order } from "./order";
 export class Ring {
   public owner: string;
   public orders: Order[];
+
+  public minerId: BigNumber;
+  public feeSelections: number[];
+
   public v: number;
   public r: string;
   public s: string;
@@ -18,9 +23,14 @@ export class Ring {
 
   public web3Instance: Web3;
 
-  constructor(owner: string, orders: Order[]) {
+  constructor(owner: string,
+              orders: Order[],
+              minerId: BigNumber,
+              feeSelections: number[]) {
     this.owner = owner;
     this.orders = orders;
+    this.minerId = minerId;
+    this.feeSelections = feeSelections;
 
     try {
       if (web3) {
@@ -50,7 +60,7 @@ export class Ring {
 
   public async signAsync() {
     const ringHash = this.getRingHash();
-    // console.log("ring hash: ", ethUtil.bufferToHex(ringHash));
+    console.log("ring hash: ", ethUtil.bufferToHex(ringHash));
     const signer = promisify(this.web3Instance.eth.sign);
     const signature = await signer(this.owner, ethUtil.bufferToHex(ringHash));
     const { v, r, s } = ethUtil.fromRpcSig(signature);
@@ -68,21 +78,17 @@ export class Ring {
   }
 
   public getRingHash() {
-    const size = this.orders.length;
-    const vList: number[] = [];
-    const rList: string[] = [];
-    const sList: string[] = [];
+    const orderHashList: string[] = [];
 
-    for (let i = 0; i < size; i++) {
-      vList[i] = this.orders[i].params.v;
-      rList[i] = this.orders[i].params.r;
-      sList[i] = this.orders[i].params.s;
+    for (const order of this.orders) {
+      const orderHash = order.getOrderHash();
+      orderHashList.push(ethUtil.bufferToHex(orderHash));
     }
 
     const ringHash = crypto.solSHA3([
-      this.xorReduce(vList),
-      this.xorReduceStr(rList),
-      this.xorReduceStr(sList),
+      this.xorReduceStr(orderHashList),
+      this.minerId,
+      this.xorReduce(this.feeSelections),
     ]);
 
     return ringHash;

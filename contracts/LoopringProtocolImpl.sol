@@ -390,9 +390,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyRingSignatures(params);
 
-        verifyTokensRegistered(params);
+        /* verifyTokensRegistered(params); */
 
-        handleRing(params, orders);
+        /* handleRing(params, orders); */
 
         ringIndex = (ringIndex ^ ENTERED_MASK) + 1;
     }
@@ -969,15 +969,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
             params.ringHash ^= orderHash;
         }
 
-        uint8[] memory feeSelections = new uint8[](params.ringSize);
-        for (i = 0; i < params.ringSize; i++) {
-            feeSelections[i] = params.uint8ArgsList[i][0];
+        uint8 feeSelectionsXor = params.uint8ArgsList[0][0];
+        for (i = 1; i < params.ringSize; i++) {
+            feeSelectionsXor ^= params.uint8ArgsList[i][0];
         }
         params.ringHash = keccak256(
             params.ringHash,
             params.minerId,
-            feeSelections
+            feeSelectionsXor
         );
+
+        log0(params.ringHash);
     }
 
     /// @dev validate order's parameters are OK.
