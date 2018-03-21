@@ -197,13 +197,13 @@ contract TokenTransferDelegate is Claimable {
                         require(
                             token.transferFrom(owner,
                                                minerFeeRecipient,
-                                               uint(item).mul(walletSplitPercentage) / 100
+                                               uint(item).mul(100 - walletSplitPercentage) / 100
                                                )
                         );
                         require(
                             token.transferFrom(owner,
                                                address(batch[i + 6]),
-                                               uint(item).mul(100 - walletSplitPercentage) / 100
+                                               uint(item).mul(walletSplitPercentage) / 100
                                                )
                         );
                     } else {
@@ -226,13 +226,13 @@ contract TokenTransferDelegate is Claimable {
                         require(
                             lrc.transferFrom(owner,
                                              minerFeeRecipient,
-                                             uint(item).mul(walletSplitPercentage) / 100
+                                             uint(item).mul(100 - walletSplitPercentage) / 100
                                              )
                         );
                         require(
                             lrc.transferFrom(owner,
                                              address(batch[i + 6]),
-                                             uint(item).mul(100 - walletSplitPercentage) / 100
+                                             uint(item).mul(walletSplitPercentage) / 100
                                              )
                         );
                     } else {
