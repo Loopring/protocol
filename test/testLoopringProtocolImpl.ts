@@ -46,6 +46,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
 
   let participantId: number;
   let currBlockTimeStamp: number;
+  let walletSplitPercentage: number;
 
   let ringFactory: RingFactory;
 
@@ -101,6 +102,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     await nameRegistry.addParticipant(feeRecepient, ringOwner, {from: owner});
     const pids = await nameRegistry.getParticipantIds("test001", 0, 1);
     participantId = pids[0].toNumber();
+
+    const walletSplitPercentageBN = await loopringProtocolImpl.walletSplitPercentage();
+    walletSplitPercentage = walletSplitPercentageBN.toNumber();
+    // console.log("walletSplitPercentage:", walletSplitPercentage);
 
     tokenTransferDelegate.authorizeAddress(LoopringProtocolImpl.address);
 
@@ -225,7 +230,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const eosBalance23 = await getTokenBalanceAsync(eos, feeRecepient);
       const neoBalance23 = await getTokenBalanceAsync(neo, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
 
@@ -278,7 +283,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance23 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance23 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
 
@@ -343,7 +348,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const qtumBalance24 = await getTokenBalanceAsync(qtum, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
 
@@ -415,7 +420,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const qtumBalance24 = await getTokenBalanceAsync(qtum, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.availableAmountSList = availableAmountSList;
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
@@ -491,7 +496,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const qtumBalance24 = await getTokenBalanceAsync(qtum, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.availableAmountSList = availableAmountSList;
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
@@ -559,7 +564,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.availableAmountSList = availableAmountSList;
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
@@ -638,7 +643,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.availableAmountSList = availableAmountSList;
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
@@ -706,7 +711,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const neoBalance24 = await getTokenBalanceAsync(neo, feeRecepient);
       const lrcBalance24 = await getTokenBalanceAsync(lrc, feeRecepient);
 
-      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList);
+      const simulator = new ProtocolSimulator(ring, lrcAddress, feeSelectionList, walletSplitPercentage);
       simulator.availableAmountSList = availableAmountSList;
       simulator.spendableLrcFeeList = spendableLrcFeeList;
       const feeAndBalanceExpected = simulator.caculateRingFeesAndBalances();
