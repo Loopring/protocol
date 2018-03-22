@@ -27,6 +27,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
   const orderAuthAddr = accounts[7]; // should generate each time in front-end. we just mock it here.
   const ringOwner = accounts[0];
   const feeRecepient = accounts[6];
+  const walletAddr = accounts[8];
 
   let loopringProtocolImpl: any;
   let tokenRegistry: any;
@@ -47,6 +48,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
   let participantId: number;
   let currBlockTimeStamp: number;
   let walletSplitPercentage: number;
+  let walletId: BigNumber;
 
   let ringFactory: RingFactory;
 
@@ -103,6 +105,12 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     const pids = await nameRegistry.getParticipantIds("test001", 0, 1);
     participantId = pids[0].toNumber();
 
+    await nameRegistry.registerName("wallet03", {from: walletAddr});
+    await nameRegistry.addParticipant(walletAddr, walletAddr, {from: walletAddr});
+    const walletIds = await nameRegistry.getParticipantIds("wallet03", 0, 1);
+    walletId = walletIds[0];
+    // console.log("walletId", walletId);
+
     const walletSplitPercentageBN = await loopringProtocolImpl.walletSplitPercentage();
     walletSplitPercentage = walletSplitPercentageBN.toNumber();
     // console.log("walletSplitPercentage:", walletSplitPercentage);
@@ -126,6 +134,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                                   qtumAddress,
                                   orderAuthAddr,
                                   currBlockTimeStamp);
+    ringFactory.walletId = new BigNumber(walletId.toNumber());
 
     // approve only once for all test cases.
     const allTokens = [lrc, eos, neo, qtum];

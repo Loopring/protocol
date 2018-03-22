@@ -178,10 +178,13 @@ export class ProtocolSimulator {
       const balanceItem = balances[i];
       const tokenS = order.params.tokenS;
       const tokenB = order.params.tokenB;
+      const walletId = order.params.walletId.toNumber();
 
-      // feeItem.feeLrc = feeItem.feeLrc * (100 - this.walletSplitPercentage) / 100;
-      // feeItem.feeS = feeItem.feeS * (100 - this.walletSplitPercentage) / 100;
-      // feeItem.feeB = feeItem.feeB * (100 - this.walletSplitPercentage) / 100;
+      if (walletId > 0) {
+        feeItem.feeLrc = feeItem.feeLrc * (100 - this.walletSplitPercentage) / 100;
+        feeItem.feeS = feeItem.feeS * (100 - this.walletSplitPercentage) / 100;
+        feeItem.feeB = feeItem.feeB * (100 - this.walletSplitPercentage) / 100;
+      }
 
       feeTotals[this.lrcAddress] = this.sumFeeItem(feeTotals, this.lrcAddress, feeItem.feeLrc);
       feeTotals[this.lrcAddress] = this.sumFeeItem(feeTotals,
