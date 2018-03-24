@@ -199,7 +199,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assert.equal(eosBalance22.toNumber(), 1000e18, "eos balance not match for order2Owner");
       assert.equal(neoBalance22.toNumber(), 900e18, "neo balance not match for order2Owner");
 
-      assert.equal(lrcBalance23.toNumber(), 15e18, "lrc balance not match for feeRecepient");
+      assert.equal(lrcBalance23.toNumber(), 12e18, "lrc balance not match for feeRecepient");
 
       await clear([eos, neo, lrc], [order1Owner, order2Owner, feeRecepient]);
     });
@@ -372,7 +372,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       assertNumberEqualsWithPrecision(eosBalance24.toNumber(), feeAndBalanceExpected.totalFees[eosAddress]);
       assertNumberEqualsWithPrecision(neoBalance24.toNumber(), feeAndBalanceExpected.totalFees[neoAddress]);
       assertNumberEqualsWithPrecision(qtumBalance24.toNumber(), feeAndBalanceExpected.totalFees[qtumAddress]);
-      assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), 5e18);
+      assertNumberEqualsWithPrecision(lrcBalance24.toNumber(), 4e18);
 
       await clear([eos, neo, lrc, qtum], [order1Owner, order2Owner, order3Owner, feeRecepient]);
     });
