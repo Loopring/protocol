@@ -23,6 +23,7 @@ pragma solidity 0.4.21;
 library AddressUtil {
     function isContract(address addr)
         internal
+        view
         returns (bool)
     {
         if (addr == 0x0) {
