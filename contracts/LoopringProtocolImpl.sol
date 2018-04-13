@@ -327,9 +327,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
             0x0         // ringHash
         );
 
+        NameRegistry nameRegistry = NameRegistry(nameRegistryAddress);
+
         verifyInputDataIntegrity(params);
 
-        updateFeeRecipient(params);
+        updateFeeRecipient(params, nameRegistry);
 
         // Assemble input data into structs so we can pass them to other functions.
         // This method also calculates ringHash, therefore it must be called before
@@ -340,7 +342,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(params);
 
-        handleRing(params, orders);
+        handleRing(params, orders, nameRegistry);
 
         ringIndex = (ringIndex ^ ENTERED_MASK) + 1;
     }
@@ -413,19 +415,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
         ); // "token not registered");
     }
 
-    function updateFeeRecipient(RingParams params)
+    function updateFeeRecipient(RingParams params, NameRegistry nameRegistry)
         private
         view
     {
         if (params.minerId == 0) {
             params.feeRecipient = msg.sender;
         } else {
-            (params.feeRecipient, params.ringMiner) = NameRegistry(
-                nameRegistryAddress
-            ).getParticipantById(
-                params.minerId
-            );
-
+            (params.feeRecipient, params.ringMiner) = nameRegistry.getParticipantById(params.minerId);
             if (params.feeRecipient == 0x0) {
                 params.feeRecipient = msg.sender;
             }
@@ -443,7 +440,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     function handleRing(
         RingParams    params,
-        OrderState[]  orders
+        OrderState[]  orders,
+        NameRegistry  nameRegistry
         )
         private
     {
@@ -490,7 +488,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             params.ringSize,
             orders,
             params.feeRecipient,
-            _lrcTokenAddress
+            _lrcTokenAddress,
+            nameRegistry
         );
 
         emit RingMined(
@@ -508,7 +507,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint          ringSize,
         OrderState[]  orders,
         address       feeRecipient,
-        address       _lrcTokenAddress
+        address       _lrcTokenAddress,
+        NameRegistry  nameRegistry
         )
         private
         returns (
@@ -520,10 +520,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         amountsList = new uint[6][](ringSize);
 
         uint p = 0;
+        uint prevSplitB = orders[ringSize - 1].splitB;
         for (uint i = 0; i < ringSize; i++) {
             OrderState memory state = orders[i];
             Order memory order = state.order;
-            uint prevSplitB = orders[(i + ringSize - 1) % ringSize].splitB;
             uint nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
 
             // Store owner and tokenS of every order
@@ -536,7 +536,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             batch[p + 4] = bytes32(state.lrcReward);
             batch[p + 5] = bytes32(state.lrcFee);
             if (order.walletId != 0) {
-                batch[p + 6] = bytes32(NameRegistry(nameRegistryAddress).getFeeRecipientById(order.walletId));
+                batch[p + 6] = bytes32(nameRegistry.getFeeRecipientById(order.walletId));
             } else {
                 batch[p + 6] = bytes32(0x0);
             }
@@ -556,6 +556,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             amountsList[i][3] = state.lrcFee;
             amountsList[i][4] = state.splitS;
             amountsList[i][5] = state.splitB;
+
+            prevSplitB = state.splitB;
         }
 
         // Do all transactions
@@ -692,16 +694,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         ) / _marginSplitPercentageBase;
                     }
 
-                    if (state.order.buyNoMoreThanAmountB) {
-                        state.splitS = split;
-                    } else {
-                        state.splitB = split;
-                    }
-
                     // This implicits order with smaller index in the ring will
                     // be paid LRC reward first, so the orders in the ring does
                     // mater.
                     if (split > 0) {
+                        if (state.order.buyNoMoreThanAmountB) {
+                            state.splitS = split;
+                        } else {
+                            state.splitB = split;
+                        }
                         minerLrcSpendable -= state.lrcFee;
                         state.lrcReward = state.lrcFee;
                     }
