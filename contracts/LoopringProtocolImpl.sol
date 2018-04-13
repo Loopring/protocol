@@ -88,6 +88,39 @@ contract LoopringProtocolImpl is LoopringProtocol {
     ////////////////////////////////////////////////////////////////////////////
     /// Structs                                                              ///
     ////////////////////////////////////////////////////////////////////////////
+    /// @param tokenS       Token to sell.
+    /// @param tokenB       Token to buy.
+    /// @param amountS      Maximum amount of tokenS to sell.
+    /// @param amountB      Minimum amount of tokenB to buy if all amountS sold.
+    /// @param authAddr     An address to verify miner has access to the order's
+    ///                     auth private-key.
+    /// @param validSince   Indicating when this order should be treated as
+    ///                     valid for trading, in second.
+    /// @param validUntil   Indicating when this order should be treated as
+    ///                     expired, in second.
+    /// @param lrcFee       Max amount of LRC to pay for miner. The real amount
+    ///                     to pay is proportional to fill amount.
+    /// @param buyNoMoreThanAmountB -
+    ///                     If true, this order does not accept buying more
+    ///                     than `amountB`.
+    /// @param walletId     The id of the wallet that generated this order.
+    /// @param marginSplitPercentage -
+    ///                     The percentage of margin paid to miner.
+
+    struct Order {
+        address owner;
+        address tokenS;
+        address tokenB;
+        address authAddr;
+        uint    validSince;
+        uint    validUntil;
+        uint    amountS;
+        uint    amountB;
+        uint    lrcFee;
+        bool    buyNoMoreThanAmountB;
+        uint    walletId;
+        uint8   marginSplitPercentage;
+    }
 
     /// @param tokenS       Token to sell.
     /// @param tokenB       Token to buy.
@@ -120,7 +153,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
     /// @param lrcReward    The amount of LRC paid by miner to order owner in
     ///                     exchange for margin split.
-    /// @param lrcFee       The amount of LR paid by order owner to miner.
+    /// @param lrcFeeState  The amount of LR paid by order owner to miner.
     /// @param splitS      TokenS paid to miner.
     /// @param splitB      TokenB paid to miner.
     struct OrderState {
@@ -219,7 +252,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(cancelAmount > 0); // "amount to cancel is zero");
 
-        OrderState memory order = OrderState(
+        Order memory order = Order(
             addresses[0],
             addresses[1],
             addresses[2],
@@ -231,21 +264,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[4],
             buyNoMoreThanAmountB,
             orderValues[5],
-            marginSplitPercentage,
-            bytes32(0),
-            false,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
+            marginSplitPercentage
         );
 
         require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
 
-        bytes32 orderHash = calculateOrderStateHash(order);
+        bytes32 orderHash = calculateOrderHash(order);
 
         verifySignature(
             order.owner,
@@ -914,17 +938,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             validateOrder(orders[i]);
 
-            orders[i].orderHash = calculateOrderStateHash(orders[i]);
+            bytes32 orderHash = calculateOrderStateHash(orders[i]);
+            orders[i].orderHash = orderHash;
 
             verifySignature(
                 orders[i].owner,
-                orders[i].orderHash,
+                orderHash,
                 params.vList[i],
                 params.rList[i],
                 params.sList[i]
             );
 
-            params.ringHash ^= orders[i].orderHash;
+            params.ringHash ^= orderHash;
         }
 
         params.ringHash = keccak256(
@@ -954,7 +979,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.validSince > cutoffs[order.owner]); // order is cut off
     }
 
-    /// @dev Get the Keccak-256 hash of order with specified parameters.
+    /// @dev Get the Keccak-256 hash of orderstate with specified parameters.
     function calculateOrderStateHash(OrderState order)
         private
         view
@@ -977,6 +1002,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
+    /// @dev Get the Keccak-256 hash of order with specified parameters.
+    function calculateOrderHash(Order order)
+        private
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            address(this),
+            order.owner,
+            order.tokenS,
+            order.tokenB,
+            order.authAddr,
+            order.amountS,
+            order.amountB,
+            order.validSince,
+            order.validUntil,
+            order.lrcFee,
+            order.buyNoMoreThanAmountB,
+            order.walletId,
+            order.marginSplitPercentage
+        );
+    }
     /// @dev Verify signer's signature.
     function verifySignature(
         address signer,
