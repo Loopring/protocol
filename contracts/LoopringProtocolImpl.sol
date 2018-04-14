@@ -70,8 +70,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public constant RATE_RATIO_SCALE    = 10000;
 
-    uint64  public constant ENTERED_MASK        = 1 << 63;
-
     // The following map is used to keep trace of order fill and cancellation
     // history.
     mapping (bytes32 => uint) public cancelledOrFilled;
@@ -305,15 +303,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         public
     {
-        //storage cached variables in memory
+        // Cache the current ring index
         uint64 _ringIndex = ringIndex;
-        uint64 _ENTERED_MASK = ENTERED_MASK;
-
-        // Check if the highest bit of ringIndex is '1'.
-        require(_ringIndex & _ENTERED_MASK != _ENTERED_MASK); // "attempted to re-ent submitRing function");
-
-        // Set the highest bit of ringIndex to '1'.
-        _ringIndex |= _ENTERED_MASK;
+        // Increment the ringIndex immediately
+        // In the case of reentry a new ringIndex will be given
+        ringIndex += 1;
 
         RingParams memory params = RingParams(
             addressList,
@@ -344,9 +338,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(params);
 
-        handleRing(params, orders, _ringIndex, _ENTERED_MASK);
-
-        ringIndex = (_ringIndex ^ _ENTERED_MASK) + 1;
+        handleRing(params, orders, _ringIndex);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -448,12 +440,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function handleRing(
         RingParams    params,
         OrderState[]  orders,
-        uint64        _ringIndex,
-        uint64        _ENTERED_MASK
+        uint64        _ringIndex
         )
         private
     {
-        uint64 _emitRingIndex = _ringIndex ^ _ENTERED_MASK;
         address _lrcTokenAddress = lrcTokenAddress;
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
@@ -500,7 +490,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
         emit RingMined(
-            _emitRingIndex,
+            _ringIndex,
             params.ringHash,
             params.ringMiner,
             params.feeRecipient,
