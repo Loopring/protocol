@@ -528,28 +528,27 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint p = 0;
         for (uint i = 0; i < ringSize; i++) {
             OrderState memory state = orders[i];
-            Order memory order = state.order;
             uint prevSplitB = orders[(i + ringSize - 1) % ringSize].splitB;
             uint nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
 
             // Store owner and tokenS of every order
-            batch[p] = bytes32(order.owner);
-            batch[p + 1] = bytes32(order.tokenS);
+            batch[p] = bytes32(state.order.owner);
+            batch[p + 1] = bytes32(state.order.tokenS);
 
             // Store all amounts
             batch[p + 2] = bytes32(state.fillAmountS - prevSplitB);
             batch[p + 3] = bytes32(prevSplitB + state.splitS);
             batch[p + 4] = bytes32(state.lrcReward);
             batch[p + 5] = bytes32(state.lrcFee);
-            if (order.walletId != 0) {
-                batch[p + 6] = bytes32(NameRegistry(nameRegistryAddress).getFeeRecipientById(order.walletId));
+            if (state.order.walletId != 0) {
+                batch[p + 6] = bytes32(NameRegistry(nameRegistryAddress).getFeeRecipientById(state.order.walletId));
             } else {
                 batch[p + 6] = bytes32(0x0);
             }
             p += 7;
 
             // Update fill records
-            if (order.buyNoMoreThanAmountB) {
+            if (state.order.buyNoMoreThanAmountB) {
                 cancelledOrFilled[state.orderHash] += nextFillAmountS;
             } else {
                 cancelledOrFilled[state.orderHash] += state.fillAmountS;
@@ -583,19 +582,35 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint[] memory rateRatios = new uint[](ringSize);
         uint _rateRatioScale = RATE_RATIO_SCALE;
+        uint i;
 
-        for (uint i = 0; i < ringSize; i++) {
+        uint avg = 0;
+        for (i = 0; i < ringSize; i++) {
             uint s1b0 = orders[i].rate.amountS.mul(orders[i].order.amountB);
             uint s0b1 = orders[i].order.amountS.mul(orders[i].rate.amountB);
 
             require(s1b0 <= s0b1); // "miner supplied exchange rate provides invalid discount");
 
             rateRatios[i] = _rateRatioScale.mul(s1b0) / s0b1;
+            avg += rateRatios[i];
         }
+        avg = avg / ringSize;
 
-        uint cvs = MathUint.cvsquare(rateRatios, _rateRatioScale);
-
-        require(cvs <= rateRatioCVSThreshold); // "miner supplied exchange rate is not evenly discounted");
+        /// @dev calculate the square of Coefficient of Variation (CV)
+        /// https://en.wikipedia.org/wiki/Coefficient_of_variation
+        if (avg != 0) {
+            uint cvs = 0;
+            uint s;
+            uint item;
+            for (i = 0; i < ringSize; i++) {
+                item = rateRatios[i];
+                s = item > avg ? item - avg : avg - item;
+                cvs += s.mul(s);
+            }
+            
+            cvs = ((cvs.mul(_rateRatioScale).mul(_rateRatioScale) / avg) / avg) / (ringSize - 1);
+            require(cvs <= rateRatioCVSThreshold); // "miner supplied exchange rate is not evenly discounted");
+        }
     }
 
     /// @dev Calculate each order's fee or LRC reward.
@@ -808,13 +823,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            Order memory order = state.order;
+            Order memory order = orders[i].order;
             uint amount;
 
             if (order.buyNoMoreThanAmountB) {
                 amount = order.amountB.tolerantSub(
-                    cancelledOrFilled[state.orderHash]
+                    cancelledOrFilled[orders[i].orderHash]
                 );
 
                 order.amountS = amount.mul(order.amountS) / order.amountB;
@@ -823,7 +837,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order.amountB = amount;
             } else {
                 amount = order.amountS.tolerantSub(
-                    cancelledOrFilled[state.orderHash]
+                    cancelledOrFilled[orders[i].orderHash]
                 );
 
                 order.amountB = amount.mul(order.amountB) / order.amountS;
@@ -838,7 +852,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             uint availableAmountS = getSpendable(delegate, order.tokenS, order.owner);
             require(availableAmountS > 0); // "order spendable amountS is zero");
 
-            state.fillAmountS = (
+            orders[i].fillAmountS = (
                 order.amountS < availableAmountS ?
                 order.amountS : availableAmountS
             );
