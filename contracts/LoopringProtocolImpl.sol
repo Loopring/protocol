@@ -555,12 +555,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
             }
 
             orderHashList[i] = state.orderHash;
-            amountsList[i][0] = state.fillAmountS + state.splitS;
-            amountsList[i][1] = nextFillAmountS - state.splitB;
-            amountsList[i][2] = state.lrcReward;
-            amountsList[i][3] = state.lrcFee;
-            amountsList[i][4] = state.splitS;
-            amountsList[i][5] = state.splitB;
+            uint[6] memory amounts = amountsList[i];
+            amounts[0] = state.fillAmountS + state.splitS;
+            amounts[1] = nextFillAmountS - state.splitB;
+            amounts[2] = state.lrcReward;
+            amounts[3] = state.lrcFee;
+            amounts[4] = state.splitS;
+            amounts[5] = state.splitB;
         }
 
         // Do all transactions
@@ -906,20 +907,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         orders = new OrderState[](params.ringSize);
 
+        Order memory order;
         for (uint i = 0; i < params.ringSize; i++) {
+            uint[7] memory uintArgs = params.uintArgsList[i];
 
-            Order memory order = Order(
+            order = Order(
                 params.addressList[i][0],
                 params.addressList[i][1],
                 params.addressList[(i + 1) % params.ringSize][1],
                 params.addressList[i][2],
-                params.uintArgsList[i][2],
-                params.uintArgsList[i][3],
-                params.uintArgsList[i][0],
-                params.uintArgsList[i][1],
-                params.uintArgsList[i][4],
+                uintArgs[2],
+                uintArgs[3],
+                uintArgs[0],
+                uintArgs[1],
+                uintArgs[4],
                 params.buyNoMoreThanAmountBList[i],
-                params.uintArgsList[i][6],
+                uintArgs[6],
                 params.uint8ArgsList[i][0]
             );
 
@@ -940,7 +943,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order,
                 orderHash,
                 marginSplitAsFee,
-                Rate(params.uintArgsList[i][5], order.amountB),
+                Rate(uintArgs[5], order.amountB),
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
