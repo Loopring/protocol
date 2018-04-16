@@ -127,7 +127,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
     const currBlockNumber = web3.eth.blockNumber;
     currBlockTimeStamp = web3.eth.getBlock(currBlockNumber).timestamp;
 
-    ringFactory = new RingFactory(LoopringProtocolImpl.address,
+    ringFactory = new RingFactory(TokenTransferDelegate.address,
                                   eosAddress,
                                   neoAddress,
                                   lrcAddress,
@@ -875,7 +875,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                            order.params.walletId,
                            cancelAmount];
 
-      const cancelledOrFilledAmount0 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
+      const cancelledOrFilledAmount0 = await tokenTransferDelegate.cancelledOrFilled(order.params.orderHashHex);
       const tx = await loopringProtocolImpl.cancelOrder(addresses,
                                                         orderValues,
                                                         order.params.buyNoMoreThanAmountB,
@@ -885,7 +885,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
                                                         order.params.s,
                                                         {from: order.owner});
 
-      const cancelledOrFilledAmount1 = await loopringProtocolImpl.cancelledOrFilled(order.params.orderHashHex);
+      const cancelledOrFilledAmount1 = await tokenTransferDelegate.cancelledOrFilled(order.params.orderHashHex);
       assert.equal(cancelledOrFilledAmount1.minus(cancelledOrFilledAmount0).toNumber(),
         cancelAmount.toNumber(), "cancelled amount not match");
     });
@@ -929,7 +929,7 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
   describe("cancelAllOrders", () => {
     it("should be able to set cutoffs", async () => {
       await loopringProtocolImpl.cancelAllOrders(new BigNumber(1508566125), {from: order2Owner});
-      const cutoff = await loopringProtocolImpl.cutoffs(order2Owner);
+      const cutoff = await tokenTransferDelegate.cutoffs(order2Owner);
       assert.equal(cutoff.toNumber(), 1508566125, "cutoff not set correctly");
     });
 
