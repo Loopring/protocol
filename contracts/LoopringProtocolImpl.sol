@@ -965,7 +965,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (bytes32)
     {
         return keccak256(
-            address(this),
+            delegateAddress,
             order.owner,
             order.tokenS,
             order.tokenB,
