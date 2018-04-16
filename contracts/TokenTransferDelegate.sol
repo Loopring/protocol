@@ -125,6 +125,21 @@ contract TokenTransferDelegate is Claimable {
         tradingPairCutoff = tradingPairCutoffs[owner][tradingPair];
     }
 
+    function checkCutoffsBatch(address[] owners, bytes20[] tradingPairs, uint[] validSince)
+        onlyAuthorized
+        external
+        view
+    {
+        uint len = owners.length;
+        require(len == tradingPairs.length);
+        require(len == validSince.length);
+
+        for(uint i = 0; i < len; i++) {
+            require(validSince[i] > tradingPairCutoffs[owners[i]][tradingPairs[i]]);  // order trading pair is cut off
+            require(validSince[i] > cutoffs[owners[i]]);                              // order is cut off
+        }
+    }
+
     function setCutoffs(uint t)
         onlyAuthorized
         external

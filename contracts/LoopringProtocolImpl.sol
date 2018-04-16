@@ -881,6 +881,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         orders = new OrderState[](params.ringSize);
 
+
+        address[] memory owners = new address[](params.ringSize);
+        bytes20[] memory tradingPairs = new bytes20[](params.ringSize);
+        uint[] memory validSinceTimes = new uint[](params.ringSize);
+
         for (uint i = 0; i < params.ringSize; i++) {
 
             Order memory order = Order(
@@ -923,6 +928,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0    // splitB
             );
 
+            owners[i] = order.owner;
+            tradingPairs[i] = bytes20(order.tokenS) ^ bytes20(order.tokenB);
+            validSinceTimes[i] = order.validSince;
+
             params.ringHash ^= orderHash;
         }
 
@@ -931,6 +940,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             params.minerId,
             params.feeSelections
         );
+
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        delegate.checkCutoffsBatch(owners, tradingPairs, validSinceTimes);
     }
 
     /// @dev validate order's parameters are OK.
@@ -948,13 +960,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.validSince <= block.timestamp); // order is too early to match
         require(order.validUntil > block.timestamp); // order is expired
 
-        bytes20 tradingPair = bytes20(order.tokenS) ^ bytes20(order.tokenB);
-        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
-        uint cutoff;
-        uint tradingPairCutoff;
-        (cutoff, tradingPairCutoff) = delegate.getCutoffAndTradingPairCutoff(order.owner, tradingPair);
-        require(order.validSince > tradingPairCutoff); // order trading pair is cut off
-        require(order.validSince > cutoff); // order is cut off
+        //bytes20 tradingPair = bytes20(order.tokenS) ^ bytes20(order.tokenB);
+        //TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        //uint cutoff;
+        //uint tradingPairCutoff;
+        //(cutoff, tradingPairCutoff) = delegate.getCutoffAndTradingPairCutoff(order.owner, tradingPair);
+        //require(order.validSince > tradingPairCutoff); // order trading pair is cut off
+        //require(order.validSince > cutoff); // order is cut off
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
