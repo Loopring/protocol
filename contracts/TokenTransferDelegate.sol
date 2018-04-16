@@ -104,6 +104,27 @@ contract TokenTransferDelegate is Claimable {
         cancelledOrFilled[orderHash] = cancelledOrFilled[orderHash].add(cancelOrFillAmount);
     }
 
+    function getCancelledOrFilledBatch(bytes32 orderHashA, bytes32 orderHashB, bytes32 orderHashC)
+        onlyAuthorized
+        external
+        view
+        returns (uint[3] amounts)
+    {
+        amounts[0] = cancelledOrFilled[orderHashA];
+        amounts[1] = cancelledOrFilled[orderHashB];
+        amounts[2] = cancelledOrFilled[orderHashC];
+    }
+
+    function getCutoffAndTradingPairCutoff(address owner, bytes20 tradingPair)
+        onlyAuthorized
+        external
+        view
+        returns (uint cutoff, uint tradingPairCutoff)
+    {
+        cutoff = cutoffs[owner];
+        tradingPairCutoff = tradingPairCutoffs[owner][tradingPair];
+    }
+
     function setCutoffs(uint t)
         onlyAuthorized
         external
@@ -209,14 +230,14 @@ contract TokenTransferDelegate is Claimable {
         external
     {
         uint len = batch.length;
-        require(len % 7 == 0);
+        require(len % 9 == 0);
         require(walletSplitPercentage > 0 && walletSplitPercentage < 100);
 
         ERC20 lrc = ERC20(lrcTokenAddress);
 
-        for (uint i = 0; i < len; i += 7) {
+        for (uint i = 0; i < len; i += 9) {
             address owner = address(batch[i]);
-            address prevOwner = address(batch[(i + len - 7) % len]);
+            address prevOwner = address(batch[(i + len - 9) % len]);
 
             // Pay token to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
@@ -265,6 +286,9 @@ contract TokenTransferDelegate is Claimable {
                 address(batch[i + 6]),
                 walletSplitPercentage
             );
+
+            // Update with filled amount
+            cancelledOrFilled[batch[i + 7]] = cancelledOrFilled[batch[i + 7]].add(uint(batch[i + 8]));
         }
     }
 

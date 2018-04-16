@@ -506,7 +506,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[] memory orderHashList,
         uint[6][] memory amountsList)
     {
-        bytes32[] memory batch = new bytes32[](ringSize * 7); // ringSize * (owner + tokenS + 4 amounts + walletAddrress)
+        bytes32[] memory batch = new bytes32[](ringSize * 9); // ringSize * (owner + tokenS + 4 amounts + walletAddrress + orderHash + filled)
         orderHashList = new bytes32[](ringSize);
         amountsList = new uint[6][](ringSize);
 
@@ -531,14 +531,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             } else {
                 batch[p + 6] = bytes32(0x0);
             }
-            p += 7;
-
-            // Update fill records
-            if (order.buyNoMoreThanAmountB) {
-                delegate.addCancelledOrFilled(state.orderHash, nextFillAmountS);
-            } else {
-                delegate.addCancelledOrFilled(state.orderHash, state.fillAmountS);
-            }
+            batch[p + 7] = state.orderHash;
+            batch[p + 8] = order.buyNoMoreThanAmountB ? bytes32(nextFillAmountS) : bytes32(state.fillAmountS);
+            p += 9;
 
             orderHashList[i] = state.orderHash;
             amountsList[i][0] = state.fillAmountS + state.splitS;
@@ -792,14 +787,23 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
+        uint[3] memory cancelledOrFilledAmounts;
         for (uint i = 0; i < ringSize; i++) {
             OrderState memory state = orders[i];
             Order memory order = state.order;
             uint amount;
 
+            if(i % 3 == 0) {
+                cancelledOrFilledAmounts = delegate.getCancelledOrFilledBatch(
+                    state.orderHash,
+                    (i+1 < ringSize) ? orders[i+1].orderHash : bytes32(0),
+                    (i+2 < ringSize) ? orders[i+2].orderHash : bytes32(0)
+                );
+            }
+
             if (order.buyNoMoreThanAmountB) {
                 amount = order.amountB.tolerantSub(
-                    delegate.cancelledOrFilled(state.orderHash)
+                    cancelledOrFilledAmounts[i % 3]
                 );
 
                 order.amountS = amount.mul(order.amountS) / order.amountB;
@@ -808,7 +812,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order.amountB = amount;
             } else {
                 amount = order.amountS.tolerantSub(
-                    delegate.cancelledOrFilled(state.orderHash)
+                    cancelledOrFilledAmounts[i % 3]
                 );
 
                 order.amountB = amount.mul(order.amountB) / order.amountS;
@@ -946,8 +950,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         bytes20 tradingPair = bytes20(order.tokenS) ^ bytes20(order.tokenB);
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
-        require(order.validSince > delegate.tradingPairCutoffs(order.owner, tradingPair)); // order trading pair is cut off
-        require(order.validSince > delegate.cutoffs(order.owner)); // order is cut off
+        uint cutoff;
+        uint tradingPairCutoff;
+        (cutoff, tradingPairCutoff) = delegate.getCutoffAndTradingPairCutoff(order.owner, tradingPair);
+        require(order.validSince > tradingPairCutoff); // order trading pair is cut off
+        require(order.validSince > cutoff); // order is cut off
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
