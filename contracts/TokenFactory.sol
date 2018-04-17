@@ -34,7 +34,6 @@ contract TokenFactory {
 
     mapping(bytes10 => address) public tokens;
     address   public tokenRegistry;
-    address   public tokenTransferDelegate;
 
     event TokenCreated(
         address indexed addr,
@@ -42,8 +41,7 @@ contract TokenFactory {
         string  symbol,
         uint8   decimals,
         uint    totalSupply,
-        address firstHolder,
-        address tokenTransferDelegate
+        address firstHolder
     );
 
     /// @dev Disable default function.
@@ -53,18 +51,12 @@ contract TokenFactory {
     }
 
     /// @dev Initialize TokenRegistry address.
-    ///      This method sjhall be called immediately upon deployment.
-    function initialize(
-        address _tokenRegistry,
-        address _tokenTransferDelegate
-        )
+    ///      This method shall be called immediately upon deployment.
+    function initialize(address _tokenRegistry)
         public
     {
         require(tokenRegistry == 0x0 && _tokenRegistry.isContract());
         tokenRegistry = _tokenRegistry;
-
-        require(tokenTransferDelegate == 0x0 && _tokenTransferDelegate.isContract());
-        tokenTransferDelegate = _tokenTransferDelegate;
     }
 
     /// @dev Deploy an ERC20 token contract, register it with TokenRegistry,
@@ -83,7 +75,6 @@ contract TokenFactory {
         returns (address addr)
     {
         require(tokenRegistry != 0x0);
-        require(tokenTransferDelegate != 0x0);
         require(symbol.checkStringLength(3, 10));
 
         bytes10 symbolBytes = symbol.stringToBytes10();
@@ -107,8 +98,14 @@ contract TokenFactory {
             symbol,
             decimals,
             totalSupply,
-            tx.origin,
-            tokenTransferDelegate
+            tx.origin
         );
+    }
+
+    function isValidSymbol(bytes10 symbolBytes)
+        internal
+        returns (bool)
+    {
+
     }
 }
