@@ -68,18 +68,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint64  public constant ENTERED_MASK        = 1 << 63;
 
-    // The following map is used to keep trace of order fill and cancellation
-    // history.
-    mapping (bytes32 => uint) public cancelledOrFilled;
-
-    // This map is used to keep trace of order's cancellation history.
-    mapping (bytes32 => uint) public cancelled;
-
-    // A map from address to its cutoff timestamp.
-    mapping (address => uint) public cutoffs;
-
-    // A map from address to its trading-pair cutoff timestamp.
-    mapping (address => mapping (bytes20 => uint)) public tradingPairCutoffs;
 
     ////////////////////////////////////////////////////////////////////////////
     /// Structs                                                              ///
@@ -250,8 +238,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             s
         );
 
-        cancelled[orderHash] = cancelled[orderHash].add(cancelAmount);
-        cancelledOrFilled[orderHash] = cancelledOrFilled[orderHash].add(cancelAmount);
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        delegate.addCancelled(orderHash, cancelAmount);
+        delegate.addCancelledOrFilled(orderHash, cancelAmount);
 
         emit OrderCancelled(orderHash, cancelAmount);
     }
@@ -266,9 +255,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
         bytes20 tokenPair = bytes20(token1) ^ bytes20(token2);
-        require(tradingPairCutoffs[msg.sender][tokenPair] < t); // "attempted to set cutoff to a smaller value"
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        require(delegate.tradingPairCutoffs(msg.sender, tokenPair) < t); // "attempted to set cutoff to a smaller value"
 
-        tradingPairCutoffs[msg.sender][tokenPair] = t;
+        delegate.setTradingPairCutoffs(tokenPair, t);
         emit OrdersCancelled(
             msg.sender,
             token1,
@@ -281,10 +271,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         external
     {
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
-        require(cutoffs[msg.sender] < t); // "attempted to set cutoff to a smaller value"
+        require(delegate.cutoffs(msg.sender) < t); // "attempted to set cutoff to a smaller value"
 
-        cutoffs[msg.sender] = t;
+        delegate.setCutoffs(t);
         emit AllOrdersCancelled(msg.sender, t);
     }
 
@@ -511,7 +502,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[] memory orderHashList,
         uint[6][] memory amountsList)
     {
-        bytes32[] memory batch = new bytes32[](ringSize * 7); // ringSize * (owner + tokenS + 4 amounts + walletAddrress)
+        bytes32[] memory batch = new bytes32[](ringSize * 9); // ringSize * (owner + tokenS + 4 amounts + walletAddrress + orderHash + filled)
         orderHashList = new bytes32[](ringSize);
         amountsList = new uint[6][](ringSize);
 
@@ -536,14 +527,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             } else {
                 batch[p + 6] = bytes32(0x0);
             }
-            p += 7;
-
-            // Update fill records
-            if (order.buyNoMoreThanAmountB) {
-                cancelledOrFilled[state.orderHash] += nextFillAmountS;
-            } else {
-                cancelledOrFilled[state.orderHash] += state.fillAmountS;
-            }
+            batch[p + 7] = state.orderHash;
+            batch[p + 8] = order.buyNoMoreThanAmountB ? bytes32(nextFillAmountS) : bytes32(state.fillAmountS);
+            p += 9;
 
             orderHashList[i] = state.orderHash;
             amountsList[i][0] = state.fillAmountS + state.splitS;
@@ -797,14 +783,23 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
+        uint[3] memory cancelledOrFilledAmounts;
         for (uint i = 0; i < ringSize; i++) {
             OrderState memory state = orders[i];
             Order memory order = state.order;
             uint amount;
 
+            if(i % 3 == 0) {
+                cancelledOrFilledAmounts = delegate.getCancelledOrFilledBatch(
+                    state.orderHash,
+                    (i+1 < ringSize) ? orders[i+1].orderHash : bytes32(0),
+                    (i+2 < ringSize) ? orders[i+2].orderHash : bytes32(0)
+                );
+            }
+
             if (order.buyNoMoreThanAmountB) {
                 amount = order.amountB.tolerantSub(
-                    cancelledOrFilled[state.orderHash]
+                    cancelledOrFilledAmounts[i % 3]
                 );
 
                 order.amountS = amount.mul(order.amountS) / order.amountB;
@@ -813,7 +808,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order.amountB = amount;
             } else {
                 amount = order.amountS.tolerantSub(
-                    cancelledOrFilled[state.orderHash]
+                    cancelledOrFilledAmounts[i % 3]
                 );
 
                 order.amountB = amount.mul(order.amountB) / order.amountS;
@@ -882,6 +877,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         orders = new OrderState[](params.ringSize);
 
+
+        address[] memory owners = new address[](params.ringSize);
+        bytes20[] memory tradingPairs = new bytes20[](params.ringSize);
+        uint[] memory validSinceTimes = new uint[](params.ringSize);
+
         for (uint i = 0; i < params.ringSize; i++) {
 
             Order memory order = Order(
@@ -924,6 +924,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0    // splitB
             );
 
+            owners[i] = order.owner;
+            tradingPairs[i] = bytes20(order.tokenS) ^ bytes20(order.tokenB);
+            validSinceTimes[i] = order.validSince;
+
             params.ringHash ^= orderHash;
         }
 
@@ -932,6 +936,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             params.minerId,
             params.feeSelections
         );
+
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        delegate.checkCutoffsBatch(owners, tradingPairs, validSinceTimes);
     }
 
     /// @dev validate order's parameters are OK.
@@ -949,9 +956,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.validSince <= block.timestamp); // order is too early to match
         require(order.validUntil > block.timestamp); // order is expired
 
-        bytes20 tradingPair = bytes20(order.tokenS) ^ bytes20(order.tokenB);
-        require(order.validSince > tradingPairCutoffs[order.owner][tradingPair]); // order trading pair is cut off
-        require(order.validSince > cutoffs[order.owner]); // order is cut off
+        //bytes20 tradingPair = bytes20(order.tokenS) ^ bytes20(order.tokenB);
+        //TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        //uint cutoff;
+        //uint tradingPairCutoff;
+        //(cutoff, tradingPairCutoff) = delegate.getCutoffAndTradingPairCutoff(order.owner, tradingPair);
+        //require(order.validSince > tradingPairCutoff); // order trading pair is cut off
+        //require(order.validSince > cutoff); // order is cut off
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
@@ -961,7 +972,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (bytes32)
     {
         return keccak256(
-            address(this),
+            delegateAddress,
             order.owner,
             order.tokenS,
             order.tokenB,
@@ -1004,6 +1015,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         returns (uint)
     {
         bytes20 tokenPair = bytes20(token1) ^ bytes20(token2);
-        return tradingPairCutoffs[orderOwner][tokenPair];
+        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
+        return delegate.tradingPairCutoffs(orderOwner, tokenPair);
     }
 }
