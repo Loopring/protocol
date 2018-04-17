@@ -47,6 +47,12 @@ contract("TokenRegistry", (accounts: string[]) => {
       assert.equal(isRegisteredBySymbol, false, "token should be unregistered");
     });
 
+    // it("should be able to register a token again", async () => {
+    //   await tokenRegistry.registerToken(testTokenAddr, "TEST", {from: owner});
+    //   const isRegistered = await tokenRegistry.isTokenRegistered(testTokenAddr);
+    //   assert.equal(isRegistered, true, "token should be registered");
+    // });
+
     it("should be able to check all tokens registered in array", async () => {
       const tokenList = [lrcAddress, neoAddress, eosAddress, qtumAddress];
       const allRegistered = await tokenRegistry.areAllTokensRegistered(tokenList);

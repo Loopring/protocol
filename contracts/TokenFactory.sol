@@ -102,10 +102,4 @@ contract TokenFactory {
         );
     }
 
-    function isValidSymbol(bytes10 symbolBytes)
-        internal
-        returns (bool)
-    {
-
-    }
 }
