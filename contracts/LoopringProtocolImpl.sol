@@ -531,19 +531,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
             batch[p + 3] = bytes32(prevSplitB + state.splitS);
             batch[p + 4] = bytes32(state.lrcReward);
             batch[p + 5] = bytes32(state.lrcFee);
-            if (order.walletId != 0) {
-                batch[p + 6] = bytes32(NameRegistry(nameRegistryAddress).getFeeRecipientById(order.walletId));
+            // Check if the order wallet id is the same as the one of the order before
+            if(i > 0 && order.walletId == orders[i-1].order.walletId) {
+                batch[p + 6] = batch[(p-7) + 6];
             } else {
-                batch[p + 6] = bytes32(0x0);
+                batch[p + 6] = bytes32((order.walletId != 0) ? NameRegistry(nameRegistryAddress).getFeeRecipientById(order.walletId) : 0x0);
             }
             p += 7;
 
             // Update fill records
-            if (order.buyNoMoreThanAmountB) {
-                cancelledOrFilled[state.orderHash] += nextFillAmountS;
-            } else {
-                cancelledOrFilled[state.orderHash] += state.fillAmountS;
-            }
+            cancelledOrFilled[state.orderHash] += order.buyNoMoreThanAmountB ? nextFillAmountS : state.fillAmountS;
 
             orderHashList[i] = state.orderHash;
             amountsList[i][0] = state.fillAmountS + state.splitS;
