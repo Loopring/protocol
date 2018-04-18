@@ -29,7 +29,7 @@ contract LoopringProtocol {
     event RingMined(
         uint                _ringIndex,
         bytes32     indexed _ringHash,
-        address             _feeRecipient,
+        address             _miner,
         bytes32[]           _orderHashList,
         uint[6][]           _amountsList
     );
@@ -73,7 +73,7 @@ contract LoopringProtocol {
         bytes32    r,
         bytes32    s
         )
-        external;
+        public;
 
     /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
     ///        is smaller than or equal to the new value of the address's cutoff
@@ -85,7 +85,7 @@ contract LoopringProtocol {
         address token2,
         uint cutoff
         )
-        external;
+        public;
 
     /// @dev   Set a cutoff timestamp to invalidate all orders whose timestamp
     ///        is smaller than or equal to the new value of the address's cutoff
@@ -95,7 +95,7 @@ contract LoopringProtocol {
     function cancelAllOrders(
         uint cutoff
         )
-        external;
+        public;
 
     /// @dev Submit a order-ring for validation and settlement.
     /// @param addressList  List of each order's owner, tokenS, wallet, authAddr.
@@ -133,5 +133,52 @@ contract LoopringProtocol {
         address         miner,
         uint16          feeSelections
         )
+        public;
+
+    function settleProposal(
+        address[4][]    addressList,
+        uint[6][]       uintArgsList,
+        uint8[1][]      uint8ArgsList,
+        bool[]          buyNoMoreThanAmountBList,
+        uint8[]         vList,
+        bytes32[]       rList,
+        bytes32[]       sList,
+        address         miner,
+        uint16          feeSelections,
+        uint[]          context,
+        uint[]          proposal
+        )
+        public;
+
+    function computeProposal(
+        address[4][]    addressList,
+        uint[6][]       uintArgsList,
+        uint8[1][]      uint8ArgsList,
+        bool[]          buyNoMoreThanAmountBList,
+        uint8[]         vList,
+        bytes32[]       rList,
+        bytes32[]       sList,
+        address         miner,
+        uint16          feeSelections,
+        uint[]          context
+        )
+        pure
+        public
+        returns (uint[] memory proposal);
+
+    function challangeProposal(
+        address[4][]    addressList,
+        uint[6][]       uintArgsList,
+        uint8[1][]      uint8ArgsList,
+        bool[]          buyNoMoreThanAmountBList,
+        uint8[]         vList,
+        bytes32[]       rList,
+        bytes32[]       sList,
+        address         miner,
+        uint16          feeSelections,
+        uint[]          context,
+        uint[]          proposal
+        )
+        pure
         public;
 }

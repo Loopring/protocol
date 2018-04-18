@@ -153,6 +153,79 @@ contract LoopringProtocolImpl is LoopringProtocol {
         revert();
     }
 
+    function settleProposal(
+        address[4][]    addressList,
+        uint[6][]       uintArgsList,
+        uint8[1][]      uint8ArgsList,
+        bool[]          buyNoMoreThanAmountBList,
+        uint8[]         vList,
+        bytes32[]       rList,
+        bytes32[]       sList,
+        address         miner,
+        uint16          feeSelections,
+        uint[]          context,
+        uint[]          proposal
+        )
+        public
+    {
+
+    }
+
+    function computeProposal(
+        address[4][]    addressList,
+        uint[6][]       uintArgsList,
+        uint8[1][]      uint8ArgsList,
+        bool[]          buyNoMoreThanAmountBList,
+        uint8[]         vList,
+        bytes32[]       rList,
+        bytes32[]       sList,
+        address         miner,
+        uint16          feeSelections,
+        uint[]          context
+        )
+        pure
+        public
+        returns (uint[] proposal)
+    {
+        // proposal = context; // TODO(calculate proposal)
+    }
+
+    function challangeProposal(
+        address[4][]    addressList,
+        uint[6][]       uintArgsList,
+        uint8[1][]      uint8ArgsList,
+        bool[]          buyNoMoreThanAmountBList,
+        uint8[]         vList,
+        bytes32[]       rList,
+        bytes32[]       sList,
+        address         miner,
+        uint16          feeSelections,
+        uint[]          context,
+        uint[]          proposal
+        )
+        pure
+        public
+    {
+        uint[] memory actual = computeProposal
+            (
+            addressList,
+            uintArgsList,
+            uint8ArgsList,
+            buyNoMoreThanAmountBList,
+            vList,
+            rList,
+            sList,
+            miner,
+            feeSelections,
+            context
+            );
+        if (true) {
+            // chalange failed
+        } else {
+            // challange successful, redo all bad things.
+        }
+    }
+
     function cancelOrder(
         address[5] addresses,
         uint[6]    orderValues,
@@ -162,7 +235,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32    r,
         bytes32    s
         )
-        external
+        public
     {
         uint cancelAmount = orderValues[5];
 
@@ -215,7 +288,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address token2,
         uint    cutoff
         )
-        external
+        public
     {
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
@@ -235,7 +308,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function cancelAllOrders(
         uint cutoff
         )
-        external
+        public
     {
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
