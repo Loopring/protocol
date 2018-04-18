@@ -271,7 +271,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
         bytes20 tokenPair = bytes20(token1) ^ bytes20(token2);
-        require(tradingPairCutoffs[msg.sender][tokenPair] < t); // "attempted to set cutoff to a smaller value"
+        require(tradingPairCutoffs[msg.sender][tokenPair] < t);
+        // "attempted to set cutoff to a smaller value"
 
         tradingPairCutoffs[msg.sender][tokenPair] = t;
         emit OrdersCancelled(
@@ -495,6 +496,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             batch[p + 4] = bytes32(state.lrcReward);
             batch[p + 5] = bytes32(state.lrcFeeState);
             batch[p + 6] = bytes32(state.wallet);
+
             p += 7;
 
             // Update fill records
@@ -544,7 +546,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         uint cvs = MathUint.cvsquare(rateRatios, _rateRatioScale);
 
-        require(cvs <= rateRatioCVSThreshold); // "miner supplied exchange rate is not evenly discounted");
+        require(cvs <= rateRatioCVSThreshold);
+        // "miner supplied exchange rate is not evenly discounted");
     }
 
     /// @dev Calculate each order's fee or LRC reward.
@@ -820,10 +823,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
     {
         require(params.miner != 0x0);
-        require(params.ringSize == params.addressList.length); // "ring data is inconsistent - addressList");
-        require(params.ringSize == params.uintArgsList.length); // "ring data is inconsistent - uintArgsList");
-        require(params.ringSize == params.uint8ArgsList.length); // "ring data is inconsistent - uint8ArgsList");
-        require(params.ringSize == params.buyNoMoreThanAmountBList.length); // "ring data is inconsistent - buyNoMoreThanAmountBList");
+        require(params.ringSize == params.addressList.length); 
+        require(params.ringSize == params.uintArgsList.length);
+        require(params.ringSize == params.uint8ArgsList.length);
+        require(params.ringSize == params.buyNoMoreThanAmountBList.length);
+
 
         // Validate ring-mining related arguments.
         for (uint i = 0; i < params.ringSize; i++) {
@@ -911,18 +915,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.tokenB != 0x0); // invalid order tokenB
         require(order.amountS != 0); // invalid order amountS
         require(order.amountB != 0); // invalid order amountB
-        require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE); // invalid order marginSplitPercentage
+        require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE);
+        // invalid order marginSplitPercentage
 
         require(order.validSince <= block.timestamp); // order is too early to match
         require(order.validUntil > block.timestamp); // order is expired
 
         bytes20 tradingPair = bytes20(order.tokenS) ^ bytes20(order.tokenB);
-        require(order.validSince > tradingPairCutoffs[order.owner][tradingPair]); // order trading pair is cut off
+        require(order.validSince > tradingPairCutoffs[order.owner][tradingPair]);
+        // order trading pair is cut off
         require(order.validSince > cutoffs[order.owner]); // order is cut off
     }
 
-    /// @dev Get the Keccak-256 hash of orderstate with specified parameters.
-    function calculateOrderStateHash(OrderState order)
+    /// @dev Get the Keccak-256 hash of order with specified parameters.
+    function calculateOrderStateHash(
+        OrderState order
+        )
         private
         view
         returns (bytes32)

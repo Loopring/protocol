@@ -13,7 +13,6 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
 */
 pragma solidity 0.4.21;
 
@@ -24,17 +23,14 @@ import "./MathUint.sol";
 
 /// @title ERC20 Token Implementation
 /// @dev see https://github.com/ethereum/EIPs/issues/20
-///      This ERC20 token will give the designated tokenTransferDelegate a max allowance.
 /// @author Daniel Wang - <daniel@loopring.org>
 contract ERC20Token is ERC20 {
     using MathUint for uint;
-    using AddressUtil for address;
 
     string  public name;
     string  public symbol;
     uint8   public decimals;
     uint    public totalSupply_;
-    address public tokenTransferDelegate;
 
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) internal allowed;
@@ -47,27 +43,25 @@ contract ERC20Token is ERC20 {
         string  _symbol,
         uint8   _decimals,
         uint    _totalSupply,
-        address _firstHolder,
-        address _tokenTransferDelegate
+        address _firstHolder
         )
         public
     {
-        require(bytes(_name).length > 0);
-        require(bytes(_symbol).length > 0);
         require(_totalSupply > 0);
         require(_firstHolder != 0x0);
-        require(_tokenTransferDelegate.isContract());
+        checkSymbolAndName(_symbol,_name);
 
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
         totalSupply_ = _totalSupply;
-        tokenTransferDelegate = _tokenTransferDelegate;
 
         balances[_firstHolder] = totalSupply_;
     }
 
-    function () payable public
+    function ()
+        payable
+        public
     {
         revert();
     }
@@ -75,7 +69,11 @@ contract ERC20Token is ERC20 {
     /**
     * @dev total number of tokens in existence
     */
-    function totalSupply() public view returns (uint256) {
+    function totalSupply()
+        public
+        view
+        returns (uint256)
+    {
         return totalSupply_;
     }
 
@@ -106,7 +104,9 @@ contract ERC20Token is ERC20 {
     * @param _owner The address to query the the balance of.
     * @return An uint256 representing the amount owned by the passed address.
     */
-    function balanceOf(address _owner)
+    function balanceOf(
+        address _owner
+        )
         public
         view
         returns (uint256 balance)
@@ -169,16 +169,13 @@ contract ERC20Token is ERC20 {
      */
     function allowance(
         address _owner,
-        address _spender)
+        address _spender
+        )
         public
         view
         returns (uint256)
     {
-        if (_spender == tokenTransferDelegate) {
-            return totalSupply_;
-        } else {
-            return allowed[_owner][_spender];
-        }
+        return allowed[_owner][_spender];
     }
 
     /**
@@ -228,5 +225,30 @@ contract ERC20Token is ERC20 {
         }
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
+    }
+
+    // Make sure symbol has 3-8 chars in [A-Za-z._] and name has up to 128 chars.
+    function checkSymbolAndName(
+        string memory _symbol,
+        string memory _name
+        )
+        internal
+        pure
+    {
+        bytes memory s = bytes(_symbol);
+        require(s.length >= 3 && s.length <= 8);
+        for (uint i = 0; i < s.length; i++) {
+            require(
+                s[i] == 0x2E ||  // "."
+                s[i] == 0x5F ||  // "_"
+                s[i] >= 0x41 && s[i] <= 0x5A ||  // [A-Z]
+                s[i] >= 0x61 && s[i] <= 0x7A     // [a-z]
+            );
+        }
+        bytes memory n = bytes(_name);
+        require(n.length >= s.length && n.length <= 128);
+        for (i = 0; i < n.length; i++) {
+            require(n[i] >= 0x20 && n[i] <= 0x7E);
+        }
     }
 }

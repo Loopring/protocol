@@ -18,21 +18,36 @@ pragma solidity 0.4.21;
 
 
 /// @title Utility Functions for address
-/// @author Daniel Wang - <daniel@loopring.org>
-library AddressUtil {
-    function isContract(
-        address addr
-        )
+/// @author Kongliang Zhong - <kongliang@loopring.org>
+library StringUtil {
+    function stringToBytes12(string str)
         internal
-        view
-        returns (bool)
+        pure
+        returns (bytes12 result)
     {
-        if (addr == 0x0) {
-            return false;
-        } else {
-            uint size;
-            assembly { size := extcodesize(addr) }
-            return size > 0;
+        assembly {
+            result := mload(add(str, 32))
         }
     }
+
+    function stringToBytes10(string str)
+        internal
+        pure
+        returns (bytes10 result)
+    {
+        assembly {
+            result := mload(add(str, 32))
+        }
+    }
+
+    /// check length >= min && <= max
+    function checkStringLength(string name, uint min, uint max)
+        internal
+        pure
+        returns (bool)
+    {
+        bytes memory temp = bytes(name);
+        return temp.length >= min && temp.length <= max;
+    }
+
 }
