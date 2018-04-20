@@ -14,7 +14,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./lib/AddressUtil.sol";
 import "./lib/Claimable.sol";
@@ -40,7 +42,7 @@ contract TokenRegistryImpl is TokenRegistry, Claimable {
     /// @dev Disable default function.
     function ()
         payable
-        public
+        external
     {
         revert();
     }
