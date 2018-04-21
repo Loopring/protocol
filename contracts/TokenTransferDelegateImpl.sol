@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./lib/Claimable.sol";
 import "./lib/ERC20.sol";
 import "./lib/MathUint.sol";
+import "./BrokerTracker.sol";
 import "./TokenTransferDelegate.sol";
 
 
@@ -144,48 +145,58 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
     }
 
     function batchTransferToken(
-        address lrcTokenAddress,
-        address minerAddr,
+        address lrcAddr,
+        address miner,
         bytes32[] batch
         )
         onlyAuthorized
         external
     {
-        uint len = batch.length;
-        require(len % 8 == 0, "invalid batch");
+        require(batch.length % 9 == 0, "invalid batch");
 
-        ERC20 lrc = ERC20(lrcTokenAddress);
-        address prevOwner = address(batch[len - 8]);
-        address prevSigner = address(batch[len - 7]);
+        address prevOwner = address(batch[batch.length - 9]);
 
-        for (uint i = 0; i < len; i += 8) {
+        for (uint i = 0; i < batch.length; i += 9) {
             address owner = address(batch[i]);
             address signer = address(batch[i + 1]);
+            address tracker = address(batch[i + 2]);
 
             // Pay token to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
-            ERC20 token = ERC20(address(batch[i + 2]));
+            address token = address(batch[i + 3]);
+            uint amount;
 
-            // Here batch[i + 2] has been checked not to be 0.
+            // Here batch[i + 4] has been checked not to be 0.
             if (owner != prevOwner) {
+                amount = uint(batch[i + 4]);
                 require(
-                    token.transferFrom(
+                    ERC20(token).transferFrom(
                         owner,
                         prevOwner,
-                        uint(batch[i + 3])
+                        amount
                     )
                 );
 
+                if (tracker != 0x0) {
+                    require(
+                        BrokerTracker(tracker).onTokenSpent(
+                            owner,
+                            signer,
+                            token,
+                            amount
+                        )
+                    );
+                }
             }
 
             // Miner pays LRx fee to order owner
-            uint lrcReward = uint(batch[i + 5]);
-            if (lrcReward != 0 && minerAddr != owner) {
+            amount = uint(batch[i + 6]);
+            if (amount != 0 && miner != owner) {
                 require(
-                    lrc.transferFrom(
-                        minerAddr,
+                    ERC20(lrcAddr).transferFrom(
+                        miner,
                         owner,
-                        lrcReward
+                        amount
                     )
                 );
             }
@@ -193,23 +204,26 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
             // Split margin-split income between miner and wallet
             splitPayFee(
                 token,
-                uint(batch[i + 4]),
                 owner,
-                minerAddr,
-                address(batch[i + 7])
+                miner,
+                signer,
+                tracker,
+                address(batch[i + 8]),
+                uint(batch[i + 5])
             );
 
-            // Split LRx fee income between miner and wallet
+            // Split LRC fee income between miner and wallet
             splitPayFee(
-                lrc,
-                uint(batch[i + 6]),
+                lrcAddr,
                 owner,
-                minerAddr,
-                address(batch[i + 7])
+                miner,
+                signer,
+                tracker,
+                address(batch[i + 8]),
+                uint(batch[i + 7])
             );
 
             prevOwner = owner;
-            prevSigner = signer;
         }
     }
 
@@ -224,11 +238,13 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
     }
 
     function splitPayFee(
-        ERC20   token,
-        uint    fee,
+        address token,
         address owner,
-        address minerAddr,
-        address walletFeeRecipient
+        address miner,
+        address broker,
+        address tracker,
+        address wallet,
+        uint    fee
         )
         internal
     {
@@ -236,25 +252,36 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
             return;
         }
 
-        uint walletFee = (walletFeeRecipient == 0x0) ? 0 : fee.mul(walletSplitPercentage) / 100;
+        uint walletFee = (wallet == 0x0) ? 0 : fee.mul(walletSplitPercentage) / 100;
         uint minerFee = fee - walletFee;
 
-        if (walletFee > 0 && walletFeeRecipient != owner) {
+        if (walletFee > 0 && wallet != owner) {
             require(
-                token.transferFrom(
+                ERC20(token).transferFrom(
                     owner,
-                    walletFeeRecipient,
+                    wallet,
                     walletFee
                 )
             );
         }
 
-        if (minerFee > 0 && minerAddr != 0x0 && minerAddr != owner) {
+        if (minerFee > 0 && miner != 0x0 && miner != owner) {
             require(
-                token.transferFrom(
+                ERC20(token).transferFrom(
                     owner,
-                    minerAddr,
+                    miner,
                     minerFee
+                )
+            );
+        }
+
+        if (broker != 0x0) {
+            require(
+                BrokerTracker(tracker).onTokenSpent(
+                    owner,
+                    broker,
+                    token,
+                    fee
                 )
             );
         }

@@ -35,15 +35,11 @@ contract BrokerTracker {
     ///      it must check `msg.sender` is the address of LoopringProtocol.
     ///      Check https://github.com/Loopring/token-listing/blob/master/ethereum/deployment.md
     ///      for the current address of LoopringProtocol deployment. 
-    function onSettlement(
+    function onTokenSpent(
         address owner,
         address broker,
-        address tokenB,
-        uint    amountB,
-        address tokenS,
-        uint    amountS,
-        uint    lrcFee,
-        uint    lrcReward
+        address token,
+        uint    amount
         )
         public
         returns (bool ok);

@@ -745,7 +745,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         // ringSize * (owner + tokenS + 4 amounts + wallet)
         uint[] memory values = new uint[](ctx.ringSize * 6);
-        bytes32[] memory batch = new bytes32[](ctx.ringSize * 8);
+        bytes32[] memory batch = new bytes32[](ctx.ringSize * 9);
 
         uint p = 0;
         uint prevSplitB = ctx.orders[ctx.ringSize - 1].splitB;
@@ -756,21 +756,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
             // Store owner and tokenS of every order
             batch[p] = bytes32(order.owner);
             batch[p + 1] = bytes32(order.signer);
-            batch[p + 2] = bytes32(order.tokenS);
+            batch[p + 2] = bytes32(order.trackerAddr);
+            batch[p + 3] = bytes32(order.tokenS);
 
             // Store all amounts
-            batch[p + 3] = bytes32(order.fillAmountS - prevSplitB);
-            batch[p + 4] = bytes32(prevSplitB + order.splitS);
-            batch[p + 5] = bytes32(order.lrcReward);
-            batch[p + 6] = bytes32(order.lrcFeeState);
-            batch[p + 7] = bytes32(order.wallet);
-            p += 8;
+            batch[p + 4] = bytes32(order.fillAmountS - prevSplitB);
+            batch[p + 5] = bytes32(prevSplitB + order.splitS);
+            batch[p + 6] = bytes32(order.lrcReward);
+            batch[p + 7] = bytes32(order.lrcFeeState);
+            batch[p + 8] = bytes32(order.wallet);
+            p += 9;
 
             // Update fill records
             if (order.capByAmountB) {
-                ctx.delegate.addCancelledOrFilled(order.orderHash, nextFillAmountS);
+                ctx.delegate.addCancelledOrFilled(
+                    order.orderHash,
+                    nextFillAmountS
+                );
             } else {
-                ctx.delegate.addCancelledOrFilled(order.orderHash, order.fillAmountS);
+                ctx.delegate.addCancelledOrFilled(
+                    order.orderHash,
+                    order.fillAmountS
+                );
             }
 
             values[i * 6 + 0] = uint(order.orderHash);
@@ -803,9 +810,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function calculateOrderFillAmount(
         Order order,
         Order next,
-        uint       i,
-        uint       j,
-        uint       smallestIdx
+        uint  i,
+        uint  j,
+        uint  smallestIdx
         )
         private
         pure
