@@ -45,5 +45,6 @@ contract BrokerTracker {
         uint    lrcFee,
         uint    lrcReward
         )
-        public;
+        public
+        returns (bool ok);
 }

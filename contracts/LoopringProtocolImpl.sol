@@ -48,7 +48,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     address public  brokerRegistryAddress       = 0x0;
 
     uint64  public  ringIndex                   = 0;
-    uint8   public  walletSplitPercentage       = 0;
 
     // Exchange rate (rate) is the amount to sell or sold divided by the amount
     // to buy or bought.
@@ -115,8 +114,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address _tokenRegistryAddress,
         address _delegateAddress,
         address _brokerRegistryAddress,
-        uint    _rateRatioCVSThreshold,
-        uint8   _walletSplitPercentage
+        uint    _rateRatioCVSThreshold
         )
         public
     {
@@ -126,14 +124,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(_brokerRegistryAddress.isContract());
 
         require(_rateRatioCVSThreshold > 0);
-        require(_walletSplitPercentage > 0 && _walletSplitPercentage < 100);
 
         lrcTokenAddress = _lrcTokenAddress;
         tokenRegistryAddress = _tokenRegistryAddress;
         delegateAddress = _delegateAddress;
         brokerRegistryAddress = _brokerRegistryAddress;
         rateRatioCVSThreshold = _rateRatioCVSThreshold;
-        walletSplitPercentage = _walletSplitPercentage;
     }
 
     /// @dev Disable default function.
@@ -747,8 +743,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
     {
-        bytes32[] memory batch = new bytes32[](ctx.ringSize * 7); // ringSize * (owner + tokenS + 4 amounts + wallet)
-        uint[] memory orderInfoList = new uint[](ctx.ringSize * 6);
+        // ringSize * (owner + tokenS + 4 amounts + wallet)
+        uint[] memory values = new uint[](ctx.ringSize * 6);
+        bytes32[] memory batch = new bytes32[](ctx.ringSize * 8);
 
         uint p = 0;
         uint prevSplitB = ctx.orders[ctx.ringSize - 1].splitB;
@@ -758,15 +755,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             // Store owner and tokenS of every order
             batch[p] = bytes32(order.owner);
-            batch[p + 1] = bytes32(order.tokenS);
+            batch[p + 1] = bytes32(order.signer);
+            batch[p + 2] = bytes32(order.tokenS);
 
             // Store all amounts
-            batch[p + 2] = bytes32(order.fillAmountS - prevSplitB);
-            batch[p + 3] = bytes32(prevSplitB + order.splitS);
-            batch[p + 4] = bytes32(order.lrcReward);
-            batch[p + 5] = bytes32(order.lrcFeeState);
-            batch[p + 6] = bytes32(order.wallet);
-            p += 7;
+            batch[p + 3] = bytes32(order.fillAmountS - prevSplitB);
+            batch[p + 4] = bytes32(prevSplitB + order.splitS);
+            batch[p + 5] = bytes32(order.lrcReward);
+            batch[p + 6] = bytes32(order.lrcFeeState);
+            batch[p + 7] = bytes32(order.wallet);
+            p += 8;
 
             // Update fill records
             if (order.capByAmountB) {
@@ -775,21 +773,21 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 ctx.delegate.addCancelledOrFilled(order.orderHash, order.fillAmountS);
             }
 
-            orderInfoList[i * 6 + 0] = uint(order.orderHash);
-            orderInfoList[i * 6 + 1] = order.fillAmountS;
-            orderInfoList[i * 6 + 2] = order.lrcReward;
-            orderInfoList[i * 6 + 3] = order.lrcFeeState;
-            orderInfoList[i * 6 + 4] = order.splitS;
-            orderInfoList[i * 6 + 5] = order.splitB;
+            values[i * 6 + 0] = uint(order.orderHash);
+            values[i * 6 + 1] = order.fillAmountS;
+            values[i * 6 + 2] = order.lrcReward;
+            values[i * 6 + 3] = order.lrcFeeState;
+            values[i * 6 + 4] = order.splitS;
+            values[i * 6 + 5] = order.splitB;
 
             prevSplitB = order.splitB;
         }
+
 
         // Do all transactions
         ctx.delegate.batchTransferToken(
             lrcTokenAddress,
             ctx.miner,
-            walletSplitPercentage,
             batch
         );
 
@@ -797,7 +795,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ctx.ringIndex,
             ctx.ringHash,
             ctx.miner,
-            orderInfoList
+            values
         );
     }
 
