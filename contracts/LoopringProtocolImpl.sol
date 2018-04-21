@@ -83,10 +83,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address tokenB;
         address wallet;
         address authAddr;
-        uint    validSince;
-        uint    validUntil;
         uint    amountS;
         uint    amountB;
+        uint    validSince;
+        uint    validUntil;
         uint    lrcFee;
         uint8   option;
         bool    capByAmountB;
@@ -151,7 +151,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function cancelOrder(
-        address[5] addresses,
+        address[6] addresses,
         uint[6]    orderValues,
         uint8      option,
         uint8      v,
@@ -163,17 +163,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint cancelAmount = orderValues[5];
 
         require(cancelAmount > 0, "invalid cancelAmount");
-
         Order memory order = Order(
             addresses[0],
-            addresses[1],
             addresses[2],
             addresses[3],
             addresses[4],
-            orderValues[2],
-            orderValues[3],
+            addresses[5],
             orderValues[0],
             orderValues[1],
+            orderValues[2],
+            orderValues[3],
             orderValues[4],
             option,
             option & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
@@ -373,10 +372,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 ctx.addressesList[(i + 1) % ctx.ringSize][1],
                 ctx.addressesList[i][2],
                 ctx.addressesList[i][3],
-                uintArgs[2],
-                uintArgs[3],
                 uintArgs[0],
                 uintArgs[1],
+                uintArgs[2],
+                uintArgs[3],
                 uintArgs[4],
                 ctx.optionList[i],
                 ctx.optionList[i] & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
