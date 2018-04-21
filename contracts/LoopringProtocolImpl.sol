@@ -305,7 +305,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(context);
 
-        handleRing(_ringIndex, context.params, context.orders, context.delegate);
+        handleRing(context);
 
         ringIndex = _ringIndex + 1;
     }
@@ -368,59 +368,56 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function handleRing(
-        uint64       _ringIndex,
-        RingParams   params,
-        OrderState[] orders,
-        TokenTransferDelegate delegate
+        Context context
         )
         private
     {
         address _lrcTokenAddress = lrcTokenAddress;
 
         // Do the hard work.
-        verifyRingHasNoSubRing(params.ringSize, orders);
+        verifyRingHasNoSubRing(context.params.ringSize, context.orders);
 
         // Exchange rates calculation are performed by ring-miners as solidity
         // cannot get power-of-1/n operation, therefore we have to verify
         // these rates are correct.
-        verifyMinerSuppliedFillRates(params.ringSize, orders);
+        verifyMinerSuppliedFillRates(context.params.ringSize, context.orders);
 
         // Scale down each order independently by substracting amount-filled and
         // amount-cancelled. Order owner's current balance and allowance are
         // not taken into consideration in these operations.
-        scaleRingBasedOnHistoricalRecords(delegate, params.ringSize, orders);
+        scaleRingBasedOnHistoricalRecords(context.delegate, context.params.ringSize, context.orders);
 
         // Based on the already verified exchange rate provided by ring-miners,
         // we can furthur scale down orders based on token balance and allowance,
         // then find the smallest order of the ring, then calculate each order's
         // `fillAmountS`.
-        calculateRingFillAmount(params.ringSize, orders);
+        calculateRingFillAmount(context.params.ringSize, context.orders);
 
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
 
         calculateRingFees(
-            delegate,
-            params.ringSize,
-            orders,
-            params.miner,
+            context.delegate,
+            context.params.ringSize,
+            context.orders,
+            context.params.miner,
             _lrcTokenAddress
         );
 
         /// Make transfers.
         uint[] memory orderInfoList = settleRing(
-            delegate,
-            params.ringSize,
-            orders,
-            params.miner,
+            context.delegate,
+            context.params.ringSize,
+            context.orders,
+            context.params.miner,
             _lrcTokenAddress
         );
 
         emit RingMined(
-            _ringIndex,
-            params.ringHash,
-            params.miner,
+            context.index,
+            context.params.ringHash,
+            context.params.miner,
             orderInfoList
         );
     }
