@@ -101,20 +101,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev A struct to capture parameters passed to submitRing method and
     ///      various of other variables used across the submitRing core logics.
-    struct RingParams {
+    struct Context {
+        address[4][]  addressList;
+        uint[6][]     uintArgsList;
+        uint8[1][]    uint8ArgsList;
+        bool[]        buyNoMoreThanAmountBList;
         uint8[]       vList;
         bytes32[]     rList;
         bytes32[]     sList;
         address       miner;
         uint16        feeSelections;
+        uint          index;
         uint          ringSize;         // computed
         bytes32       ringHash;         // computed
-    }
-
-    struct Context {
-        uint                  index;
         TokenTransferDelegate delegate;
-        RingParams            params;
         OrderState[]          orders;
     }
 
@@ -266,40 +266,30 @@ contract LoopringProtocolImpl is LoopringProtocol {
         ringIndex |= (1 << 63);
 
         Context memory context = Context(
-            _ringIndex,
-            TokenTransferDelegate(delegateAddress),
-            RingParams(
-                vList,
-                rList,
-                sList,
-                miner,
-                feeSelections,
-                addressList.length,
-                0x0 // ringHash
-            ),
-            new OrderState[](0)
-        );
-
-        verifyInputDataIntegrity(
-            context.params,
             addressList,
             uintArgsList,
             uint8ArgsList,
-            buyNoMoreThanAmountBList
+            buyNoMoreThanAmountBList,
+            vList,
+            rList,
+            sList,
+            miner,
+            feeSelections,
+            _ringIndex,
+            addressList.length,
+            0x0, // ringHash
+            TokenTransferDelegate(delegateAddress),
+            new OrderState[](addressList.length)
         );
+
+        verifyInputDataIntegrity(context);
 
         // Assemble input data into structs so we can pass them to other functions.
         // This method also calculates ringHash, therefore it must be called before
         // calling `verifyRingSignatures`.
-        context.orders = assembleOrders(
-            context.params,
-            context.delegate,
-            addressList,
-            uintArgsList,
-            uint8ArgsList,
-            buyNoMoreThanAmountBList
-        );
+        assembleOrders(context);
 
+        validateOrdersCutoffs(context);
 
         verifyRingSignatures(context);
 
@@ -312,17 +302,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev Validate a ring.
     function verifyRingHasNoSubRing(
-        uint          ringSize,
-        OrderState[]  orders
+        Context context
         )
         private
         pure
     {
         // Check the ring has no sub-ring.
-        for (uint i = 0; i < ringSize - 1; i++) {
-            address tokenS = orders[i].tokenS;
-            for (uint j = i + 1; j < ringSize; j++) {
-                require(tokenS != orders[j].tokenS); // "found sub-ring");
+        for (uint i = 0; i < context.ringSize - 1; i++) {
+            address tokenS = context.orders[i].tokenS;
+            for (uint j = i + 1; j < context.ringSize; j++) {
+                require(tokenS != context.orders[j].tokenS); // "found sub-ring");
             }
         }
     }
@@ -336,15 +325,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
     {
         uint j;
-        for (uint i = 0; i < context.params.ringSize; i++) {
-            j = i + context.params.ringSize;
+        for (uint i = 0; i < context.ringSize; i++) {
+            j = i + context.ringSize;
 
             verifySignature(
                 context.orders[i].authAddr,
-                context.params.ringHash,
-                context.params.vList[j],
-                context.params.rList[j],
-                context.params.sList[j]
+                context.ringHash,
+                context.vList[j],
+                context.rList[j],
+                context.sList[j]
             );
         }
     }
@@ -356,8 +345,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         // Extract the token addresses
-        address[] memory tokens = new address[](context.params.ringSize);
-        for (uint i = 0; i < context.params.ringSize; i++) {
+        address[] memory tokens = new address[](context.ringSize);
+        for (uint i = 0; i < context.ringSize; i++) {
             tokens[i] = context.orders[i].tokenS;
         }
 
@@ -372,26 +361,24 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
     {
-        address _lrcTokenAddress = lrcTokenAddress;
-
         // Do the hard work.
-        verifyRingHasNoSubRing(context.params.ringSize, context.orders);
+        verifyRingHasNoSubRing(context);
 
         // Exchange rates calculation are performed by ring-miners as solidity
         // cannot get power-of-1/n operation, therefore we have to verify
         // these rates are correct.
-        verifyMinerSuppliedFillRates(context.params.ringSize, context.orders);
+        verifyMinerSuppliedFillRates(context);
 
         // Scale down each order independently by substracting amount-filled and
         // amount-cancelled. Order owner's current balance and allowance are
         // not taken into consideration in these operations.
-        scaleRingBasedOnHistoricalRecords(context.delegate, context.params.ringSize, context.orders);
+        scaleRingBasedOnHistoricalRecords(context);
 
         // Based on the already verified exchange rate provided by ring-miners,
         // we can furthur scale down orders based on token balance and allowance,
         // then find the smallest order of the ring, then calculate each order's
         // `fillAmountS`.
-        calculateRingFillAmount(context.params.ringSize, context.orders);
+        calculateRingFillAmount(context.ringSize, context.orders);
 
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
@@ -399,25 +386,25 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         calculateRingFees(
             context.delegate,
-            context.params.ringSize,
+            context.ringSize,
             context.orders,
-            context.params.miner,
-            _lrcTokenAddress
+            context.miner,
+            lrcTokenAddress
         );
 
         /// Make transfers.
         uint[] memory orderInfoList = settleRing(
             context.delegate,
-            context.params.ringSize,
+            context.ringSize,
             context.orders,
-            context.params.miner,
-            _lrcTokenAddress
+            context.miner,
+            lrcTokenAddress
         );
 
         emit RingMined(
             context.index,
-            context.params.ringHash,
-            context.params.miner,
+            context.ringHash,
+            context.miner,
             orderInfoList
         );
     }
@@ -481,18 +468,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev Verify miner has calculte the rates correctly.
     function verifyMinerSuppliedFillRates(
-        uint         ringSize,
-        OrderState[] orders
+        Context context
         )
         private
         view
     {
-        uint[] memory rateRatios = new uint[](ringSize);
+        uint[] memory rateRatios = new uint[](context.ringSize);
         uint _rateRatioScale = RATE_RATIO_SCALE;
 
-        for (uint i = 0; i < ringSize; i++) {
-            uint s1b0 = orders[i].rateS.mul(orders[i].amountB);
-            uint s0b1 = orders[i].amountS.mul(orders[i].rateB);
+        for (uint i = 0; i < context.ringSize; i++) {
+            uint s1b0 = context.orders[i].rateS.mul(context.orders[i].amountB);
+            uint s0b1 = context.orders[i].amountS.mul(context.orders[i].rateB);
 
             require(s1b0 <= s0b1); // "miner supplied exchange rate provides invalid discount");
 
@@ -707,20 +693,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev Scale down all orders based on historical fill or cancellation
     ///      stats but key the order's original exchange rate.
     function scaleRingBasedOnHistoricalRecords(
-        TokenTransferDelegate delegate,
-        uint ringSize,
-        OrderState[] orders
+        Context context
         )
         private
         view
     {
+
+        uint ringSize = context.ringSize;
+        OrderState[] memory orders = context.orders;
+
         for (uint i = 0; i < ringSize; i++) {
             OrderState memory state = orders[i];
             uint amount;
 
             if (state.buyNoMoreThanAmountB) {
                 amount = state.amountB.tolerantSub(
-                    delegate.cancelledOrFilled(state.orderHash)
+                    context.delegate.cancelledOrFilled(state.orderHash)
                 );
 
                 state.amountS = amount.mul(state.amountS) / state.amountB;
@@ -729,7 +717,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.amountB = amount;
             } else {
                 amount = state.amountS.tolerantSub(
-                    delegate.cancelledOrFilled(state.orderHash)
+                    context.delegate.cancelledOrFilled(state.orderHash)
                 );
 
                 state.amountB = amount.mul(state.amountB) / state.amountS;
@@ -741,7 +729,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(state.amountS > 0); // "amountS is zero");
             require(state.amountB > 0); // "amountB is zero");
 
-            uint availableAmountS = getSpendable(delegate, state.tokenS, state.owner);
+            uint availableAmountS = getSpendable(context.delegate, state.tokenS, state.owner);
             require(availableAmountS > 0); // "order spendable amountS is zero");
 
             state.fillAmountS = (
@@ -772,69 +760,56 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev verify input data's basic integrity.
     function verifyInputDataIntegrity(
-        RingParams params,
-        address[4][]  addressList,
-        uint[6][]     uintArgsList,
-        uint8[1][]    uint8ArgsList,
-        bool[]        buyNoMoreThanAmountBList
+        Context context
         )
         private
         pure
     {
-        require(params.miner != 0x0);
-        require(params.ringSize == addressList.length);
-        require(params.ringSize == uintArgsList.length);
-        require(params.ringSize == uint8ArgsList.length);
-        require(params.ringSize == buyNoMoreThanAmountBList.length);
+        require(context.miner != 0x0);
+        require(context.ringSize == context.addressList.length);
+        require(context.ringSize == context.uintArgsList.length);
+        require(context.ringSize == context.uint8ArgsList.length);
+        require(context.ringSize == context.buyNoMoreThanAmountBList.length);
 
         // Validate ring-mining related arguments.
-        for (uint i = 0; i < params.ringSize; i++) {
-            require(uintArgsList[i][5] > 0); // "order rateAmountS is zero");
+        for (uint i = 0; i < context.ringSize; i++) {
+            require(context.uintArgsList[i][5] > 0); // "order rateAmountS is zero");
         }
 
         //Check ring size
-        require(params.ringSize > 1 && params.ringSize <= MAX_RING_SIZE); // "invalid ring size");
+        require(context.ringSize > 1 && context.ringSize <= MAX_RING_SIZE); // "invalid ring size");
 
-        uint sigSize = params.ringSize << 1;
-        require(sigSize == params.vList.length);
-        require(sigSize == params.rList.length);
-        require(sigSize == params.sList.length);
+        uint sigSize = context.ringSize << 1;
+        require(sigSize == context.vList.length);
+        require(sigSize == context.rList.length);
+        require(sigSize == context.sList.length);
     }
 
     /// @dev        assmble order parameters into Order struct.
     /// @return     A list of orders.
     function assembleOrders(
-        RingParams params,
-        TokenTransferDelegate delegate,
-        address[4][]  addressList,
-        uint[6][]     uintArgsList,
-        uint8[1][]    uint8ArgsList,
-        bool[]        buyNoMoreThanAmountBList
+        Context context
         )
         private
-        view
-        returns (OrderState[] memory orders)
     {
-        orders = new OrderState[](params.ringSize);
-
-        for (uint i = 0; i < params.ringSize; i++) {
-            uint[6] memory uintArgs = uintArgsList[i];
-            bool marginSplitAsFee = (params.feeSelections & (uint16(1) << i)) > 0;
-            orders[i] = OrderState(
-                addressList[i][0],
-                addressList[i][1],
-                addressList[(i + 1) % params.ringSize][1],
-                addressList[i][2],
-                addressList[i][3],
+        for (uint i = 0; i < context.ringSize; i++) {
+            uint[6] memory uintArgs = context.uintArgsList[i];
+            bool marginSplitAsFee = (context.feeSelections & (uint16(1) << i)) > 0;
+            context.orders[i] = OrderState(
+                context.addressList[i][0],
+                context.addressList[i][1],
+                context.addressList[(i + 1) % context.ringSize][1],
+                context.addressList[i][2],
+                context.addressList[i][3],
                 uintArgs[2],
                 uintArgs[3],
                 uintArgs[0],
                 uintArgs[1],
                 uintArgs[4],
-                buyNoMoreThanAmountBList[i],
+                context.buyNoMoreThanAmountBList[i],
                 marginSplitAsFee,
                 bytes32(0),
-                uint8ArgsList[i][0],
+                context.uint8ArgsList[i][0],
                 uintArgs[5],
                 uintArgs[1],
                 0,   // fillAmountS
@@ -844,28 +819,26 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0    // splitB
             );
 
-            validateOrder(orders[i]);
+            validateOrder(context.orders[i]);
 
-            bytes32 orderHash = calculateOrderHash(orders[i]);
-            orders[i].orderHash = orderHash;
+            bytes32 orderHash = calculateOrderHash(context.orders[i]);
+            context.orders[i].orderHash = orderHash;
 
             verifySignature(
-                orders[i].owner,
+                context.orders[i].owner,
                 orderHash,
-                params.vList[i],
-                params.rList[i],
-                params.sList[i]
+                context.vList[i],
+                context.rList[i],
+                context.sList[i]
             );
 
-            params.ringHash ^= orderHash;
+            context.ringHash ^= orderHash;
         }
 
-        validateOrdersCutoffs(orders, delegate);
-
-        params.ringHash = keccak256(
-            params.ringHash,
-            params.miner,
-            params.feeSelections
+        context.ringHash = keccak256(
+            context.ringHash,
+            context.miner,
+            context.feeSelections
         );
     }
 
@@ -888,21 +861,23 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.validUntil > block.timestamp); // order is expired
     }
 
-    function validateOrdersCutoffs(OrderState[] orders, TokenTransferDelegate delegate)
+    function validateOrdersCutoffs(
+        Context context
+        )
         private
         view
     {
-        address[] memory owners = new address[](orders.length);
-        bytes20[] memory tradingPairs = new bytes20[](orders.length);
-        uint[] memory validSinceTimes = new uint[](orders.length);
+        address[] memory owners = new address[](context.ringSize);
+        bytes20[] memory tradingPairs = new bytes20[](context.ringSize);
+        uint[] memory validSinceTimes = new uint[](context.ringSize);
 
-        for (uint i = 0; i < orders.length; i++) {
-            owners[i] = orders[i].owner;
-            tradingPairs[i] = bytes20(orders[i].tokenS) ^ bytes20(orders[i].tokenB);
-            validSinceTimes[i] = orders[i].validSince;
+        for (uint i = 0; i < context.ringSize; i++) {
+            owners[i] = context.orders[i].owner;
+            tradingPairs[i] = bytes20(context.orders[i].tokenS) ^ bytes20(context.orders[i].tokenB);
+            validSinceTimes[i] = context.orders[i].validSince;
         }
 
-        delegate.checkCutoffsBatch(owners, tradingPairs, validSinceTimes);
+        context.delegate.checkCutoffsBatch(owners, tradingPairs, validSinceTimes);
     }
 
     /// @dev Get the Keccak-256 hash of order with specified parameters.
