@@ -64,21 +64,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     uint    public constant RATE_RATIO_SCALE    = 10000;
 
-    /// @param orderHash    The order's hash
-    /// @param feeSelection -
-    ///                     A miner-supplied value indicating if LRC (value = 0)
-    ///                     or margin split is choosen by the miner (value = 1).
-    ///                     We may support more fee model in the future.
-    /// @param rateS        Sell Exchange rate provided by miner.
-    /// @param rateB        Buy Exchange rate provided by miner.
-    /// @param fillAmountS  Amount of tokenS to sell, calculated by protocol.
-    /// @param lrcReward    The amount of LRC paid by miner to order owner in
-    ///                     exchange for margin split.
-    /// @param lrcFeeState  The amount of LR paid by order owner to miner.
-    /// @param splitS      TokenS paid to miner.
-    /// @param splitB      TokenB paid to miner.
     struct Order {
         address owner;
+        address signer;
         address tokenS;
         address tokenB;
         address wallet;
@@ -104,7 +92,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev A struct to capture parameters passed to submitRing method and
     ///      various of other variables used across the submitRing core logics.
     struct Context {
-        address[4][]  addressesList;
+        address[5][]  addressesList;
         uint[6][]     valuesList;
         uint8[]       optionList;
         uint8[]       vList;
@@ -165,6 +153,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(cancelAmount > 0, "invalid cancelAmount");
         Order memory order = Order(
             addresses[0],
+            addresses[1],
             addresses[2],
             addresses[3],
             addresses[4],
@@ -253,7 +242,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function submitRing(
-        address[4][]  addressesList,
+        address[5][]  addressesList,
         uint[6][]     valuesList,
         uint8[]       optionList,
         uint8[]       vList,
@@ -369,9 +358,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ctx.orders[i] = Order(
                 ctx.addressesList[i][0],
                 ctx.addressesList[i][1],
-                ctx.addressesList[(i + 1) % ctx.ringSize][1],
                 ctx.addressesList[i][2],
+                ctx.addressesList[(i + 2) % ctx.ringSize][1],
                 ctx.addressesList[i][3],
+                ctx.addressesList[i][4],
                 uintArgs[0],
                 uintArgs[1],
                 uintArgs[2],

@@ -94,7 +94,8 @@ contract LoopringProtocol {
         external;
 
     /// @dev Submit a order-ring for validation and settlement.
-    /// @param addressesList List of each order's owner, tokenS, wallet, authAddr.
+    /// @param addressesList List of each order's owner, signer, tokenS, wallet,
+    ///                      authAddr.
     ///                      Note that next order's `tokenS` equals this order's
     ///                      `tokenB`.
     /// @param valuesList   List of uint-type arguments in this order:
@@ -115,7 +116,7 @@ contract LoopringProtocol {
     ///                     Bits to indicate fee selections. `1` represents margin
     ///                     split and `0` represents LRC as fee.
     function submitRing(
-        address[4][]    addressesList,
+        address[5][]    addressesList,
         uint[6][]       valuesList,
         bool[]          optionList,
         uint8[]         vList,
