@@ -58,7 +58,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     //     `(0.025 * RATE_RATIO_SCALE)^2` or 62500.
     uint    public rateRatioCVSThreshold        = 0;
 
-    uint    public constant MAX_RING_SIZE       = 16;
+    uint    public constant MAX_RING_SIZE       = 8;
 
     uint    public constant RATE_RATIO_SCALE    = 10000;
 
@@ -108,7 +108,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]     rList;
         bytes32[]     sList;
         address       miner;
-        uint16        feeSelections;
+        uint8         feeSelections;
         uint64        ringIndex;
         uint          ringSize;         // computed
         TokenTransferDelegate delegate;
@@ -257,7 +257,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32[]     rList,
         bytes32[]     sList,
         address       miner,
-        uint16        feeSelections
+        uint8         feeSelections
         )
         public
     {
@@ -361,7 +361,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         for (uint i = 0; i < ctx.ringSize; i++) {
 
             uint[6] memory uintArgs = ctx.uintArgsList[i];
-            bool marginSplitAsFee = (ctx.feeSelections & (uint16(1) << i)) > 0;
+            bool marginSplitAsFee = (ctx.feeSelections & (uint8(1) << i)) > 0;
 
             ctx.orders[i] = OrderState(
                 ctx.addressList[i][0],
