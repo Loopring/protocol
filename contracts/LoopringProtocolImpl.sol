@@ -294,7 +294,32 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(ctx);
 
-        handleRing(ctx);
+        // Do the hard work.
+        verifyRingHasNoSubRing(ctx);
+
+        // Exchange rates calculation are performed by ring-miners as solidity
+        // cannot get power-of-1/n operation, therefore we have to verify
+        // these rates are correct.
+        verifyMinerSuppliedFillRates(ctx);
+
+        // Scale down each order independently by substracting amount-filled and
+        // amount-cancelled. Order owner's current balance and allowance are
+        // not taken into consideration in these operations.
+        scaleRingBasedOnHistoricalRecords(ctx);
+
+        // Based on the already verified exchange rate provided by ring-miners,
+        // we can furthur scale down orders based on token balance and allowance,
+        // then find the smallest order of the ring, then calculate each order's
+        // `fillAmountS`.
+        calculateRingFillAmount(ctx);
+
+        // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
+        // of `fillAmountS` shall be paid to matching order or miner as margin
+        // split.
+        calculateRingFees(ctx);
+
+        /// Make transfers.
+        settleRing(ctx);
 
         ringIndex = ctx.ringIndex + 1;
     }
@@ -355,54 +380,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         ); // "token not registered");
     }
 
-    function handleRing(
-        Context ctx
-        )
-        private
-    {
-        // Do the hard work.
-        verifyRingHasNoSubRing(ctx);
-
-        // Exchange rates calculation are performed by ring-miners as solidity
-        // cannot get power-of-1/n operation, therefore we have to verify
-        // these rates are correct.
-        verifyMinerSuppliedFillRates(ctx);
-
-        // Scale down each order independently by substracting amount-filled and
-        // amount-cancelled. Order owner's current balance and allowance are
-        // not taken into consideration in these operations.
-        scaleRingBasedOnHistoricalRecords(ctx);
-
-        // Based on the already verified exchange rate provided by ring-miners,
-        // we can furthur scale down orders based on token balance and allowance,
-        // then find the smallest order of the ring, then calculate each order's
-        // `fillAmountS`.
-        calculateRingFillAmount(ctx);
-
-        // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
-        // of `fillAmountS` shall be paid to matching order or miner as margin
-        // split.
-        calculateRingFees(ctx);
-
-        /// Make transfers.
-        uint[] memory orderInfoList = settleRing(ctx);
-
-        emit RingMined(
-            ctx.ringIndex,
-            ctx.ringHash,
-            ctx.miner,
-            orderInfoList
-        );
-    }
-
     function settleRing(
         Context ctx
         )
         private
-        returns (uint[] memory orderInfoList)
     {
         bytes32[] memory batch = new bytes32[](ctx.ringSize * 7); // ringSize * (owner + tokenS + 4 amounts + wallet)
-        orderInfoList = new uint[](ctx.ringSize * 6);
+        uint[] memory orderInfoList = new uint[](ctx.ringSize * 6);
 
         uint p = 0;
         uint prevSplitB = ctx.orders[ctx.ringSize - 1].splitB;
@@ -445,6 +429,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ctx.miner,
             walletSplitPercentage,
             batch
+        );
+
+        emit RingMined(
+            ctx.ringIndex,
+            ctx.ringHash,
+            ctx.miner,
+            orderInfoList
         );
     }
 
@@ -767,6 +758,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         Context ctx
         )
         private
+        view
     {
         for (uint i = 0; i < ctx.ringSize; i++) {
             uint[6] memory uintArgs = ctx.uintArgsList[i];
