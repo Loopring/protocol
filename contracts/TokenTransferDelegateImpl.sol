@@ -37,8 +37,7 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
         )
         public
     {
-        require(_walletSplitPercentage > 0 && _walletSplitPercentage < 100);
-
+        require(_walletSplitPercentage >= 0 && _walletSplitPercentage <= 100);
         walletSplitPercentage = _walletSplitPercentage;
     }
     struct AddressInfo {
