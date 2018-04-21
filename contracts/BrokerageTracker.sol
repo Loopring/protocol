@@ -19,16 +19,37 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 
-/// @title ERC20 Token Mint
-/// @dev This contract deploys ERC20 token contract and registered the contract
-///      so the token can be traded with Loopring Protocol.
-/// @author Kongliang Zhong - <kongliang@loopring.org>,
-/// @author Daniel Wang - <daniel@loopring.org>.
+/// @title BrokerageTracker
+/// @dev   This tracker MUST set the TokenTransferDelegateImpl as the owner.
 contract BrokerageTracker {
+    /// @dev Returns the max amount the broker can buy or sell.
     function getAllowance(
         address owner,
-        address broker
+        address broker,
+        address tokenB,
+        address tokenS
         )
-        external
-        returns (uint allowance);
+        public
+        view
+        returns (
+            uint allowanceB,
+            uint allowanceS,
+            uint lrcAllowance
+        );
+
+    /// @dev This method will be called from TokenTransferDelegateImpl, so
+    ///      it must check `msg.sender` is the address of TokenTransferDelegateImpl.
+    ///      Check https://github.com/Loopring/token-listing/blob/master/ethereum/deployment.md
+    ///      for the current address of TokenTransferDelegateImpl. 
+    function onSettlement(
+        address owner,
+        address broker,
+        address tokenB,
+        uint    amountB,
+        address tokenS,
+        uint    amountS,
+        uint    lrcFee,
+        uint    lrcReward
+        )
+        public;
 }

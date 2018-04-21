@@ -19,10 +19,11 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 
-/// @title ERC20 Token Mint
-/// @dev This contract deploys ERC20 token contract and registered the contract
-///      so the token can be traded with Loopring Protocol.
-/// @author Kongliang Zhong - <kongliang@loopring.org>,
+/// @title Trade Broker
+/// @dev A broker is an account that can submit order on behalf of other
+///      accounts. When register a broker, the owner can also specify a
+///      pre-deployed BrokageTracker to manage the allowance of for the
+///      specific broker.
 /// @author Daniel Wang - <daniel@loopring.org>.
 contract TradeBroker {
     event BrokerRegistered(
