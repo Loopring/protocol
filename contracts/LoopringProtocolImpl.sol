@@ -81,7 +81,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool    capByAmountB;
         bool    marginSplitAsFee;
         bytes32 orderHash;
-        address brokerTracker;
+        address trackerAddr;
         uint    rateS;
         uint    rateB;
         uint    fillAmountS;
@@ -414,7 +414,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             if (order.signer != order.owner) {
                 BrokerRegistry brokerRegistry = BrokerRegistry(brokerRegistryAddress);
                 bool authenticated;
-                (authenticated, order.brokerTracker) = brokerRegistry.getBroker(
+                (authenticated, order.trackerAddr) = brokerRegistry.getBroker(
                     order.owner,
                     order.signer
                 );
@@ -574,7 +574,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
             require(order.amountS > 0, "amountS scaled to 0");
             require(order.amountB > 0, "amountB scaled to 0");
 
-            uint availableAmountS = getSpendable(ctx.delegate, order.tokenS, order.owner);
+            uint availableAmountS = getSpendable(
+                ctx.delegate,
+                order.tokenS,
+                order.owner,
+                order.signer,
+                order.trackerAddr
+            );
             require(availableAmountS > 0, "spendable is 0");
 
             order.fillAmountS = (
@@ -644,7 +650,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uint lrcSpendable = getSpendable(
                     ctx.delegate,
                     lrcTokenAddress,
-                    order.owner
+                    order.owner,
+                    order.signer,
+                    order.trackerAddr
                 );
 
                 // If the order is selling LRC, we need to calculate how much LRC
@@ -686,7 +694,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // Only check the available miner balance when absolutely needed
                 if (!checkedMinerLrcSpendable && minerLrcSpendable < order.lrcFeeState) {
                     checkedMinerLrcSpendable = true;
-                    minerLrcSpendable = getSpendable(ctx.delegate, lrcTokenAddress, ctx.miner);
+                    minerLrcSpendable = getSpendable(
+                        ctx.delegate,
+                        lrcTokenAddress,
+                        ctx.miner,
+                        0x0,
+                        0x0
+                    );
                 }
 
                 // Only calculate split when miner has enough LRC;
@@ -836,19 +850,40 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function getSpendable(
         TokenTransferDelegate delegate,
         address tokenAddress,
-        address tokenOwner
+        address tokenOwner,
+        address broker,
+        address trackerAddr
         )
         private
         view
-        returns (uint)
+        returns (uint spendable)
     {
         ERC20 token = ERC20(tokenAddress);
-        uint allowance = token.allowance(
+        spendable = token.allowance(
             tokenOwner,
             address(delegate)
         );
-        uint balance = token.balanceOf(tokenOwner);
-        return (allowance < balance ? allowance : balance);
+        if (spendable == 0) {
+            return;
+        }
+        uint amount = token.balanceOf(tokenOwner);
+        if (amount < spendable) {
+            spendable = amount;
+            if (spendable == 0) {
+                return;
+            }
+        }
+
+        if (trackerAddr != 0x0) {
+            amount = BrokerTracker(trackerAddr).getAllowance(
+                tokenOwner,
+                broker,
+                tokenAddress
+            );
+            if (amount < spendable) {
+                spendable = amount;
+            }
+        }
     }
 
     /// @dev validate order's parameters are OK.

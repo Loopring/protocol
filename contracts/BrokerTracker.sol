@@ -25,16 +25,11 @@ contract BrokerTracker {
     function getAllowance(
         address owner,
         address broker,
-        address tokenB,
-        address tokenS
+        address token
         )
         public
         view
-        returns (
-            uint allowanceB,
-            uint allowanceS,
-            uint lrcAllowance
-        );
+        returns (uint allowance);
 
     /// @dev This method will be called from TokenTransferDelegateImpl, so
     ///      it must check `msg.sender` is the address of LoopringProtocol.
