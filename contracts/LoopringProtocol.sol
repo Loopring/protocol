@@ -95,7 +95,7 @@ contract LoopringProtocol {
 
     /// @dev Submit a order-ring for validation and settlement.
     /// @param addressesList List of each order's owner, signer, tokenS, wallet,
-    ///                      authAddr.
+    ///                      and authAddr.
     ///                      Note that next order's `tokenS` equals this order's
     ///                      `tokenB`.
     /// @param valuesList   List of uint-type arguments in this order:
