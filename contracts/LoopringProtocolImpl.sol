@@ -383,13 +383,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
 
-        calculateRingFees(
-            ctx.delegate,
-            ctx.ringSize,
-            ctx.orders,
-            ctx.miner,
-            lrcTokenAddress
-        );
+        calculateRingFees(ctx);
 
         /// Make transfers.
         uint[] memory orderInfoList = settleRing(
@@ -492,22 +486,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev Calculate each order's fee or LRC reward.
     function calculateRingFees(
-        TokenTransferDelegate delegate,
-        uint            ringSize,
-        OrderState[]    orders,
-        address         miner,
-        address         _lrcTokenAddress
+        Context ctx
         )
         private
         view
     {
+        uint ringSize = ctx.ringSize;
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
         uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
         uint nextFillAmountS;
 
         for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
+            OrderState memory state = ctx.orders[i];
             uint lrcReceiable = 0;
 
             if (state.lrcFeeState == 0) {
@@ -517,20 +508,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.marginSplitPercentage = _marginSplitPercentageBase;
             } else {
                 uint lrcSpendable = getSpendable(
-                    delegate,
-                    _lrcTokenAddress,
+                    ctx.delegate,
+                    lrcTokenAddress,
                     state.owner
                 );
 
                 // If the order is selling LRC, we need to calculate how much LRC
                 // is left that can be used as fee.
-                if (state.tokenS == _lrcTokenAddress) {
+                if (state.tokenS == lrcTokenAddress) {
                     lrcSpendable -= state.fillAmountS;
                 }
 
                 // If the order is buyign LRC, it will has more to pay as fee.
-                if (state.tokenB == _lrcTokenAddress) {
-                    nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
+                if (state.tokenB == lrcTokenAddress) {
+                    nextFillAmountS = ctx.orders[(i + 1) % ringSize].fillAmountS;
                     lrcReceiable = nextFillAmountS;
                 }
 
@@ -562,13 +553,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // Only check the available miner balance when absolutely needed
                 if (!checkedMinerLrcSpendable && minerLrcSpendable < state.lrcFeeState) {
                     checkedMinerLrcSpendable = true;
-                    minerLrcSpendable = getSpendable(delegate, _lrcTokenAddress, miner);
+                    minerLrcSpendable = getSpendable(ctx.delegate, lrcTokenAddress, ctx.miner);
                 }
 
                 // Only calculate split when miner has enough LRC;
                 // otherwise all splits are 0.
                 if (minerLrcSpendable >= state.lrcFeeState) {
-                    nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
+                    nextFillAmountS = ctx.orders[(i + 1) % ringSize].fillAmountS;
                     uint split;
                     if (state.buyNoMoreThanAmountB) {
                         split = (nextFillAmountS.mul(
