@@ -25,15 +25,6 @@ pragma experimental "ABIEncoderV2";
 contract LoopringProtocol {
     uint8   public constant MARGIN_SPLIT_PERCENTAGE_BASE = 100;
 
-    enum ErrorCode {
-        ORDER_EXPIRED,
-        LOW_SPENDABLE
-    }
-
-    event Error(
-        ErrorCode errorCode
-    );
-
     event RingMined(
         uint            _ringIndex,
         bytes32 indexed _ringHash,
