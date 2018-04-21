@@ -52,19 +52,19 @@ contract LoopringProtocol {
     );
 
     /// @dev Cancel a order. cancel amount(amountS or amountB) can be specified
-    ///      in orderValues.
+    ///      in values.
     /// @param addresses          owner, tokenS, tokenB, wallet, authAddr
-    /// @param orderValues        amountS, amountB, validSince (second),
+    /// @param values             amountS, amountB, validSince (second),
     ///                           validUntil (second), lrcFee, and cancelAmount.
-    /// @param options            This indicates when a order should be considered
+    /// @param option             This indicates when a order should be considered
     ///                           as 'completely filled'.
     /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
     function cancelOrder(
         address[5] addresses,
-        uint[6]    orderValues,
-        uint8      options,
+        uint[6]    values,
+        uint8      option,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -94,13 +94,13 @@ contract LoopringProtocol {
         external;
 
     /// @dev Submit a order-ring for validation and settlement.
-    /// @param addressList  List of each order's owner, tokenS, wallet, authAddr.
-    ///                     Note that next order's `tokenS` equals this order's
-    ///                     `tokenB`.
-    /// @param uintArgsList List of uint-type arguments in this order:
+    /// @param addressesList List of each order's owner, tokenS, wallet, authAddr.
+    ///                      Note that next order's `tokenS` equals this order's
+    ///                      `tokenB`.
+    /// @param valuesList   List of uint-type arguments in this order:
     ///                     amountS, amountB, validSince (second),
     ///                     validUntil (second), lrcFee, and rateAmountS.
-    /// @param optionsList  This indicates when a order should be considered
+    /// @param optionList   This indicates when a order should be considered
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -115,9 +115,9 @@ contract LoopringProtocol {
     ///                     Bits to indicate fee selections. `1` represents margin
     ///                     split and `0` represents LRC as fee.
     function submitRing(
-        address[4][]    addressList,
-        uint[6][]       uintArgsList,
-        bool[]          optionsList,
+        address[4][]    addressesList,
+        uint[6][]       valuesList,
+        bool[]          optionList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList,

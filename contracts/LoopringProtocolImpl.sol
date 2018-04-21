@@ -86,7 +86,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    amountS;
         uint    amountB;
         uint    lrcFee;
-        uint8   options;
+        uint8   option;
         bool    capByAmountB;
         bool    marginSplitAsFee;
         bytes32 orderHash;
@@ -102,9 +102,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev A struct to capture parameters passed to submitRing method and
     ///      various of other variables used across the submitRing core logics.
     struct Context {
-        address[4][]  addressList;
-        uint[6][]     uintArgsList;
-        uint8[]       optionsList;
+        address[4][]  addressesList;
+        uint[6][]     valuesList;
+        uint8[]       optionList;
         uint8[]       vList;
         bytes32[]     rList;
         bytes32[]     sList;
@@ -151,7 +151,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function cancelOrder(
         address[5] addresses,
         uint[6]    orderValues,
-        uint8      options,
+        uint8      option,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -173,8 +173,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[0],
             orderValues[1],
             orderValues[4],
-            options,
-            options & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
+            option,
+            option & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
             false,
             0x0,
             0,
@@ -252,9 +252,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function submitRing(
-        address[4][]  addressList,
-        uint[6][]     uintArgsList,
-        uint8[]       optionsList,
+        address[4][]  addressesList,
+        uint[6][]     valuesList,
+        uint8[]       optionList,
         uint8[]       vList,
         bytes32[]     rList,
         bytes32[]     sList,
@@ -264,18 +264,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
         public
     {
         Context memory ctx = Context(
-            addressList,
-            uintArgsList,
-            optionsList,
+            addressesList,
+            valuesList,
+            optionList,
             vList,
             rList,
             sList,
             miner,
             feeSelections,
             ringIndex,
-            addressList.length,
+            addressesList.length,
             TokenTransferDelegate(delegateAddress),
-            new OrderState[](addressList.length),
+            new OrderState[](addressesList.length),
             0x0 // ringHash
         );
 
@@ -320,23 +320,23 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(ctx.miner != 0x0, "bad miner");
 
         require(
-            ctx.ringSize == ctx.addressList.length,
-            "wrong addressList size"
+            ctx.ringSize == ctx.addressesList.length,
+            "wrong addressesList size"
         );
 
         require(
-            ctx.ringSize == ctx.uintArgsList.length,
-            "wrong uintArgsList size"
+            ctx.ringSize == ctx.valuesList.length,
+            "wrong valuesList size"
         );
 
         require(
-            ctx.ringSize == ctx.optionsList.length,
-            "wrong optionsList size"
+            ctx.ringSize == ctx.optionList.length,
+            "wrong optionList size"
         );
 
         // Validate ring-mining related arguments.
         for (uint i = 0; i < ctx.ringSize; i++) {
-            require(ctx.uintArgsList[i][5] > 0, "rateAmountS is 0");
+            require(ctx.valuesList[i][5] > 0, "rateAmountS is 0");
         }
 
         //Check ring size
@@ -362,22 +362,22 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         for (uint i = 0; i < ctx.ringSize; i++) {
 
-            uint[6] memory uintArgs = ctx.uintArgsList[i];
+            uint[6] memory uintArgs = ctx.valuesList[i];
             bool marginSplitAsFee = (ctx.feeSelections & (uint8(1) << i)) > 0;
 
             ctx.orders[i] = OrderState(
-                ctx.addressList[i][0],
-                ctx.addressList[i][1],
-                ctx.addressList[(i + 1) % ctx.ringSize][1],
-                ctx.addressList[i][2],
-                ctx.addressList[i][3],
+                ctx.addressesList[i][0],
+                ctx.addressesList[i][1],
+                ctx.addressesList[(i + 1) % ctx.ringSize][1],
+                ctx.addressesList[i][2],
+                ctx.addressesList[i][3],
                 uintArgs[2],
                 uintArgs[3],
                 uintArgs[0],
                 uintArgs[1],
                 uintArgs[4],
-                ctx.optionsList[i],
-                ctx.optionsList[i] & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
+                ctx.optionList[i],
+                ctx.optionList[i] & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
                 marginSplitAsFee,
                 bytes32(0),
                 uintArgs[5],
@@ -866,7 +866,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             order.validSince,
             order.validUntil,
             order.lrcFee,
-            order.options
+            order.option
         );
     }
 
