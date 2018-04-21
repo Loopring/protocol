@@ -113,9 +113,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint16        feeSelections;
         uint64        ringIndex;
         uint          ringSize;         // computed
-        bytes32       ringHash;         // computed
         TokenTransferDelegate delegate;
-        OrderState[]          orders;
+        OrderState[]  orders;
+        bytes32       ringHash;         // computed
     }
 
     constructor(
@@ -162,7 +162,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         uint cancelAmount = orderValues[5];
 
-        require(cancelAmount > 0); // "amount to cancel is zero");
+        require(cancelAmount > 0, "invalid cancelAmount");
 
         OrderState memory order = OrderState(
             addresses[0],
@@ -188,7 +188,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
             0
         );
 
-        require(msg.sender == order.owner); // "cancelOrder not submitted by order owner");
+        require(
+            msg.sender == order.owner,
+            "cancelOrder not submitted by owner"
+        );
 
         bytes32 orderHash = calculateOrderHash(order);
 
@@ -219,8 +222,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes20 tokenPair = bytes20(token1) ^ bytes20(token2);
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
-        require(delegate.tradingPairCutoffs(msg.sender, tokenPair) < t);
-        // "attempted to set cutoff to a smaller value"
+        require(
+            delegate.tradingPairCutoffs(msg.sender, tokenPair) < t,
+            "cutoff too small"
+        );
 
         delegate.setTradingPairCutoffs(tokenPair, t);
         emit OrdersCancelled(
@@ -239,7 +244,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
 
-        require(delegate.cutoffs(msg.sender) < t); // "attempted to set cutoff to a smaller value"
+        require(
+            delegate.cutoffs(msg.sender) < t,
+            "cutoff too small"
+        );
 
         delegate.setCutoffs(t);
         emit AllOrdersCancelled(msg.sender, t);
@@ -270,9 +278,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
             feeSelections,
             ringIndex,
             addressList.length,
-            0x0, // ringHash
             TokenTransferDelegate(delegateAddress),
-            new OrderState[](addressList.length)
+            new OrderState[](addressList.length),
+            0x0 // ringHash
         );
 
         // Check if the highest bit of ringIndex is '1'.
@@ -317,7 +325,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         for (uint i = 0; i < ctx.ringSize - 1; i++) {
             address tokenS = ctx.orders[i].tokenS;
             for (uint j = i + 1; j < ctx.ringSize; j++) {
-                require(tokenS != ctx.orders[j].tokenS); // "found sub-ring");
+                require(tokenS != ctx.orders[j].tokenS, "subring found");
             }
         }
     }
@@ -358,8 +366,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         // Test all token addresses at once
         require(
-            TokenRegistry(tokenRegistryAddress).areAllTokensRegistered(tokens)
-        ); // "token not registered");
+            TokenRegistry(tokenRegistryAddress).areAllTokensRegistered(tokens),
+            "token not registered"
+        );
     }
 
     function settleRing(
@@ -437,15 +446,14 @@ contract LoopringProtocolImpl is LoopringProtocol {
             uint s1b0 = ctx.orders[i].rateS.mul(ctx.orders[i].amountB);
             uint s0b1 = ctx.orders[i].amountS.mul(ctx.orders[i].rateB);
 
-            require(s1b0 <= s0b1); // "miner supplied exchange rate provides invalid discount");
+            require(s1b0 <= s0b1, "invalid discount");
 
             rateRatios[i] = _rateRatioScale.mul(s1b0) / s0b1;
         }
 
         uint cvs = MathUint.cvsquare(rateRatios, _rateRatioScale);
 
-        require(cvs <= rateRatioCVSThreshold);
-        // "miner supplied exchange rate is not evenly discounted");
+        require(cvs <= rateRatioCVSThreshold, "uneven discount");
     }
 
     /// @dev  Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
@@ -682,11 +690,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 state.amountS = amount;
             }
 
-            require(state.amountS > 0); // "amountS is zero");
-            require(state.amountB > 0); // "amountB is zero");
+            require(state.amountS > 0, "amountS scaled to 0");
+            require(state.amountB > 0, "amountB scaled to 0");
 
             uint availableAmountS = getSpendable(ctx.delegate, state.tokenS, state.owner);
-            require(availableAmountS > 0); // "order spendable amountS is zero");
+            require(availableAmountS > 0, "spendable is 0");
 
             state.fillAmountS = (
                 state.amountS < availableAmountS ?
@@ -721,24 +729,39 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         pure
     {
-        require(ctx.miner != 0x0);
-        require(ctx.ringSize == ctx.addressList.length);
-        require(ctx.ringSize == ctx.uintArgsList.length);
-        require(ctx.ringSize == ctx.uint8ArgsList.length);
-        require(ctx.ringSize == ctx.buyNoMoreThanAmountBList.length);
+        require(ctx.miner != 0x0, "bad miner");
+        require(
+            ctx.ringSize == ctx.addressList.length,
+            "wrong addressList size"
+        );
+        require(
+            ctx.ringSize == ctx.uintArgsList.length,
+            "wrong uintArgsList size"
+        );
+        require(
+            ctx.ringSize == ctx.uint8ArgsList.length,
+            "wrong uint8ArgsList size"
+        );
+        require(
+            ctx.ringSize == ctx.buyNoMoreThanAmountBList.length,
+            "wrong buyNoMoreThanAmountBList size"
+        );
 
         // Validate ring-mining related arguments.
         for (uint i = 0; i < ctx.ringSize; i++) {
-            require(ctx.uintArgsList[i][5] > 0); // "order rateAmountS is zero");
+            require(ctx.uintArgsList[i][5] > 0, "rateAmountS is 0");
         }
 
         //Check ring size
-        require(ctx.ringSize > 1 && ctx.ringSize <= MAX_RING_SIZE); // "invalid ring size");
+        require(
+            ctx.ringSize > 1 && ctx.ringSize <= MAX_RING_SIZE,
+            "invalid ring size"
+        );
 
         uint sigSize = ctx.ringSize << 1;
-        require(sigSize == ctx.vList.length);
-        require(sigSize == ctx.rList.length);
-        require(sigSize == ctx.sList.length);
+        require(sigSize == ctx.vList.length, "invalid vList size");
+        require(sigSize == ctx.rList.length, "invalid rList size");
+        require(sigSize == ctx.sList.length, "invalid sList size");
     }
 
     /// @dev Assemble input data into structs so we can pass them to other functions.
@@ -807,16 +830,18 @@ contract LoopringProtocolImpl is LoopringProtocol {
         private
         view
     {
-        require(order.owner != 0x0); // invalid order owner
-        require(order.tokenS != 0x0); // invalid order tokenS
-        require(order.tokenB != 0x0); // invalid order tokenB
-        require(order.amountS != 0); // invalid order amountS
-        require(order.amountB != 0); // invalid order amountB
-        require(order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE);
-        // invalid order marginSplitPercentage
+        require(order.owner != 0x0, "invalid owner");
+        require(order.tokenS != 0x0, "invalid tokenS");
+        require(order.tokenB != 0x0, "nvalid tokenB");
+        require(order.amountS != 0, "invalid amountS");
+        require(order.amountB != 0, "invalid amountB");
+        require(
+            order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE,
+            "invalid marginSplitPercentage"
+        );
 
-        require(order.validSince <= block.timestamp); // order is too early to match
-        require(order.validUntil > block.timestamp); // order is expired
+        require(order.validSince <= block.timestamp, "immature");
+        require(order.validUntil > block.timestamp, "expired");
     }
 
     function validateOrdersCutoffs(
@@ -880,8 +905,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 v,
                 r,
                 s
-            )
-        ); // "invalid signature");
+            ),
+            "bad signature"
+        );
     }
 
     function getTradingPairCutoffs(
