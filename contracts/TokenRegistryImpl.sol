@@ -14,7 +14,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./lib/AddressUtil.sol";
 import "./lib/Claimable.sol";
@@ -32,7 +34,7 @@ contract TokenRegistryImpl is TokenRegistry, Claimable {
     mapping (string => address) symbolMap;
 
     struct TokenInfo {
-        uint   pos;      // 0 mens unregistered; if > 0, pos + 1 is the
+        uint   pos;      // 0 mens unregistered; if > 0, pos - 1 is the
                          // token's position in `addresses`.
         string symbol;   // Symbol of the token
     }
@@ -40,7 +42,7 @@ contract TokenRegistryImpl is TokenRegistry, Claimable {
     /// @dev Disable default function.
     function ()
         payable
-        public
+        external
     {
         revert();
     }
@@ -71,8 +73,8 @@ contract TokenRegistryImpl is TokenRegistry, Claimable {
         external
         onlyOwner
     {
-        require(addr != 0x0);
-        require(symbolMap[symbol] == addr);
+        require(addr != 0x0,"bad address");
+        require(symbolMap[symbol] == addr, "token not found");
         delete symbolMap[symbol];
 
         uint pos = addressMap[addr].pos;
@@ -168,16 +170,27 @@ contract TokenRegistryImpl is TokenRegistry, Claimable {
         }
     }
 
+    // address[] public addresses;
+    // mapping (address => TokenInfo) addressMap;
+    // mapping (string => address) symbolMap;
+
+    // struct TokenInfo {
+    //     uint   pos;      // 0 mens unregistered; if > 0, pos - 1 is the
+    //                      // token's position in `addresses`.
+    //     string symbol;   // Symbol of the token
+    // }
+
+
     function registerTokenInternal(
         address addr,
         string  symbol
         )
         internal
     {
-        require(0x0 != addr);
-        require(bytes(symbol).length > 0);
-        require(0x0 == symbolMap[symbol]);
-        require(0 == addressMap[addr].pos);
+        require(0x0 != addr, "bad address");
+        require(bytes(symbol).length > 0, "empty symbol");
+        require(0x0 == symbolMap[symbol], "symbol registered");
+        require(0 == addressMap[addr].pos, "address registered");
 
         addresses.push(addr);
         symbolMap[symbol] = addr;

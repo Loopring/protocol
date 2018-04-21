@@ -19,44 +19,28 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 
-/// @title ERC20 Token Interface
-/// @dev see https://github.com/ethereum/EIPs/issues/20
-/// @author Daniel Wang - <daniel@loopring.org>
-contract ERC20 {
-    function balanceOf(
-        address who
-        )
-        view
-        public
-        returns (uint256);
-
-    function allowance(
+/// @title BrokerTracker
+contract BrokerTracker {
+    /// @dev Returns the max amount the broker can buy or sell.
+    function getAllowance(
         address owner,
-        address spender
+        address broker,
+        address token
         )
+        public
         view
-        public
-        returns (uint256);
+        returns (uint allowance);
 
-    function transfer(
-        address to,
-        uint256 value
+    /// @dev This method will be called from TokenTransferDelegateImpl, so
+    ///      it must check `msg.sender` is the address of LoopringProtocol.
+    ///      Check https://github.com/Loopring/token-listing/blob/master/ethereum/deployment.md
+    ///      for the current address of TokenTransferDelegateImpl deployment. 
+    function onTokenSpent(
+        address owner,
+        address broker,
+        address token,
+        uint    amount
         )
         public
-        returns (bool);
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-        )
-        public
-        returns (bool);
-
-    function approve(
-        address spender,
-        uint256 value
-        )
-        public
-        returns (bool);
+        returns (bool ok);
 }

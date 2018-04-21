@@ -14,7 +14,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 
 /// @title Loopring Token Exchange Protocol Contract Interface
@@ -23,14 +25,22 @@ pragma solidity 0.4.21;
 contract LoopringProtocol {
     uint8   public constant MARGIN_SPLIT_PERCENTAGE_BASE = 100;
 
-    /// @dev Event to emit if a ring is successfully mined.
-    /// _amountsList is an array of:
-    /// [_amountS, _amountB, _lrcReward, _lrcFee, splitS, splitB].
+    uint8   public constant OPTION_MASK_CAP_BY_AMOUNTB = 0x01;
+
+    struct Fill {
+        bytes32 orderHash;
+        uint    amountS;
+        uint    lrcReward;
+        uint    lrcFee;
+        uint    splitS;
+        uint    splitB;
+    }
+
     event RingMined(
         uint            _ringIndex,
         bytes32 indexed _ringHash,
         address         _miner,
-        uint[]          _orderInfoList
+        Fill[]          _fills
     );
 
     event OrderCancelled(
@@ -51,23 +61,19 @@ contract LoopringProtocol {
     );
 
     /// @dev Cancel a order. cancel amount(amountS or amountB) can be specified
-    ///      in orderValues.
-    /// @param addresses          owner, tokenS, tokenB, wallet, authAddr
-    /// @param orderValues        amountS, amountB, validSince (second),
+    ///      in values.
+    /// @param addresses          owner, signer, tokenS, tokenB, wallet, authAddr
+    /// @param values             amountS, amountB, validSince (second),
     ///                           validUntil (second), lrcFee, and cancelAmount.
-    /// @param buyNoMoreThanAmountB -
-    ///                           This indicates when a order should be considered
+    /// @param option             This indicates when a order should be considered
     ///                           as 'completely filled'.
-    /// @param marginSplitPercentage -
-    ///                           Percentage of margin split to share with miner.
     /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
     function cancelOrder(
-        address[5] addresses,
-        uint[6]    orderValues,
-        bool       buyNoMoreThanAmountB,
-        uint8      marginSplitPercentage,
+        address[6] addresses,
+        uint[6]    values,
+        uint8      option,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -97,17 +103,14 @@ contract LoopringProtocol {
         external;
 
     /// @dev Submit a order-ring for validation and settlement.
-    /// @param addressList  List of each order's owner, tokenS, wallet, authAddr.
-    ///                     Note that next order's `tokenS` equals this order's
-    ///                     `tokenB`.
-    /// @param uintArgsList List of uint-type arguments in this order:
+    /// @param addressesList List of each order's owner, signer, tokenS, wallet,
+    ///                      and authAddr.
+    ///                      Note that next order's `tokenS` equals this order's
+    ///                      `tokenB`.
+    /// @param valuesList   List of uint-type arguments in this order:
     ///                     amountS, amountB, validSince (second),
     ///                     validUntil (second), lrcFee, and rateAmountS.
-    /// @param uint8ArgsList -
-    ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList.
-    /// @param buyNoMoreThanAmountBList -
-    ///                     This indicates when a order should be considered
+    /// @param optionList   This indicates when a order should be considered
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -122,15 +125,14 @@ contract LoopringProtocol {
     ///                     Bits to indicate fee selections. `1` represents margin
     ///                     split and `0` represents LRC as fee.
     function submitRing(
-        address[4][]    addressList,
-        uint[6][]       uintArgsList,
-        uint8[1][]      uint8ArgsList,
-        bool[]          buyNoMoreThanAmountBList,
+        address[5][]    addressesList,
+        uint[6][]       valuesList,
+        bool[]          optionList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList,
         address         miner,
-        uint16          feeSelections
+        uint8           feeSelections
         )
         public;
 }

@@ -14,11 +14,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./lib/AddressUtil.sol";
-import "./lib/StringUtil.sol";
 import "./lib/ERC20Token.sol";
+import "./lib/StringUtil.sol";
 import "./TokenFactory.sol";
 import "./TokenRegistry.sol";
 
@@ -32,17 +34,16 @@ contract TokenFactoryImpl is TokenFactory {
 
     mapping(bytes10 => address) public tokens;
     address   public tokenRegistry;
-    address   public tokenTransferDelegate;
 
     /// @dev Disable default function.
     function ()
         payable
-        public
+        external
     {
         revert();
     }
 
-    function TokenFactoryImpl(
+    constructor(
         address _tokenRegistry
         )
         public
@@ -60,12 +61,10 @@ contract TokenFactoryImpl is TokenFactory {
         external
         returns (address addr)
     {
-        require(tokenRegistry != 0x0);
-        require(tokenTransferDelegate != 0x0);
-        require(symbol.checkStringLength(3, 10));
+        require(symbol.checkStringLength(3, 10), "bad symbol size");
 
         bytes10 symbolBytes = symbol.stringToBytes10();
-        require(tokens[symbolBytes] == 0x0);
+        require(tokens[symbolBytes] == 0x0, "invalid symbol");
 
         ERC20Token token = new ERC20Token(
             name,

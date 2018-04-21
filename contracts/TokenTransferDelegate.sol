@@ -14,7 +14,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 
 /// @title TokenTransferDelegate
@@ -82,7 +84,6 @@ contract TokenTransferDelegate {
     function batchTransferToken(
         address lrcTokenAddress,
         address minerFeeRecipient,
-        uint8 walletSplitPercentage,
         bytes32[] batch
         )
         external;
@@ -94,19 +95,34 @@ contract TokenTransferDelegate {
         view
         returns (bool);
 
-    function addCancelled(bytes32 orderHash, uint cancelAmount)
+    function addCancelled(
+        bytes32 orderHash,
+        uint cancelAmount
+        )
         external;
 
-    function addCancelledOrFilled(bytes32 orderHash, uint cancelOrFillAmount)
+    function addCancelledOrFilled(
+        bytes32 orderHash,
+        uint cancelOrFillAmount
+        )
         external;
 
-    function setCutoffs(uint t)
+    function setCutoffs(
+        uint cutoff
+        )
         external;
 
-    function setTradingPairCutoffs(bytes20 tokenPair, uint t)
+    function setTradingPairCutoffs(
+        bytes20 tokenPair,
+        uint cutoff
+        )
         external;
 
-    function checkCutoffsBatch(address[] owners, bytes20[] tradingPairs, uint[] validSince)
+    function checkCutoffsBatch(
+        address[] owners,
+        bytes20[] tradingPairs,
+        uint[] validSince
+        )
         external
         view;
 }

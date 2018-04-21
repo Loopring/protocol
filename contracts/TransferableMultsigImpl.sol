@@ -14,7 +14,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./TransferableMultsig.sol";
 
@@ -28,7 +30,7 @@ contract TransferableMultsigImpl is TransferableMultsig {
     mapping (address => bool) ownerMap; // immutable state
     address[] public owners;            // immutable state
 
-    function TransferableMultsig(
+    constructor(
         uint      _threshold,
         address[] _owners
         )
@@ -40,7 +42,7 @@ contract TransferableMultsigImpl is TransferableMultsig {
     // default function does nothing.
     function ()
         payable
-        public
+        external
     {
     }
 
@@ -74,7 +76,8 @@ contract TransferableMultsigImpl is TransferableMultsig {
         );
 
         require(
-            destination.call.value(value)(data)
+            destination.call.value(value)(data),
+            "execution error"
         );
     }
 
@@ -152,7 +155,7 @@ contract TransferableMultsigImpl is TransferableMultsig {
         }
 
         address lastAddr = 0x0;
-        for (i = 0; i < _owners.length; i++) {
+        for (uint i = 0; i < _owners.length; i++) {
             address owner = _owners[i];
             require(owner > lastAddr);
 
