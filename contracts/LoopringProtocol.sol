@@ -25,6 +25,8 @@ pragma experimental "ABIEncoderV2";
 contract LoopringProtocol {
     uint8   public constant MARGIN_SPLIT_PERCENTAGE_BASE = 100;
 
+    uint8   public constant OPTION_MASK_CAP_BY_AMOUNTB = 0x01;
+
     event RingMined(
         uint            _ringIndex,
         bytes32 indexed _ringHash,
@@ -54,8 +56,7 @@ contract LoopringProtocol {
     /// @param addresses          owner, tokenS, tokenB, wallet, authAddr
     /// @param orderValues        amountS, amountB, validSince (second),
     ///                           validUntil (second), lrcFee, and cancelAmount.
-    /// @param buyNoMoreThanAmountB -
-    ///                           This indicates when a order should be considered
+    /// @param options            This indicates when a order should be considered
     ///                           as 'completely filled'.
     /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
@@ -63,7 +64,7 @@ contract LoopringProtocol {
     function cancelOrder(
         address[5] addresses,
         uint[6]    orderValues,
-        bool       buyNoMoreThanAmountB,
+        uint8      options,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -99,8 +100,7 @@ contract LoopringProtocol {
     /// @param uintArgsList List of uint-type arguments in this order:
     ///                     amountS, amountB, validSince (second),
     ///                     validUntil (second), lrcFee, and rateAmountS.
-    /// @param buyNoMoreThanAmountBList -
-    ///                     This indicates when a order should be considered
+    /// @param optionsList  This indicates when a order should be considered
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -117,7 +117,7 @@ contract LoopringProtocol {
     function submitRing(
         address[4][]    addressList,
         uint[6][]       uintArgsList,
-        bool[]          buyNoMoreThanAmountBList,
+        bool[]          optionsList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList,

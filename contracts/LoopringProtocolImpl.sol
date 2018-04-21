@@ -86,7 +86,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint    amountS;
         uint    amountB;
         uint    lrcFee;
-        bool    buyNoMoreThanAmountB;
+        uint8   options;
+        bool    capByAmountB;
         bool    marginSplitAsFee;
         bytes32 orderHash;
         uint    rateS;
@@ -103,7 +104,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     struct Context {
         address[4][]  addressList;
         uint[6][]     uintArgsList;
-        bool[]        buyNoMoreThanAmountBList;
+        uint8[]       optionsList;
         uint8[]       vList;
         bytes32[]     rList;
         bytes32[]     sList;
@@ -150,7 +151,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function cancelOrder(
         address[5] addresses,
         uint[6]    orderValues,
-        bool       buyNoMoreThanAmountB,
+        uint8      options,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -172,7 +173,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             orderValues[0],
             orderValues[1],
             orderValues[4],
-            buyNoMoreThanAmountB,
+            options,
+            options & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
             false,
             0x0,
             0,
@@ -252,7 +254,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function submitRing(
         address[4][]  addressList,
         uint[6][]     uintArgsList,
-        bool[]        buyNoMoreThanAmountBList,
+        uint8[]       optionsList,
         uint8[]       vList,
         bytes32[]     rList,
         bytes32[]     sList,
@@ -264,7 +266,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         Context memory ctx = Context(
             addressList,
             uintArgsList,
-            buyNoMoreThanAmountBList,
+            optionsList,
             vList,
             rList,
             sList,
@@ -328,8 +330,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
         require(
-            ctx.ringSize == ctx.buyNoMoreThanAmountBList.length,
-            "wrong buyNoMoreThanAmountBList size"
+            ctx.ringSize == ctx.optionsList.length,
+            "wrong optionsList size"
         );
 
         // Validate ring-mining related arguments.
@@ -374,7 +376,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uintArgs[0],
                 uintArgs[1],
                 uintArgs[4],
-                ctx.buyNoMoreThanAmountBList[i],
+                ctx.optionsList[i],
+                ctx.optionsList[i] & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
                 marginSplitAsFee,
                 bytes32(0),
                 uintArgs[5],
@@ -527,7 +530,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             OrderState memory state = orders[i];
             uint amount;
 
-            if (state.buyNoMoreThanAmountB) {
+            if (state.capByAmountB) {
                 amount = state.amountB.tolerantSub(
                     ctx.delegate.cancelledOrFilled(state.orderHash)
                 );
@@ -606,7 +609,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint ringSize = ctx.ringSize;
         bool checkedMinerLrcSpendable = false;
         uint minerLrcSpendable = 0;
-        uint8 _marginSplitPercentageBase = MARGIN_SPLIT_PERCENTAGE_BASE;
         uint nextFillAmountS;
 
         for (uint i = 0; i < ringSize; i++) {
@@ -671,7 +673,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 if (minerLrcSpendable >= state.lrcFeeState) {
                     nextFillAmountS = ctx.orders[(i + 1) % ringSize].fillAmountS;
                     uint split;
-                    if (state.buyNoMoreThanAmountB) {
+                    if (state.capByAmountB) {
                         split = (nextFillAmountS.mul(
                             state.amountS
                         ) / state.amountB).sub(
@@ -685,7 +687,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         ) / 2;
                     }
 
-                    if (state.buyNoMoreThanAmountB) {
+                    if (state.capByAmountB) {
                         state.splitS = split;
                     } else {
                         state.splitB = split;
@@ -732,7 +734,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             p += 7;
 
             // Update fill records
-            if (state.buyNoMoreThanAmountB) {
+            if (state.capByAmountB) {
                 ctx.delegate.addCancelledOrFilled(state.orderHash, nextFillAmountS);
             } else {
                 ctx.delegate.addCancelledOrFilled(state.orderHash, state.fillAmountS);
@@ -783,7 +785,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             state.rateB
         ) / state.rateS;
 
-        if (state.buyNoMoreThanAmountB) {
+        if (state.capByAmountB) {
             if (fillAmountB > state.amountB) {
                 fillAmountB = state.amountB;
 
@@ -864,7 +866,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             order.validSince,
             order.validUntil,
             order.lrcFee,
-            order.buyNoMoreThanAmountB
+            order.options
         );
     }
 
