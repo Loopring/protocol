@@ -80,6 +80,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool    capByAmountB;
         bool    marginSplitAsFee;
         bytes32 orderHash;
+        address brokerTracker;
         uint    rateS;
         uint    rateB;
         uint    fillAmountS;
@@ -167,6 +168,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             option & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
             false,
             0x0,
+            0x0,
             0,
             0,
             0,
@@ -178,13 +180,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         require(
             msg.sender == order.owner,
-            "cancelOrder not submitted by owner"
+            "cancelOrder not submitted by signer"
         );
 
         bytes32 orderHash = calculateOrderHash(order);
 
         verifySignature(
-            order.owner,
+            order.signer,
             orderHash,
             v,
             r,
@@ -370,14 +372,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 ctx.optionList[i],
                 ctx.optionList[i] & OPTION_MASK_CAP_BY_AMOUNTB > 0 ? true : false,
                 marginSplitAsFee,
-                bytes32(0),
+                0x0,
+                0x0,  // brokderTracker
                 uintArgs[5],
                 uintArgs[1],
                 0,   // fillAmountS
                 0,   // lrcReward
                 0,   // lrcFee
                 0,   // splitS
-                0    // splitB
+                0.   // splitB
             );
 
             validateOrder(ctx.orders[i]);
@@ -848,6 +851,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         return keccak256(
             delegateAddress,
             order.owner,
+            order.signer,
             order.tokenS,
             order.tokenB,
             order.wallet,
