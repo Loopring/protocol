@@ -743,9 +743,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
         )
         private
     {
-        // ringSize * (owner + tokenS + 4 amounts + wallet)
-        uint[] memory values = new uint[](ctx.ringSize * 6);
-        bytes32[] memory batch = new bytes32[](ctx.ringSize * 9);
+        bytes32[] memory batch = new bytes32[](ctx.ringSize * 7);
+        Fill[] memory fills = new Fill[](ctx.ringSize);
 
         uint p = 0;
         uint prevSplitB = ctx.orders[ctx.ringSize - 1].splitB;
@@ -780,12 +779,23 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 );
             }
 
+<<<<<<< HEAD
             values[i * 6 + 0] = uint(order.orderHash);
             values[i * 6 + 1] = order.fillAmountS;
             values[i * 6 + 2] = order.lrcReward;
             values[i * 6 + 3] = order.lrcFeeState;
             values[i * 6 + 4] = order.splitS;
             values[i * 6 + 5] = order.splitB;
+=======
+            fills[i]  = Fill(
+                order.orderHash,
+                order.fillAmountS,
+                order.lrcReward,
+                order.lrcFeeState,
+                order.splitS,
+                order.splitB
+            );
+>>>>>>> 4c279499d12a9b30fad4ad5bdec66bdec911c2b0
 
             prevSplitB = order.splitB;
         }
@@ -802,7 +812,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ctx.ringIndex,
             ctx.ringHash,
             ctx.miner,
+<<<<<<< HEAD
             values
+=======
+            fills
+>>>>>>> 4c279499d12a9b30fad4ad5bdec66bdec911c2b0
         );
     }
 
