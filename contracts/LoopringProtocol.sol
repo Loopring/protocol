@@ -105,9 +105,10 @@ contract LoopringProtocol {
     ///                     validUntil (second), lrcFee, and rateAmountS.
     /// @param uint8ArgsList -
     ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList.
-    /// @param buyNoMoreThanAmountBList -
-    ///                     This indicates when a order should be considered
+    ///                     marginSplitPercentageList. Bits 0-6 represent the marginSplitPercentage,
+    ///                     bits 7 represents the buyNoMoreThanAmountB as Boolean
+    ///                     bits 8 represents the feeSelection
+    ///                     also indicates when a order should be considered
     /// @param vList        List of v for each order. This list is 1-larger than
     ///                     the previous lists, with the last element being the
     ///                     v value of the ring signature.
@@ -118,19 +119,15 @@ contract LoopringProtocol {
     ///                     the previous lists, with the last element being the
     ///                     s value of the ring signature.
     /// @param miner        Miner address.
-    /// @param feeSelections -
-    ///                     Bits to indicate fee selections. `1` represents margin
-    ///                     split and `0` represents LRC as fee.
+
     function submitRing(
         address[4][]    addressList,
         uint[6][]       uintArgsList,
-        uint8[1][]      uint8ArgsList,
-        bool[]          buyNoMoreThanAmountBList,
+        uint16[]        uint8ArgsList,
         uint8[]         vList,
         bytes32[]       rList,
         bytes32[]       sList,
-        address         miner,
-        uint16          feeSelections
+        address         miner
         )
         public;
 }

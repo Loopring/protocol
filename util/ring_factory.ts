@@ -428,8 +428,7 @@ export class RingFactory {
     const ringSize = ring.orders.length;
     const addressList: string[][] = [];
     const uintArgsList: BigNumber[][] = [];
-    const uint8ArgsList: number[][] = [];
-    const buyNoMoreThanAmountBList: boolean[] = [];
+    const uint8ArgsList: number[] = [];
     const vList: number[] = [];
     const rList: string[] = [];
     const sList: string[] = [];
@@ -456,12 +455,14 @@ export class RingFactory {
       ];
       uintArgsList.push(uintArgsListItem);
 
-      const uint8ArgsListItem = [order.params.marginSplitPercentage];
+      const encoded = this.BuyNoMoreAndMarginEncode(order.params.buyNoMoreThanAmountB,
+        order.params.marginSplitPercentage,
+        feeSelectionList[i]);
+
+      // const uint8ArgsListItem = [encoded];
       // console.log("uint8ArgsListItem", uint8ArgsListItem);
 
-      uint8ArgsList.push(uint8ArgsListItem);
-
-      buyNoMoreThanAmountBList.push(order.params.buyNoMoreThanAmountB);
+      uint8ArgsList.push(encoded);
 
       vList.push(order.params.v);
       rList.push(order.params.r);
@@ -480,13 +481,11 @@ export class RingFactory {
       addressList,
       uintArgsList,
       uint8ArgsList,
-      buyNoMoreThanAmountBList,
       vList,
       rList,
       sList,
       ringOwner: ring.owner,
       feeRecepient,
-      feeSelections: this.feeSelectionListToNumber(feeSelectionList),
     };
 
     return submitParams;
@@ -498,6 +497,19 @@ export class RingFactory {
       res += feeSelections[i] << i;
     }
 
+    return res;
+  }
+
+  public BuyNoMoreAndMarginEncode(buyNoMoreThanAmountB: boolean, marginSplitPercentage: number, feeSelection: number) {
+    let res = marginSplitPercentage;
+    let buy = 0;
+    if (buyNoMoreThanAmountB) {
+      buy = 1;
+    }
+
+    res += buy << 7;
+
+    res += feeSelection << 8;
     return res;
   }
 

@@ -27,14 +27,12 @@ export interface OrderParams {
 export interface LoopringSubmitParams {
   addressList: string[][];
   uintArgsList: BigNumber[][];
-  uint8ArgsList: number[][];
-  buyNoMoreThanAmountBList: boolean[];
+  uint8ArgsList: number[];
   vList: number[];
   rList: string[];
   sList: string[];
   ringOwner: string;
   feeRecepient: string;
-  feeSelections: number;
 }
 
 export interface FeeItem {
