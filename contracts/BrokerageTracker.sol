@@ -24,48 +24,11 @@ pragma experimental "ABIEncoderV2";
 ///      so the token can be traded with Loopring Protocol.
 /// @author Kongliang Zhong - <kongliang@loopring.org>,
 /// @author Daniel Wang - <daniel@loopring.org>.
-contract TradeBroker {
-    event BrokerRegistered(
-        address owner,
-        address broker,
-        address tracker
-    );
-
-    event BrokerUnregistered(
-        address owner,
-        address broker
-    );
-
-    function getBroker(
+contract BrokerageTracker {
+    function getAllowance(
         address owner,
         address broker
         )
         external
-        view
-        returns(
-            bool authenticated,
-            address tracker
-        );
-
-    function getBrokers(
-        uint start,
-        uint count
-        )
-        public
-        view
-        returns (
-            address[] brokers,
-            address[] trackers
-        );
-
-    function registerBroker(
-        address broker,
-        address tracker  // 0x0 allowed
-        )
-        external;
-    
-    function unregisterBroker(
-        address broker
-        )
-        external;
+        returns (uint allowance);
 }
