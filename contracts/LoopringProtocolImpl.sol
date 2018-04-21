@@ -276,16 +276,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
         // Check if the highest bit of ringIndex is '1'.
-        require((ringIndex >> 63) == 0); // "attempted to re-ent submitRing function");
+        require((ringIndex >> 63) == 0, "reentry");
 
         // Set the highest bit of ringIndex to '1'.
         ringIndex |= (1 << 63);
 
         verifyInputDataIntegrity(ctx);
 
-        // Assemble input data into structs so we can pass them to other functions.
-        // This method also calculates ringHash, therefore it must be called before
-        // calling `verifyRingSignatures`.
         assembleOrders(ctx);
 
         validateOrdersCutoffs(ctx);
@@ -294,31 +291,16 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         verifyTokensRegistered(ctx);
 
-        // Do the hard work.
         verifyRingHasNoSubRing(ctx);
 
-        // Exchange rates calculation are performed by ring-miners as solidity
-        // cannot get power-of-1/n operation, therefore we have to verify
-        // these rates are correct.
         verifyMinerSuppliedFillRates(ctx);
 
-        // Scale down each order independently by substracting amount-filled and
-        // amount-cancelled. Order owner's current balance and allowance are
-        // not taken into consideration in these operations.
         scaleRingBasedOnHistoricalRecords(ctx);
 
-        // Based on the already verified exchange rate provided by ring-miners,
-        // we can furthur scale down orders based on token balance and allowance,
-        // then find the smallest order of the ring, then calculate each order's
-        // `fillAmountS`.
         calculateRingFillAmount(ctx);
 
-        // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
-        // of `fillAmountS` shall be paid to matching order or miner as margin
-        // split.
         calculateRingFees(ctx);
 
-        /// Make transfers.
         settleRing(ctx);
 
         ringIndex = ctx.ringIndex + 1;
@@ -439,7 +421,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
     }
 
-    /// @dev Verify miner has calculte the rates correctly.
+    /// @dev Exchange rates calculation are performed by ring-miners as solidity
+    /// cannot get power-of-1/n operation, therefore we have to verify
+    /// these rates are correct.
     function verifyMinerSuppliedFillRates(
         Context ctx
         )
@@ -464,7 +448,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // "miner supplied exchange rate is not evenly discounted");
     }
 
-    /// @dev Calculate each order's fee or LRC reward.
+    /// @dev  Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
+    /// of `fillAmountS` shall be paid to matching order or miner as margin
+    /// split.
     function calculateRingFees(
         Context ctx
         )
@@ -581,7 +567,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
     }
 
-    /// @dev Calculate each order's fill amount.
+    /// @dev Based on the already verified exchange rate provided by ring-miners,
+    /// we can furthur scale down orders based on token balance and allowance,
+    /// then find the smallest order of the ring, then calculate each order's
+    /// `fillAmountS`.
     function calculateRingFillAmount(
         Context ctx
         )
@@ -752,8 +741,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(sigSize == ctx.sList.length);
     }
 
-    /// @dev        assmble order parameters into Order struct.
-    /// @return     A list of orders.
+    /// @dev Assemble input data into structs so we can pass them to other functions.
+    /// This method also calculates ringHash, therefore it must be called before
+    /// calling `verifyRingSignatures`.
     function assembleOrders(
         Context ctx
         )
