@@ -779,14 +779,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 );
             }
 
-<<<<<<< HEAD
-            values[i * 6 + 0] = uint(order.orderHash);
-            values[i * 6 + 1] = order.fillAmountS;
-            values[i * 6 + 2] = order.lrcReward;
-            values[i * 6 + 3] = order.lrcFeeState;
-            values[i * 6 + 4] = order.splitS;
-            values[i * 6 + 5] = order.splitB;
-=======
             fills[i]  = Fill(
                 order.orderHash,
                 order.fillAmountS,
@@ -795,7 +787,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order.splitS,
                 order.splitB
             );
->>>>>>> 4c279499d12a9b30fad4ad5bdec66bdec911c2b0
 
             prevSplitB = order.splitB;
         }
@@ -812,11 +803,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ctx.ringIndex,
             ctx.ringHash,
             ctx.miner,
-<<<<<<< HEAD
-            values
-=======
             fills
->>>>>>> 4c279499d12a9b30fad4ad5bdec66bdec911c2b0
         );
     }
 
