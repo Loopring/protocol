@@ -301,9 +301,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         );
 
 
-        verifyRingSignatures(context.params, context.orders);
+        verifyRingSignatures(context);
 
-        verifyTokensRegistered(context.params, context.orders);
+        verifyTokensRegistered(context);
 
         handleRing(_ringIndex, context.params, context.orders, context.delegate);
 
@@ -330,37 +330,35 @@ contract LoopringProtocolImpl is LoopringProtocol {
     /// @dev Verify the ringHash has been signed with each order's auth private
     ///      keys as well as the miner's private key.
     function verifyRingSignatures(
-        RingParams params,
-        OrderState[] orders
+        Context context
         )
         private
         pure
     {
         uint j;
-        for (uint i = 0; i < params.ringSize; i++) {
-            j = i + params.ringSize;
+        for (uint i = 0; i < context.params.ringSize; i++) {
+            j = i + context.params.ringSize;
 
             verifySignature(
-                orders[i].authAddr,
-                params.ringHash,
-                params.vList[j],
-                params.rList[j],
-                params.sList[j]
+                context.orders[i].authAddr,
+                context.params.ringHash,
+                context.params.vList[j],
+                context.params.rList[j],
+                context.params.sList[j]
             );
         }
     }
 
     function verifyTokensRegistered(
-        RingParams params,
-        OrderState[] orders
+        Context context
         )
         private
         view
     {
         // Extract the token addresses
-        address[] memory tokens = new address[](params.ringSize);
-        for (uint i = 0; i < params.ringSize; i++) {
-            tokens[i] = orders[i].tokenS;
+        address[] memory tokens = new address[](context.params.ringSize);
+        for (uint i = 0; i < context.params.ringSize; i++) {
+            tokens[i] = context.orders[i].tokenS;
         }
 
         // Test all token addresses at once
