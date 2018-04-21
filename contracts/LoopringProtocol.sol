@@ -31,9 +31,7 @@ contract LoopringProtocol {
     }
 
     event Error(
-        uint            _ringIndex,
-        bytes32 indexed _ringHash,
-        uint8   indexed errorCode
+        ErrorCode errorCode
     );
 
     event RingMined(

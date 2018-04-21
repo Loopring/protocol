@@ -111,6 +111,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bytes32       ringHash;         // computed
     }
 
+    struct Context {
+        uint                  index;
+        TokenTransferDelegate delegate;
+        RingParams            params;
+        OrderState[]          orders;
+    }
+
     constructor(
         address _lrcTokenAddress,
         address _tokenRegistryAddress,
@@ -258,43 +265,47 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint64 _ringIndex = ringIndex;
         ringIndex |= (1 << 63);
 
-        RingParams memory params = RingParams(
-            vList,
-            rList,
-            sList,
-            miner,
-            feeSelections,
-            addressList.length,
-            0x0 // ringHash
+        Context memory context = Context(
+            _ringIndex,
+            TokenTransferDelegate(delegateAddress),
+            RingParams(
+                vList,
+                rList,
+                sList,
+                miner,
+                feeSelections,
+                addressList.length,
+                0x0 // ringHash
+            ),
+            new OrderState[](0)
         );
 
         verifyInputDataIntegrity(
-            params,
+            context.params,
             addressList,
             uintArgsList,
             uint8ArgsList,
             buyNoMoreThanAmountBList
         );
-
 
         // Assemble input data into structs so we can pass them to other functions.
         // This method also calculates ringHash, therefore it must be called before
         // calling `verifyRingSignatures`.
-        TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
-        OrderState[] memory orders = assembleOrders(
-            params,
-            delegate,
+        context.orders = assembleOrders(
+            context.params,
+            context.delegate,
             addressList,
             uintArgsList,
             uint8ArgsList,
             buyNoMoreThanAmountBList
         );
 
-        verifyRingSignatures(params, orders);
 
-        verifyTokensRegistered(params, orders);
+        verifyRingSignatures(context.params, context.orders);
 
-        handleRing(_ringIndex, params, orders, delegate);
+        verifyTokensRegistered(context.params, context.orders);
+
+        handleRing(_ringIndex, context.params, context.orders, context.delegate);
 
         ringIndex = _ringIndex + 1;
     }
