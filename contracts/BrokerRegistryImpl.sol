@@ -18,12 +18,12 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
-import "./TradeBroker.sol";
+import "./BrokerRegistry.sol";
 
 
-/// @title An Implementation of TradeBroker.
+/// @title An Implementation of BrokerRegistry.
 /// @author Daniel Wang - <daniel@loopring.org>.
-contract TradeBrokerImpl is TradeBroker {
+contract BrokerRegistryImpl is BrokerRegistry {
     struct Broker {
         uint    pos;        // 0 mens unregistered; if > 0, pos - 1 is the
                             // token's position in `addresses`.

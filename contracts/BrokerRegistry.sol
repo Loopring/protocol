@@ -25,7 +25,7 @@ pragma experimental "ABIEncoderV2";
 ///      pre-deployed BrokageTracker to manage the allowance of for the
 ///      specific broker.
 /// @author Daniel Wang - <daniel@loopring.org>.
-contract TradeBroker {
+contract BrokerRegistry {
     event BrokerRegistered(
         address owner,
         address broker,

@@ -19,9 +19,8 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 
-/// @title BrokerageTracker
-/// @dev   This tracker MUST set the TokenTransferDelegateImpl as the owner.
-contract BrokerageTracker {
+/// @title BrokerTracker
+contract BrokerTracker {
     /// @dev Returns the max amount the broker can buy or sell.
     function getAllowance(
         address owner,
@@ -38,9 +37,9 @@ contract BrokerageTracker {
         );
 
     /// @dev This method will be called from TokenTransferDelegateImpl, so
-    ///      it must check `msg.sender` is the address of TokenTransferDelegateImpl.
+    ///      it must check `msg.sender` is the address of LoopringProtocol.
     ///      Check https://github.com/Loopring/token-listing/blob/master/ethereum/deployment.md
-    ///      for the current address of TokenTransferDelegateImpl. 
+    ///      for the current address of LoopringProtocol deployment. 
     function onSettlement(
         address owner,
         address broker,
