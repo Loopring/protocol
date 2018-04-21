@@ -57,8 +57,6 @@ contract LoopringProtocol {
     /// @param buyNoMoreThanAmountB -
     ///                           This indicates when a order should be considered
     ///                           as 'completely filled'.
-    /// @param marginSplitPercentage -
-    ///                           Percentage of margin split to share with miner.
     /// @param v                  Order ECDSA signature parameter v.
     /// @param r                  Order ECDSA signature parameters r.
     /// @param s                  Order ECDSA signature parameters s.
@@ -66,7 +64,6 @@ contract LoopringProtocol {
         address[5] addresses,
         uint[6]    orderValues,
         bool       buyNoMoreThanAmountB,
-        uint8      marginSplitPercentage,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -102,9 +99,6 @@ contract LoopringProtocol {
     /// @param uintArgsList List of uint-type arguments in this order:
     ///                     amountS, amountB, validSince (second),
     ///                     validUntil (second), lrcFee, and rateAmountS.
-    /// @param uint8ArgsList -
-    ///                     List of unit8-type arguments, in this order:
-    ///                     marginSplitPercentageList.
     /// @param buyNoMoreThanAmountBList -
     ///                     This indicates when a order should be considered
     /// @param vList        List of v for each order. This list is 1-larger than
@@ -123,7 +117,6 @@ contract LoopringProtocol {
     function submitRing(
         address[4][]    addressList,
         uint[6][]       uintArgsList,
-        uint8[1][]      uint8ArgsList,
         bool[]          buyNoMoreThanAmountBList,
         uint8[]         vList,
         bytes32[]       rList,

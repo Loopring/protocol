@@ -89,7 +89,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         bool    buyNoMoreThanAmountB;
         bool    marginSplitAsFee;
         bytes32 orderHash;
-        uint8   marginSplitPercentage;
         uint    rateS;
         uint    rateB;
         uint    fillAmountS;
@@ -104,7 +103,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     struct Context {
         address[4][]  addressList;
         uint[6][]     uintArgsList;
-        uint8[1][]    uint8ArgsList;
         bool[]        buyNoMoreThanAmountBList;
         uint8[]       vList;
         bytes32[]     rList;
@@ -153,7 +151,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address[5] addresses,
         uint[6]    orderValues,
         bool       buyNoMoreThanAmountB,
-        uint8      marginSplitPercentage,
         uint8      v,
         bytes32    r,
         bytes32    s
@@ -178,7 +175,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
             buyNoMoreThanAmountB,
             false,
             0x0,
-            marginSplitPercentage,
             0,
             0,
             0,
@@ -256,7 +252,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function submitRing(
         address[4][]  addressList,
         uint[6][]     uintArgsList,
-        uint8[1][]    uint8ArgsList,
         bool[]        buyNoMoreThanAmountBList,
         uint8[]       vList,
         bytes32[]     rList,
@@ -269,7 +264,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         Context memory ctx = Context(
             addressList,
             uintArgsList,
-            uint8ArgsList,
             buyNoMoreThanAmountBList,
             vList,
             rList,
@@ -322,18 +316,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
         pure
     {
         require(ctx.miner != 0x0, "bad miner");
+
         require(
             ctx.ringSize == ctx.addressList.length,
             "wrong addressList size"
         );
+
         require(
             ctx.ringSize == ctx.uintArgsList.length,
             "wrong uintArgsList size"
         );
-        require(
-            ctx.ringSize == ctx.uint8ArgsList.length,
-            "wrong uint8ArgsList size"
-        );
+
         require(
             ctx.ringSize == ctx.buyNoMoreThanAmountBList.length,
             "wrong buyNoMoreThanAmountBList size"
@@ -366,8 +359,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
         view
     {
         for (uint i = 0; i < ctx.ringSize; i++) {
+
             uint[6] memory uintArgs = ctx.uintArgsList[i];
             bool marginSplitAsFee = (ctx.feeSelections & (uint16(1) << i)) > 0;
+
             ctx.orders[i] = OrderState(
                 ctx.addressList[i][0],
                 ctx.addressList[i][1],
@@ -382,7 +377,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 ctx.buyNoMoreThanAmountBList[i],
                 marginSplitAsFee,
                 bytes32(0),
-                ctx.uint8ArgsList[i][0],
                 uintArgs[5],
                 uintArgs[1],
                 0,   // fillAmountS
@@ -623,7 +617,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // When an order's LRC fee is 0 or smaller than the specified fee,
                 // we help miner automatically select margin-split.
                 state.marginSplitAsFee = true;
-                state.marginSplitPercentage = _marginSplitPercentageBase;
             } else {
                 uint lrcSpendable = getSpendable(
                     ctx.delegate,
@@ -648,7 +641,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 // If order doesn't have enough LRC, set margin split to 100%.
                 if (lrcTotal < state.lrcFeeState) {
                     state.lrcFeeState = lrcTotal;
-                    state.marginSplitPercentage = _marginSplitPercentageBase;
                 }
 
                 if (state.lrcFeeState == 0) {
@@ -684,19 +676,13 @@ contract LoopringProtocolImpl is LoopringProtocol {
                             state.amountS
                         ) / state.amountB).sub(
                             state.fillAmountS
-                        );
+                        ) / 2;
                     } else {
                         split = nextFillAmountS.sub(
                             state.fillAmountS.mul(
                                 state.amountB
                             ) / state.amountS
-                        );
-                    }
-
-                    if (state.marginSplitPercentage != _marginSplitPercentageBase) {
-                        split = split.mul(
-                            state.marginSplitPercentage
-                        ) / _marginSplitPercentageBase;
+                        ) / 2;
                     }
 
                     if (state.buyNoMoreThanAmountB) {
@@ -854,11 +840,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(order.tokenB != 0x0, "nvalid tokenB");
         require(order.amountS != 0, "invalid amountS");
         require(order.amountB != 0, "invalid amountB");
-        require(
-            order.marginSplitPercentage <= MARGIN_SPLIT_PERCENTAGE_BASE,
-            "invalid marginSplitPercentage"
-        );
-
         require(order.validSince <= block.timestamp, "immature");
         require(order.validUntil > block.timestamp, "expired");
     }
@@ -883,8 +864,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             order.validSince,
             order.validUntil,
             order.lrcFee,
-            order.buyNoMoreThanAmountB,
-            order.marginSplitPercentage
+            order.buyNoMoreThanAmountB
         );
     }
 
