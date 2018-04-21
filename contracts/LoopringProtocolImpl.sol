@@ -45,6 +45,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
     address public  lrcTokenAddress             = 0x0;
     address public  tokenRegistryAddress        = 0x0;
     address public  delegateAddress             = 0x0;
+    address public  brokerRegistryAddress       = 0x0;
 
     uint64  public  ringIndex                   = 0;
     uint8   public  walletSplitPercentage       = 0;
@@ -104,6 +105,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         uint64        ringIndex;
         uint          ringSize;         // computed
         TokenTransferDelegate delegate;
+        BrokerRegistry        brokerRegistry;
         Order[]  orders;
         bytes32       ringHash;         // computed
     }
@@ -112,6 +114,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         address _lrcTokenAddress,
         address _tokenRegistryAddress,
         address _delegateAddress,
+        address _brokerRegistryAddress,
         uint    _rateRatioCVSThreshold,
         uint8   _walletSplitPercentage
         )
@@ -120,6 +123,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(_lrcTokenAddress.isContract());
         require(_tokenRegistryAddress.isContract());
         require(_delegateAddress.isContract());
+        require(_brokerRegistryAddress.isContract());
 
         require(_rateRatioCVSThreshold > 0);
         require(_walletSplitPercentage > 0 && _walletSplitPercentage < 100);
@@ -127,6 +131,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         lrcTokenAddress = _lrcTokenAddress;
         tokenRegistryAddress = _tokenRegistryAddress;
         delegateAddress = _delegateAddress;
+        brokerRegistryAddress = _brokerRegistryAddress;
         rateRatioCVSThreshold = _rateRatioCVSThreshold;
         walletSplitPercentage = _walletSplitPercentage;
     }
@@ -177,9 +182,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
             0,
             0
         );
-
         require(
-            msg.sender == order.owner,
+            msg.sender == order.signer,
             "cancelOrder not submitted by signer"
         );
 
@@ -192,6 +196,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
             r,
             s
         );
+
+        if (order.signer != order.owner) {
+            BrokerRegistry brokerRegistry = BrokerRegistry(brokerRegistryAddress);
+            bool authenticated;
+            address tracker;
+            (authenticated, tracker) = brokerRegistry.getBroker(
+                order.owner,
+                order.signer
+            );
+            require(authenticated, "invalid broker");
+        }
 
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
         delegate.addCancelled(orderHash, cancelAmount);
@@ -267,6 +282,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             ringIndex,
             addressesList.length,
             TokenTransferDelegate(delegateAddress),
+            BrokerRegistry(brokerRegistryAddress),
             new Order[](addressesList.length),
             0x0 // ringHash
         );
@@ -357,7 +373,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             uint[6] memory uintArgs = ctx.valuesList[i];
             bool marginSplitAsFee = (ctx.feeSelections & (uint8(1) << i)) > 0;
 
-            ctx.orders[i] = Order(
+            Order memory order = Order(
                 ctx.addressesList[i][0],
                 ctx.addressesList[i][1],
                 ctx.addressesList[i][2],
@@ -383,20 +399,31 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 0.   // splitB
             );
 
-            validateOrder(ctx.orders[i]);
+            validateOrder(order);
 
-            bytes32 orderHash = calculateOrderHash(ctx.orders[i]);
-            ctx.orders[i].orderHash = orderHash;
+            order.orderHash = calculateOrderHash(order);
 
             verifySignature(
-                ctx.orders[i].owner,
-                orderHash,
+                order.signer,
+                order.orderHash,
                 ctx.vList[i],
                 ctx.rList[i],
                 ctx.sList[i]
             );
 
-            ctx.ringHash ^= orderHash;
+            if (order.signer != order.owner) {
+                BrokerRegistry brokerRegistry = BrokerRegistry(brokerRegistryAddress);
+                bool authenticated;
+                (authenticated, order.brokerTracker) = brokerRegistry.getBroker(
+                    order.owner,
+                    order.signer
+                );
+
+                require(authenticated, "invalid broker");
+            }
+
+            ctx.orders[i] = order;
+            ctx.ringHash ^= order.orderHash;
         }
 
         ctx.ringHash = keccak256(
