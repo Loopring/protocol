@@ -377,22 +377,15 @@ contract LoopringProtocolImpl is LoopringProtocol {
         // we can furthur scale down orders based on token balance and allowance,
         // then find the smallest order of the ring, then calculate each order's
         // `fillAmountS`.
-        calculateRingFillAmount(ctx.ringSize, ctx.orders);
+        calculateRingFillAmount(ctx);
 
         // Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
         // of `fillAmountS` shall be paid to matching order or miner as margin
         // split.
-
         calculateRingFees(ctx);
 
         /// Make transfers.
-        uint[] memory orderInfoList = settleRing(
-            ctx.delegate,
-            ctx.ringSize,
-            ctx.orders,
-            ctx.miner,
-            lrcTokenAddress
-        );
+        uint[] memory orderInfoList = settleRing(ctx);
 
         emit RingMined(
             ctx.ringIndex,
@@ -403,23 +396,19 @@ contract LoopringProtocolImpl is LoopringProtocol {
     }
 
     function settleRing(
-        TokenTransferDelegate delegate,
-        uint          ringSize,
-        OrderState[]  orders,
-        address       miner,
-        address       _lrcTokenAddress
+        Context ctx
         )
         private
         returns (uint[] memory orderInfoList)
     {
-        bytes32[] memory batch = new bytes32[](ringSize * 7); // ringSize * (owner + tokenS + 4 amounts + wallet)
-        orderInfoList = new uint[](ringSize * 6);
+        bytes32[] memory batch = new bytes32[](ctx.ringSize * 7); // ringSize * (owner + tokenS + 4 amounts + wallet)
+        orderInfoList = new uint[](ctx.ringSize * 6);
 
         uint p = 0;
-        uint prevSplitB = orders[ringSize - 1].splitB;
-        for (uint i = 0; i < ringSize; i++) {
-            OrderState memory state = orders[i];
-            uint nextFillAmountS = orders[(i + 1) % ringSize].fillAmountS;
+        uint prevSplitB = ctx.orders[ctx.ringSize - 1].splitB;
+        for (uint i = 0; i < ctx.ringSize; i++) {
+            OrderState memory state = ctx.orders[i];
+            uint nextFillAmountS = ctx.orders[(i + 1) % ctx.ringSize].fillAmountS;
 
             // Store owner and tokenS of every order
             batch[p] = bytes32(state.owner);
@@ -435,9 +424,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             // Update fill records
             if (state.buyNoMoreThanAmountB) {
-                delegate.addCancelledOrFilled(state.orderHash, nextFillAmountS);
+                ctx.delegate.addCancelledOrFilled(state.orderHash, nextFillAmountS);
             } else {
-                delegate.addCancelledOrFilled(state.orderHash, state.fillAmountS);
+                ctx.delegate.addCancelledOrFilled(state.orderHash, state.fillAmountS);
             }
 
             orderInfoList[i * 6 + 0] = uint(state.orderHash);
@@ -451,9 +440,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         // Do all transactions
-        delegate.batchTransferToken(
-            _lrcTokenAddress,
-            miner,
+        ctx.delegate.batchTransferToken(
+            lrcTokenAddress,
+            ctx.miner,
             walletSplitPercentage,
             batch
         );
@@ -603,31 +592,28 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
     /// @dev Calculate each order's fill amount.
     function calculateRingFillAmount(
-        uint          ringSize,
-        OrderState[]  orders
+        Context ctx
         )
         private
         pure
     {
         uint smallestIdx = 0;
-        uint i;
-        uint j;
 
-        for (i = 0; i < ringSize; i++) {
-            j = (i + 1) % ringSize;
+        for (uint i = 0; i < ctx.ringSize; i++) {
+            uint j = (i + 1) % ctx.ringSize;
             smallestIdx = calculateOrderFillAmount(
-                orders[i],
-                orders[j],
+                ctx.orders[i],
+                ctx.orders[j],
                 i,
                 j,
                 smallestIdx
             );
         }
 
-        for (i = 0; i < smallestIdx; i++) {
+        for (uint i = 0; i < smallestIdx; i++) {
             calculateOrderFillAmount(
-                orders[i],
-                orders[(i + 1) % ringSize],
+                ctx.orders[i],
+                ctx.orders[(i + 1) % ctx.ringSize],
                 0,               // Not needed
                 0,               // Not needed
                 0                // Not needed
