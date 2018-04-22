@@ -340,8 +340,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
             "invalid ring size"
         );
 
-        uint sigSize = ctx.ringSize << 1;
-        require(sigSize == ctx.sigList.length, "invalid signature size");
+        require(
+            (ctx.ringSize << 1) == ctx.sigList.length,
+            "invalid signature size"
+        );
     }
 
     /// @dev Assemble input data into structs so we can pass them to other functions.
