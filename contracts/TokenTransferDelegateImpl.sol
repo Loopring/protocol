@@ -266,9 +266,10 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
         onlyAuthorized
         public
     {
-        uint j = 0;
-        for (uint i = 0; i < batch.length/2; i++) {
-            cancelledOrFilled[batch[j]] = cancelledOrFilled[batch[j++]].add(uint(batch[j++]));
+        require(batch.length % 2 == 0);
+        for (uint i = 0; i < batch.length / 2; i++) {
+            cancelledOrFilled[batch[i * 2]] =
+                cancelledOrFilled[batch[i * 2]].add(uint(batch[i * 2 + 1]));
         }
     }
 

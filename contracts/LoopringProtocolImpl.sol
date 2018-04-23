@@ -447,13 +447,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             batch[p++] = bytes32(state.lrcFeeState);
             batch[p++] = bytes32(state.wallet);
 
-            // Update fill records
-            // if (state.buyNoMoreThanAmountB) {
-            //     delegate.addCancelledOrFilled(state.orderHash, nextFillAmountS);
-            // } else {
-            //     delegate.addCancelledOrFilled(state.orderHash, state.fillAmountS);
-            // }
-            historyBatch[r++] = bytes32(state.orderHash);
+            historyBatch[r++] = state.orderHash;
             historyBatch[r++] =
                 bytes32(state.buyNoMoreThanAmountB ? nextFillAmountS : state.fillAmountS);
 
@@ -466,10 +460,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             prevSplitB = state.splitB;
         }
-
-        // Do all transactions
+        // Update fill records
         delegate.batchAddCancelledOrFilled(historyBatch);
 
+        // Do all transactions
         delegate.batchTransferToken(
             _lrcTokenAddress,
             miner,
