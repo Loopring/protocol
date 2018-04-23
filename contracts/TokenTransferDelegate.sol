@@ -102,7 +102,6 @@ contract TokenTransferDelegate {
         )
         external;
 
-
     function addCancelledOrFilled(
         bytes32 orderHash,
         uint cancelOrFillAmount
