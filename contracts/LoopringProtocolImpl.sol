@@ -643,7 +643,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 // If the order is selling LRC, we need to calculate how much LRC
                 // is left that can be used as fee.
-                if (order.tokenS == _lrcTokenAddress) {
+                if (order.tokenS == lrcTokenAddress) {
                     lrcSpendable = lrcSpendable.sub(order.fillAmountS);
                 }
 
