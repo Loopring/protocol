@@ -792,7 +792,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         emit RingMined(
             ctx.ringIndex,
-            ctx.ringHash,
             ctx.miner,
             fills
         );
