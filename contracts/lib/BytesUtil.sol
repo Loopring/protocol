@@ -30,8 +30,11 @@ library BytesUtil {
         pure
         returns (bytes32 out)
     {
-        for (uint i = 0; i < 32; i++) {
-            out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+        require(b.length >= offset + 32);
+        bytes32 temp;
+        assembly {
+            temp := mload(add(add(b, 0x20), offset))
         }
+        return temp;
     }
 }
