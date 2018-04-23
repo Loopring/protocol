@@ -189,7 +189,6 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
 
             // Pay token to previous order, or to miner as previous order's
             // margin split or/and this order's margin split.
-
             address token = address(batch[i + 3]);
             uint amount;
 
@@ -384,6 +383,7 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
 
     function suspend()
         onlyOwner
+        notSuspended
         public
     {
         suspended = true;
@@ -403,7 +403,7 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
         isSuspended
         external
     {
-        emit OwnershipTransferred(owner, 0x0);
         owner = 0x0;
+        emit OwnershipTransferred(owner, 0x0);
     }
 }
