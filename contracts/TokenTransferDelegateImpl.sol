@@ -325,7 +325,8 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
 
     function suspend()
         onlyOwner
-        public
+        notSuspended
+        external
     {
         suspended = true;
     }
@@ -333,7 +334,7 @@ contract TokenTransferDelegateImpl is TokenTransferDelegate, Claimable {
     function resume()
         onlyOwner
         isSuspended
-        public
+        external
     {
         suspended = false;
     }
