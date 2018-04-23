@@ -29,6 +29,8 @@ import "./BytesUtil.sol";
 ///   - https://github.com/multiformats/js-multihash
 library MultihashUtil {
 
+    string public constant SIG_PREFIX = "\x19Ethereum Signed Message:\n32";
+
     function verifySignature(
         address signer,
         bytes32 plaintext,
@@ -44,22 +46,20 @@ library MultihashUtil {
         // Currently we default 0 to be the Ethereum's default signature.
         if (algorithm == 0) {
             require(size == 65, "bad multihash size");
-            
-            uint8 v = uint8(multihash[2]);
-            bytes32 r = BytesUtil.bytesToBytes32(multihash, 3);
-            bytes32 s = BytesUtil.bytesToBytes32(multihash, 11);
-
             require(
                 signer == ecrecover(
-                    keccak256("\x19Ethereum Signed Message:\n32", plaintext),
-                    v,
-                    r,
-                    s
+                    keccak256(
+                      SIG_PREFIX,
+                      plaintext
+                    ),
+                    uint8(multihash[2]),
+                    BytesUtil.bytesToBytes32(multihash, 3),
+                    BytesUtil.bytesToBytes32(multihash, 11)
                 ),
                 "bad signature"
             );
         } else {
-            require(false, "unsupported algorithm");
+            revert("unsupported algorithm");
         }
     }
 }
