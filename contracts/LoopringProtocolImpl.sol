@@ -643,8 +643,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
                 // If the order is selling LRC, we need to calculate how much LRC
                 // is left that can be used as fee.
-                if (state.tokenS == _lrcTokenAddress) {
-                    lrcSpendable = lrcSpendable.sub(state.fillAmountS);
+                if (order.tokenS == _lrcTokenAddress) {
+                    lrcSpendable = lrcSpendable.sub(order.fillAmountS);
                 }
 
                 // If the order is buyign LRC, it will has more to pay as fee.
@@ -671,8 +671,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                         order.splitB = order.lrcFeeState;
                         order.lrcFeeState = 0;
                     } else {
-                        state.splitB = lrcReceiable;
-                        state.lrcFeeState = state.lrcFeeState.sub(lrcReceiable);
+                        order.splitB = lrcReceiable;
+                        order.lrcFeeState = order.lrcFeeState.sub(lrcReceiable);
                     }
                 }
             } else {
