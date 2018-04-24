@@ -768,9 +768,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             fills[i]  = Fill(
                 order.orderHash,
+                order.owner,
+                order.tokenS,
                 order.fillAmountS,
-                order.lrcReward,
-                order.lrcFeeState,
+                int(order.lrcFeeState) - int(order.lrcReward),
                 order.splitS,
                 order.splitB
             );
