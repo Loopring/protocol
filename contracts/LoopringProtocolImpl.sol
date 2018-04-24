@@ -203,11 +203,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         // For AON orders, must cancel it as a whole.
         if (order.optAllOrNone) {
-            if (order.optCapByAmountB) {
-                cancelAmount = order.amountB;
-            } else {
-                cancelAmount = order.amountS;
-            }
+            cancelAmount = order.optCapByAmountB ? order.amountB : order.amountS;
         }
         TokenTransferDelegate delegate = TokenTransferDelegate(delegateAddress);
         delegate.addCancelled(orderHash, cancelAmount);
@@ -554,7 +550,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             if (order.optAllOrNone) {
                 require(
                     ctx.delegate.cancelledOrFilled(order.orderHash) == 0,
-                    "AON-order filled or cancelled already"
+                    "AON filled or cancelled already"
                 );
             } else {
                 uint amount;
@@ -591,10 +587,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order.trackerAddr
             );
 
-             if (order.optAllOrNone) {
+            // This check is more strict than it needs to be, in case the
+            // `optCapByAmountB`is true.
+            if (order.optAllOrNone) {
                 require(
                     availableAmountS >= order.amountS,
-                    "AON-order low spendable"
+                    "AON spendable"
                 );
             } else {
                 require(availableAmountS > 0, "spendable is 0");
@@ -861,12 +859,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
             if (order.optCapByAmountB) {
                 require(
                     fillAmountB >= order.amountB,
-                    "aon failed on amountB"
+                    "AON failed on amountB"
                 );
             } else {
                 require(
                     order.fillAmountS >= order.amountS,
-                     "aon failed on amountS"
+                     "AON failed on amountS"
                 );
             }
         }
