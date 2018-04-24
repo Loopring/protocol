@@ -771,9 +771,8 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 order.owner,
                 order.tokenS,
                 order.fillAmountS,
-                int(order.lrcFeeState) - int(order.lrcReward),
-                order.splitS,
-                order.splitB
+                order.splitS > 0 ? int(order.splitS) : -int(order.splitB),
+                int(order.lrcFeeState) - int(order.lrcReward)
             );
 
             prevSplitB = order.splitB;

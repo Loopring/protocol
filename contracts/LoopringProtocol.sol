@@ -32,9 +32,8 @@ contract LoopringProtocol {
         address     owner;
         address     tokenS;
         uint        amountS;
+        int         split;  // Positive number for splitS and negaive for splitB .
         int         lrcFee;
-        uint        splitS;
-        uint        splitB;
     }
 
     event RingMined(
