@@ -239,13 +239,11 @@ contract LoopringProtocolImpl is LoopringProtocol {
     function submitRing(
         address[4][]  addressList,
         uint[6][]     uintArgsList,
-        uint8[1][]    uint8ArgsList,
-        bool[]        buyNoMoreThanAmountBList,
+        uint16[]      uint8ArgsList,
         uint8[]       vList,
         bytes32[]     rList,
         bytes32[]     sList,
-        address       miner,
-        uint16        feeSelections
+        address       miner
         )
         public
     {
@@ -261,7 +259,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             rList,
             sList,
             miner,
-            feeSelections,
+            0,
             addressList.length,
             0x0 // ringHash
         );
@@ -270,8 +268,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             params,
             addressList,
             uintArgsList,
-            uint8ArgsList,
-            buyNoMoreThanAmountBList
+            uint8ArgsList
         );
 
 
@@ -284,8 +281,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
             delegate,
             addressList,
             uintArgsList,
-            uint8ArgsList,
-            buyNoMoreThanAmountBList
+            uint8ArgsList
         );
 
         verifyRingSignatures(params, orders);
@@ -773,8 +769,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         RingParams params,
         address[4][]  addressList,
         uint[6][]     uintArgsList,
-        uint8[1][]    uint8ArgsList,
-        bool[]        buyNoMoreThanAmountBList
+        uint16[]      uint8ArgsList
         )
         private
         pure
@@ -783,7 +778,6 @@ contract LoopringProtocolImpl is LoopringProtocol {
         require(params.ringSize == addressList.length);
         require(params.ringSize == uintArgsList.length);
         require(params.ringSize == uint8ArgsList.length);
-        require(params.ringSize == buyNoMoreThanAmountBList.length);
 
         // Validate ring-mining related arguments.
         for (uint i = 0; i < params.ringSize; i++) {
@@ -806,8 +800,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         TokenTransferDelegate delegate,
         address[4][]  addressList,
         uint[6][]     uintArgsList,
-        uint8[1][]    uint8ArgsList,
-        bool[]        buyNoMoreThanAmountBList
+        uint16[]      uint8ArgsList
         )
         private
         view
@@ -817,7 +810,17 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
         for (uint i = 0; i < params.ringSize; i++) {
             uint[6] memory uintArgs = uintArgsList[i];
-            bool marginSplitAsFee = (params.feeSelections & (uint16(1) << i)) > 0;
+
+            //decode input variables
+            bool marginSplitAsFee = (uint8ArgsList[i] & (uint16(1) << 8)) > 0;
+            bool buyNoMoreThanAmountB = (uint8ArgsList[i] & (uint16(1) << 7)) > 0;
+            uint16 marginSplitPercentage;
+            if (buyNoMoreThanAmountB) {
+                marginSplitPercentage = uint8ArgsList[i] ^ (uint16(1)) << 7;
+            } else {
+                marginSplitPercentage = uint8ArgsList[i];
+            }
+
             orders[i] = OrderState(
                 addressList[i][0],
                 addressList[i][1],
@@ -829,10 +832,10 @@ contract LoopringProtocolImpl is LoopringProtocol {
                 uintArgs[0],
                 uintArgs[1],
                 uintArgs[4],
-                buyNoMoreThanAmountBList[i],
+                buyNoMoreThanAmountB,
                 marginSplitAsFee,
                 bytes32(0),
-                uint8ArgsList[i][0],
+                uint8(marginSplitPercentage),
                 uintArgs[5],
                 uintArgs[1],
                 0,   // fillAmountS
@@ -844,18 +847,20 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
             validateOrder(orders[i]);
 
-            bytes32 orderHash = calculateOrderHash(orders[i]);
-            orders[i].orderHash = orderHash;
+            orders[i].orderHash = calculateOrderHash(orders[i]);
 
             verifySignature(
                 orders[i].owner,
-                orderHash,
+                orders[i].orderHash,
                 params.vList[i],
                 params.rList[i],
                 params.sList[i]
             );
 
-            params.ringHash ^= orderHash;
+            params.ringHash ^= orders[i].orderHash;
+            if(marginSplitAsFee){
+                params.feeSelections += uint16(1) << i;
+            }
         }
 
         validateOrdersCutoffs(orders, delegate);

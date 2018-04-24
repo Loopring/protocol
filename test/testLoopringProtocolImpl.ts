@@ -150,12 +150,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
@@ -203,12 +201,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
 
@@ -253,12 +249,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       console.log("cumulativeGasUsed for a ring of 2 orders: " + tx.receipt.gasUsed);
@@ -313,12 +307,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       console.log("cumulativeGasUsed for a ring of 3 orders: " + tx.receipt.gasUsed);
@@ -384,12 +376,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
@@ -459,12 +449,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
@@ -527,12 +515,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
@@ -605,12 +591,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
@@ -672,12 +656,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
       const tx = await loopringProtocolImpl.submitRing(p.addressList,
                                                        p.uintArgsList,
                                                        p.uint8ArgsList,
-                                                       p.buyNoMoreThanAmountBList,
                                                        p.vList,
                                                        p.rList,
                                                        p.sList,
                                                        p.feeRecepient,
-                                                       p.feeSelections,
                                                        {from: owner});
 
       // console.log("tx.receipt.logs: ", tx.receipt.logs);
@@ -775,12 +757,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
                                               p.uint8ArgsList,
-                                              p.buyNoMoreThanAmountBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
                                               p.feeRecepient,
-                                              p.feeSelections,
                                               {from: owner});
       } catch (err) {
         const errMsg = `${err}`;
@@ -815,12 +795,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
                                               p.uint8ArgsList,
-                                              p.buyNoMoreThanAmountBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
                                               p.feeRecepient,
-                                              p.feeSelections,
                                               {from: owner});
       } catch (err) {
         const errMsg = `${err}`;
@@ -940,12 +918,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
                                               p.uint8ArgsList,
-                                              p.buyNoMoreThanAmountBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
                                               p.feeRecepient,
-                                              p.feeSelections,
                                               {from: owner});
       } catch (err) {
         const errMsg = `${err}`;
@@ -995,12 +971,10 @@ contract("LoopringProtocolImpl", (accounts: string[]) => {
         await loopringProtocolImpl.submitRing(p.addressList,
                                               p.uintArgsList,
                                               p.uint8ArgsList,
-                                              p.buyNoMoreThanAmountBList,
                                               p.vList,
                                               p.rList,
                                               p.sList,
                                               p.feeRecepient,
-                                              p.feeSelections,
                                               {from: owner});
       } catch (err) {
         const errMsg = `${err}`;
