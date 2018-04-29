@@ -23,13 +23,13 @@ import "./lib/ERC20.sol";
 import "./lib/MathUint.sol";
 import "./lib/MultihashUtil.sol";
 import "./BrokerRegistry.sol";
-import "./BrokerTracker.sol";
-import "./LoopringProtocol.sol";
+import "./BrokerInterceptor.sol";
+import "./ClearingHouse.sol";
 import "./TokenRegistry.sol";
 import "./TokenTransferDelegate.sol";
 
 
-/// @title An Implementation of LoopringProtocol.
+/// @title An Implementation of Clearn House.
 /// @author Daniel Wang - <daniel@loopring.org>,
 /// @author Kongliang Zhong - <kongliang@loopring.org>
 ///
@@ -39,7 +39,7 @@ import "./TokenTransferDelegate.sol";
 ///     https://github.com/BenjaminPrice
 ///     https://github.com/jonasshen
 ///     https://github.com/Hephyrius
-contract LoopringProtocolImpl is LoopringProtocol {
+contract ClearingHouseImpl is ClearingHouse {
     using AddressUtil   for address;
     using MathUint      for uint;
 
@@ -913,7 +913,7 @@ contract LoopringProtocolImpl is LoopringProtocol {
         }
 
         if (trackerAddr != 0x0) {
-            amount = BrokerTracker(trackerAddr).getAllowance(
+            amount = BrokerInterceptor(trackerAddr).getAllowance(
                 tokenOwner,
                 broker,
                 tokenAddress

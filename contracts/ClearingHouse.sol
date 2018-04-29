@@ -19,10 +19,10 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 
-/// @title Loopring Token Exchange Protocol Contract Interface
+/// @title Clearing House
 /// @author Daniel Wang - <daniel@loopring.org>
 /// @author Kongliang Zhong - <kongliang@loopring.org>
-contract LoopringProtocol {
+contract ClearingHouse {
     uint8   public constant MARGIN_SPLIT_PERCENTAGE_BASE = 100;
 
     uint8   public constant OPTION_MASK_CAP_BY_AMOUNTB = 0x01;
