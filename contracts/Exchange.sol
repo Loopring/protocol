@@ -234,7 +234,7 @@ contract Exchange is IExchange {
             "cutoff too small"
         );
 
-        delegate.setTradingPairCutoffs(tokenPair, t);
+        delegate.setTradingPairCutoffs(owner, tokenPair, t);
         emit OrdersCancelled(
             owner,
             tx.origin,
@@ -260,7 +260,7 @@ contract Exchange is IExchange {
             "cutoff too small"
         );
 
-        delegate.setCutoffs(t);
+        delegate.setCutoffs(owner, t);
         emit AllOrdersCancelled(
             owner,
             tx.origin,

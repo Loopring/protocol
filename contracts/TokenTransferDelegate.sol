@@ -347,16 +347,18 @@ contract TokenTransferDelegate is ITokenTransferDelegate, Claimable {
 
 
     function setCutoffs(
-        uint cutoff
+        address owner,
+        uint    cutoff
         )
         onlyAuthorized
         notSuspended
         external
     {
-        cutoffs[tx.origin] = cutoff;
+        cutoffs[owner] = cutoff;
     }
 
     function setTradingPairCutoffs(
+        address owner,
         bytes20 tokenPair,
         uint    cutoff
         )
@@ -364,7 +366,7 @@ contract TokenTransferDelegate is ITokenTransferDelegate, Claimable {
         notSuspended
         external
     {
-        tradingPairCutoffs[tx.origin][tokenPair] = cutoff;
+        tradingPairCutoffs[owner][tokenPair] = cutoff;
     }
 
     function checkCutoffsBatch(
