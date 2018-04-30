@@ -193,7 +193,7 @@ contract Exchange is IExchange {
             sig
         );
 
-        order.brokerInterceptor = verifyAuthenticationGetBroker(
+        order.brokerInterceptor = verifyAuthenticationGetInterceptor(
             order.owner,
             order.broker
         );
@@ -222,7 +222,7 @@ contract Exchange is IExchange {
         )
         external
     {
-        verifyAuthenticationGetBroker(owner, tx.origin);
+        verifyAuthenticationGetInterceptor(owner, tx.origin);
 
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
@@ -234,7 +234,12 @@ contract Exchange is IExchange {
             "cutoff too small"
         );
 
-        delegate.setTradingPairCutoffs(owner, tokenPair, t);
+        delegate.setTradingPairCutoffs(
+            owner,
+            tokenPair,
+            t
+        );
+
         emit OrdersCancelled(
             owner,
             tx.origin,
@@ -250,7 +255,7 @@ contract Exchange is IExchange {
         )
         external
     {
-        verifyAuthenticationGetBroker(owner, tx.origin);
+        verifyAuthenticationGetInterceptor(owner, tx.origin);
 
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
         ITokenTransferDelegate delegate = ITokenTransferDelegate(delegateAddress);
@@ -421,16 +426,10 @@ contract Exchange is IExchange {
                 ctx.sigList[i]
            );
 
-            if (order.broker != order.owner) {
-                IBrokerRegistry brokerRegistry = IBrokerRegistry(brokerRegistryAddress);
-                bool authenticated;
-                (authenticated, order.brokerInterceptor) = brokerRegistry.getBroker(
-                    order.owner,
-                    order.broker
-                );
-
-                require(authenticated, "invalid broker");
-            }
+            order.brokerInterceptor = verifyAuthenticationGetInterceptor(
+                order.owner,
+                order.broker
+            );
 
             ctx.orders[i] = order;
             ctx.ringHash ^= order.orderHash;
@@ -989,7 +988,7 @@ contract Exchange is IExchange {
         return delegate.tradingPairCutoffs(orderOwner, tokenPair);
     }
 
-    function verifyAuthenticationGetBroker(
+    function verifyAuthenticationGetInterceptor(
         address owner,
         address signer
         )
@@ -998,7 +997,7 @@ contract Exchange is IExchange {
         returns (address brokerInterceptor)
     {
         if (signer == owner) {
-            brokerInterceptor =  0x0;
+            brokerInterceptor = 0x0;
         } else {
             IBrokerRegistry brokerRegistry = IBrokerRegistry(brokerRegistryAddress);
             bool authenticated;
