@@ -67,7 +67,7 @@ contract Exchange is IExchange {
 
     struct Order {
         address owner;
-        address signer;
+        address broker;
         address tokenS;
         address tokenB;
         address wallet;
@@ -100,7 +100,7 @@ contract Exchange is IExchange {
         uint[6][]     valuesList;
         uint8[]       optionList;
         bytes[]       sigList;
-        address       miner;
+        address       feeRecipient;
         address       interceptor;
         uint8         feeSelections;
         uint64        ringIndex;
@@ -181,28 +181,22 @@ contract Exchange is IExchange {
             0
         );
         require(
-            msg.sender == order.signer,
-            "cancelOrder not submitted by signer"
+            tx.origin == order.broker,
+            "cancelOrder not submitted by broker"
         );
 
         bytes32 orderHash = calculateOrderHash(order);
 
         MultihashUtil.verifySignature(
-            order.signer,
+            order.broker,
             orderHash,
             sig
         );
 
-        if (order.signer != order.owner) {
-            IBrokerRegistry brokerRegistry = IBrokerRegistry(brokerRegistryAddress);
-            bool registered;
-            address tracker;
-            (registered, tracker) = brokerRegistry.getBroker(
-                order.owner,
-                order.signer
-            );
-            require(registered, "invalid broker");
-        }
+        order.brokerInterceptor = verifyAuthenticationGetBroker(
+            order.owner,
+            order.broker
+        );
 
         // For AON orders, must cancel it as a whole.
         if (order.optAllOrNone) {
@@ -214,31 +208,36 @@ contract Exchange is IExchange {
 
         emit OrderCancelled(
             order.owner,
+            tx.origin,
             orderHash,
             cancelAmount
         );
     }
 
     function cancelAllOrdersByTradingPair(
+        address owner,
         address token1,
         address token2,
         uint    cutoff
         )
         external
     {
+        verifyAuthenticationGetBroker(owner, tx.origin);
+
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
 
         bytes20 tokenPair = bytes20(token1) ^ bytes20(token2);
         ITokenTransferDelegate delegate = ITokenTransferDelegate(delegateAddress);
 
         require(
-            delegate.tradingPairCutoffs(msg.sender, tokenPair) < t,
+            delegate.tradingPairCutoffs(owner, tokenPair) < t,
             "cutoff too small"
         );
 
         delegate.setTradingPairCutoffs(tokenPair, t);
         emit OrdersCancelled(
-            msg.sender,
+            owner,
+            tx.origin,
             token1,
             token2,
             t
@@ -246,20 +245,27 @@ contract Exchange is IExchange {
     }
 
     function cancelAllOrders(
-        uint cutoff
+        address owner,
+        uint   cutoff
         )
         external
     {
+        verifyAuthenticationGetBroker(owner, tx.origin);
+
         uint t = (cutoff == 0 || cutoff >= block.timestamp) ? block.timestamp : cutoff;
         ITokenTransferDelegate delegate = ITokenTransferDelegate(delegateAddress);
 
         require(
-            delegate.cutoffs(msg.sender) < t,
+            delegate.cutoffs(owner) < t,
             "cutoff too small"
         );
 
         delegate.setCutoffs(t);
-        emit AllOrdersCancelled(msg.sender, t);
+        emit AllOrdersCancelled(
+            owner,
+            tx.origin,
+            t
+        );
     }
 
     function submitRing(
@@ -267,7 +273,7 @@ contract Exchange is IExchange {
         uint[6][]     valuesList,
         uint8[]       optionList,
         bytes[]       sigList,
-        address       miner,
+        address       feeRecipient,
         address       interceptor,
         uint8         feeSelections
         )
@@ -278,7 +284,7 @@ contract Exchange is IExchange {
             valuesList,
             optionList,
             sigList,
-            miner,
+            feeRecipient,
             interceptor,
             feeSelections,
             ringIndex,
@@ -325,9 +331,11 @@ contract Exchange is IExchange {
         Context ctx
         )
         private
-        pure
+        view
     {
-        require(ctx.miner != 0x0, "bad miner");
+        if (ctx.feeRecipient == 0x0) {
+            ctx.feeRecipient = tx.origin;
+        }
 
         require(
             ctx.ringSize == ctx.addressesList.length,
@@ -408,17 +416,17 @@ contract Exchange is IExchange {
             order.orderHash = calculateOrderHash(order);
 
             MultihashUtil.verifySignature(
-                order.signer,
+                order.broker,
                 order.orderHash,
                 ctx.sigList[i]
            );
 
-            if (order.signer != order.owner) {
+            if (order.broker != order.owner) {
                 IBrokerRegistry brokerRegistry = IBrokerRegistry(brokerRegistryAddress);
                 bool authenticated;
                 (authenticated, order.brokerInterceptor) = brokerRegistry.getBroker(
                     order.owner,
-                    order.signer
+                    order.broker
                 );
 
                 require(authenticated, "invalid broker");
@@ -430,7 +438,7 @@ contract Exchange is IExchange {
 
         ctx.ringHash = keccak256(
             ctx.ringHash,
-            ctx.miner,
+            ctx.feeRecipient,
             ctx.feeSelections
         );
     }
@@ -459,7 +467,7 @@ contract Exchange is IExchange {
     }
 
     /// @dev Verify the ringHash has been signed with each order's auth private
-    ///      keys as well as the miner's private key.
+    ///      keys.
     function verifyRingSignatures(
         Context ctx
         )
@@ -589,7 +597,7 @@ contract Exchange is IExchange {
                 ctx.delegate,
                 order.tokenS,
                 order.owner,
-                order.signer,
+                order.broker,
                 order.brokerInterceptor
             );
 
@@ -646,7 +654,7 @@ contract Exchange is IExchange {
     }
 
     /// @dev  Calculate each order's `lrcFee` and `lrcRewrard` and splict how much
-    /// of `fillAmountS` shall be paid to matching order or miner as margin
+    /// of `fillAmountS` shall be paid to matching order or fee recipient as margin
     /// split.
     function calculateRingFees(
         Context ctx
@@ -672,7 +680,7 @@ contract Exchange is IExchange {
                     ctx.delegate,
                     lrcTokenAddress,
                     order.owner,
-                    order.signer,
+                    order.broker,
                     order.brokerInterceptor
                 );
 
@@ -718,7 +726,7 @@ contract Exchange is IExchange {
                     minerLrcSpendable = getSpendable(
                         ctx.delegate,
                         lrcTokenAddress,
-                        ctx.miner,
+                        tx.origin,
                         0x0,
                         0x0
                     );
@@ -781,7 +789,7 @@ contract Exchange is IExchange {
 
             // Store owner and tokenS of every order
             batch[p++] = bytes32(order.owner);
-            batch[p++] = bytes32(order.signer);
+            batch[p++] = bytes32(order.broker);
             batch[p++] = bytes32(order.brokerInterceptor);
             batch[p++] = bytes32(order.tokenS);
 
@@ -811,14 +819,16 @@ contract Exchange is IExchange {
 
         ctx.delegate.batchUpdateHistoryAndTransferTokens(
             lrcTokenAddress,
-            ctx.miner,
+            tx.origin,
+            ctx.feeRecipient,
             historyBatch,
             batch
         );
 
         emit RingMined(
             ctx.ringIndex,
-            ctx.miner,
+            tx.origin,
+            ctx.feeRecipient,
             fills
         );
     }
@@ -951,7 +961,7 @@ contract Exchange is IExchange {
         return keccak256(
             delegateAddress,
             order.owner,
-            order.signer,
+            order.broker,
             order.tokenS,
             order.tokenB,
             order.wallet,
@@ -977,5 +987,23 @@ contract Exchange is IExchange {
         bytes20 tokenPair = bytes20(token1) ^ bytes20(token2);
         ITokenTransferDelegate delegate = ITokenTransferDelegate(delegateAddress);
         return delegate.tradingPairCutoffs(orderOwner, tokenPair);
+    }
+
+    function verifyAuthenticationGetBroker(
+        address owner,
+        address signer
+        )
+        private
+        view
+        returns (address brokerInterceptor)
+    {
+        if (signer == owner) {
+            brokerInterceptor =  0x0;
+        } else {
+            IBrokerRegistry brokerRegistry = IBrokerRegistry(brokerRegistryAddress);
+            bool authenticated;
+            (authenticated, brokerInterceptor) = brokerRegistry.getBroker(owner, signer);
+            require(authenticated, "broker unauthenticated");
+        }
     }
 }

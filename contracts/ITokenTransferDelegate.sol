@@ -83,7 +83,8 @@ contract ITokenTransferDelegate {
 
     function batchUpdateHistoryAndTransferTokens(
         address   lrcTokenAddress,
-        address   minerFeeRecipient,
+        address   miner,
+        address   feeRecipient,
         bytes32[] historyBatch,
         bytes32[] transferBatch
         )
