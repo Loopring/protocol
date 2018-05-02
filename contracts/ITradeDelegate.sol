@@ -91,8 +91,8 @@ contract ITradeDelegate {
         returns (bool);
 
     function setCancelled(
-        address   owner,
-        bytes32[] orderHashes
+        address owner,
+        bytes32 orderHash
         )
         external;
 

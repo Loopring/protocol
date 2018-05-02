@@ -63,14 +63,14 @@ contract IExchange {
         uint            _cutoff
     );
 
-    /// @dev Cancel a order. cancel amount(amountS or amountB) can be specified
-    ///      in values.
+
+    /// @dev Cancel multiple orders.
     /// @param owner              The order's owner.
     ///                           and order interceptor
-    /// @param orderHashes        The hashes of the orders to be cancelled.
+    /// @param orderHashes        Hashes of orders to be cancelled.
     function cancelOrders(
         address owner,
-        bytes32[] orderHashes
+        bytes   orderHashes
         )
         external;
 

@@ -19,6 +19,7 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 import "./lib/AddressUtil.sol";
+import "./lib/BytesUtil.sol";
 import "./lib/ERC20.sol";
 import "./lib/MathUint.sol";
 import "./lib/MultihashUtil.sol";
@@ -137,24 +138,32 @@ contract Exchange is IExchange, NoDefaultFunc {
 
     function cancelOrders(
         address owner,
-        bytes32[] orderHashes
+        bytes   orderHashes
         )
         external
     {
-        address brokerInterceptor = verifyAuthenticationGetInterceptor(
+        uint size = orderHashes.length;
+        require(size > 0 && size % 32 == 0);
+        
+        verifyAuthenticationGetInterceptor(
             owner,
             tx.origin
         );
 
-        ITradeDelegate(delegateAddress).setCancelled(
-            owner,
-            orderHashes
-        );
+        size /= 32;
+        bytes32[] memory hashes = new bytes32[](size);
+
+        ITradeDelegate delegate = ITradeDelegate(delegateAddress);
+
+        for (uint i = 0; i < size; i++) {
+            hashes[i] = BytesUtil.bytesToBytes32(orderHashes, i * 32);
+            delegate.setCancelled(owner, hashes[i]);
+        }
 
         emit OrdersCancelled(
             owner,
             tx.origin,
-            orderHashes
+            hashes
         );
     }
 
@@ -193,7 +202,7 @@ contract Exchange is IExchange, NoDefaultFunc {
         )
         external
     {
-        address brokerInterceptor = verifyAuthenticationGetInterceptor(
+        verifyAuthenticationGetInterceptor(
             owner,
             tx.origin
         );

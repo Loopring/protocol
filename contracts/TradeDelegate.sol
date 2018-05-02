@@ -142,7 +142,8 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
         notSuspended
         external
     {
-        for (uint i = 0; i < historyBatch.length / 2; i += 2) {
+        uint i;
+        for (i = 0; i < historyBatch.length / 2; i += 2) {
             filled[historyBatch[i]] = filled[historyBatch[i]].add(
                 uint(historyBatch[i + 1])
             );
@@ -150,7 +151,7 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
 
         address prevOwner = address(batch[batch.length - 9]);
 
-        for (uint i = 0; i < batch.length; i += 9) {
+        for (i = 0; i < batch.length; i += 9) {
             address owner = address(batch[i]);
             address broker = address(batch[i + 1]);
             address brokerInterceptor = address(batch[i + 2]);
@@ -290,16 +291,14 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
     }
 
     function setCancelled(
-        address   owner,
-        bytes32[] orderHashes
+        address owner,
+        bytes32 orderHash
         )
         onlyAuthorized
         notSuspended
         external
     {
-        for (uint i = 0; i < orderHashes.length; i ++) {
-            cancelled[owner][orderHashes[i]] = true;
-        }
+        cancelled[owner][orderHash] = true;
     }
 
     function addFilled(
