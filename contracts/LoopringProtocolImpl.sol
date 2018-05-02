@@ -426,10 +426,9 @@ contract LoopringProtocolImpl is LoopringProtocol {
     {
         bytes32[] memory batch = new bytes32[](ringSize * 9); // ringSize * (owner + tokenS + 4 amounts + wallet + orderHash + filledAmount)
         bytes32[] memory historyBatch = new bytes32[](ringSize * 2); // ringSize * (orderhash, fillAmount)
-        orderInfoList = new uint[](ringSize * 6);
+        orderInfoList = new bytes32[](ringSize * 6);
 
         uint p = 0;
-        uint q = 0;
         uint r = 0;
         uint prevSplitB = orders[ringSize - 1].splitB;
         for (uint i = 0; i < ringSize; i++) {
@@ -456,12 +455,12 @@ contract LoopringProtocolImpl is LoopringProtocol {
 
 
             // Store RingMined order info
-            orderInfoList[i * 6 + 0] = uint(state.orderHash);
-            orderInfoList[i * 6 + 1] = state.fillAmountS;
-            orderInfoList[i * 6 + 2] = state.lrcReward;
-            orderInfoList[i * 6 + 3] = state.lrcFeeState;
-            orderInfoList[i * 6 + 4] = state.splitS;
-            orderInfoList[i * 6 + 5] = state.splitB;
+            orderInfoList[i * 6 + 0] = state.orderHash;
+            orderInfoList[i * 6 + 1] = bytes32(state.fillAmountS);
+            orderInfoList[i * 6 + 2] = bytes32(state.lrcReward);
+            orderInfoList[i * 6 + 3] = bytes32(state.lrcFeeState);
+            orderInfoList[i * 6 + 4] = bytes32(state.splitS);
+            orderInfoList[i * 6 + 5] = bytes32(state.splitB);
 
             prevSplitB = state.splitB;
         }
