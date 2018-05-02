@@ -132,6 +132,8 @@ contract("TokenTransferDelegate", (accounts: string[]) => {
       batch.push(numberToBytes32Str(0));
       batch.push(numberToBytes32Str(5e18));
       batch.push(walletAddr1);
+      batch.push(numberToBytes32Str(0));
+      batch.push(numberToBytes32Str(0));
 
       batch.push(addressToBytes32Str(trader2));
       batch.push(addressToBytes32Str(neoAddress));
@@ -140,6 +142,8 @@ contract("TokenTransferDelegate", (accounts: string[]) => {
       batch.push(numberToBytes32Str(0));
       batch.push(numberToBytes32Str(5e18));
       batch.push(walletAddr2);
+      batch.push(numberToBytes32Str(0));
+      batch.push(numberToBytes32Str(0));
 
       const tx = await tokenTransferDelegate.batchTransferToken(lrcAddress, loopringProtocolV1, owner, 20, batch,
                                                                 {from: loopringProtocolV1});
@@ -179,6 +183,8 @@ contract("TokenTransferDelegate", (accounts: string[]) => {
         batch.push(numberToBytes32Str(0));
         batch.push(numberToBytes32Str(5e18));
         batch.push(walletAddr1);
+        batch.push(numberToBytes32Str(0));
+        batch.push(numberToBytes32Str(0));
 
         batch.push(addressToBytes32Str(trader2));
         batch.push(addressToBytes32Str(neoAddress));
@@ -187,6 +193,8 @@ contract("TokenTransferDelegate", (accounts: string[]) => {
         batch.push(numberToBytes32Str(0));
         batch.push(numberToBytes32Str(5e18));
         batch.push(walletAddr2);
+        batch.push(numberToBytes32Str(0));
+        batch.push(numberToBytes32Str(0));
 
         const tx = await tokenTransferDelegate.batchTransferToken(lrcAddress, loopringProtocolV2, owner, 20, batch,
                                                                   {from: loopringProtocolV2});

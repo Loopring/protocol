@@ -104,6 +104,11 @@ contract TokenTransferDelegate {
     function batchAddCancelledOrFilled(bytes32[] batch)
         public;
 
+    function getCancelledOrFilledBatch(bytes32 orderHashA, bytes32 orderHashB, bytes32 orderHashC)
+        external
+        view
+        returns (uint[3] amounts);
+
     function setCutoffs(uint t)
         external;
 
