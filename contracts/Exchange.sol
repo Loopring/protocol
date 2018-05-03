@@ -316,10 +316,8 @@ contract Exchange is IExchange, NoDefaultFunc {
         // Validate ring-mining related arguments.
 
         for (uint i = 0; i < ctx.ringSize; i++) {
-            uint j = (i + 1) % ctx.ringSize;
             require(ctx.valuesList[i][5] > 0, "rateAmountS is 0");
-            require(ctx.addressesList[i][0] != ctx.addressesList[j][0], "self-trading");
-        }
+       }
     }
 
     /// @dev Assemble input data into structs so we can pass them to other functions.

@@ -113,24 +113,6 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
         emit AddressDeauthorized(addr);
     }
 
-    function transferToken(
-        address token,
-        address from,
-        address to,
-        uint    value
-        )
-        onlyAuthorized
-        notSuspended
-        external
-    {
-        if (value > 0 && from != to && to != 0x0) {
-            require(
-                ERC20(token).transferFrom(from, to, value),
-                "token transfer failure"
-            );
-        }
-    }
-
     function batchUpdateHistoryAndTransferTokens(
         address   lrcAddr,
         address   miner,
@@ -162,6 +144,7 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
             uint amount;
 
             // Here batch[i + 4] has been checked not to be 0.
+            require(owner != prevOwner, "self trading");
             amount = uint(batch[i + 4]);
             require(
                 ERC20(token).transferFrom(
