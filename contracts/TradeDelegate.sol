@@ -162,30 +162,26 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
             uint amount;
 
             // Here batch[i + 4] has been checked not to be 0.
-            if (owner != prevOwner) {
-                amount = uint(batch[i + 4]);
-                if (amount > 0) {
-                    require(
-                        ERC20(token).transferFrom(
-                            owner,
-                            prevOwner,
-                            amount
-                        ),
-                        "token transfer failure"
-                    );
-                }
+            amount = uint(batch[i + 4]);
+            require(
+                ERC20(token).transferFrom(
+                    owner,
+                    prevOwner,
+                    amount
+                ),
+                "token transfer failure"
+            );
 
-                if (brokerInterceptor != 0x0) {
-                    require(
-                        IBrokerInterceptor(brokerInterceptor).onTokenSpent(
-                            owner,
-                            broker,
-                            token,
-                            amount
-                        ),
-                        "brokerInterceptor update failure"
-                    );
-                }
+            if (brokerInterceptor != 0x0) {
+                require(
+                    IBrokerInterceptor(brokerInterceptor).onTokenSpent(
+                        owner,
+                        broker,
+                        token,
+                        amount
+                    ),
+                    "brokerInterceptor update failure"
+                );
             }
 
             // Miner pays LRC award to order owner
@@ -351,8 +347,14 @@ contract TradeDelegate is ITradeDelegate, Claimable, NoDefaultFunc {
         require(len == validSince.length);
 
         for (uint i = 0; i < len; i++) {
-            require(validSince[i] > tradingPairCutoffs[owners[i]][tradingPairs[i]]);  // order trading pair is cut off
-            require(validSince[i] > cutoffs[owners[i]]);                              // order is cut off
+            require(
+                validSince[i] > tradingPairCutoffs[owners[i]][tradingPairs[i]],
+                "order cancelled"
+            );
+            require(
+                validSince[i] > cutoffs[owners[i]],
+                "order cancelled"
+            ); 
         }
     }
 
